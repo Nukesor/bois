@@ -9,25 +9,23 @@ edition = "2021"
 rust-version = "1.63"
 
 [dependencies]
-# General purpose code helper
 anyhow = "1"
 better-panic = "0.3"
-
-# Commandline stuff
+chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "cargo"] }
+dirs = "4"
+dotenv = "0.15"
 log = "0.4"
 pretty_env_logger = "0.4"
-dotenv = "0.15"
-
-# Common libraries
+serde = "1"
+serde_yaml = "0.9"
+serde_derive = "1"
+shellexpand = "2.1"
 strum = "0.24"
 strum_macros = "0.24"
-chrono = { version = "0.4", features = ["serde"] }
-crossbeam-channel = "0.5"
-serde = "1"
-serde_derive = "1"
+thiserror = "1"
 
 [dev-dependencies]
+pretty_assertions = "1"
 rstest = "0.15"
 rstest_reuse = "0.3"
-pretty_assertions = "1"

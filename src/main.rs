@@ -6,6 +6,8 @@ use log::LevelFilter;
 use pretty_env_logger::env_logger::Builder;
 
 mod cli;
+mod config;
+mod error;
 
 fn main() -> Result<()> {
     // Read any .env files
