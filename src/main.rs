@@ -1,13 +1,15 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 
 use cli::CliArguments;
 use log::LevelFilter;
+use pest::Parser as PestParser;
 use pretty_env_logger::env_logger::Builder;
 
 mod cli;
 mod config;
 mod error;
+mod parser;
 
 fn main() -> Result<()> {
     // Read any .env files
@@ -17,6 +19,18 @@ fn main() -> Result<()> {
 
     // Initalize everything
     init_app(opt.verbose)?;
+
+    let text = r#"# bois_config_start
+    # this_is_some_test:
+    #    - "Geil"
+    # bois_config_end
+    test
+    bois_config_end"#;
+
+    let parsed = parser::ConfigParser::parse(parser::Rule::full_config, text)
+        .context("Failed to parse query")?;
+
+    dbg!(parsed);
 
     Ok(())
 }

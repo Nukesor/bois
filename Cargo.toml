@@ -16,13 +16,16 @@ clap = { version = "4", features = ["derive", "cargo"] }
 dirs = "4"
 dotenv = "0.15"
 log = "0.4"
+pest = "2"
+pest_derive = "2"
 pretty_env_logger = "0.4"
 serde = "1"
-serde_yaml = "0.9"
 serde_derive = "1"
+serde_yaml = "0.9"
 shellexpand = "2.1"
 strum = "0.24"
 strum_macros = "0.24"
+tera = "1"
 thiserror = "1"
 
 [dev-dependencies]

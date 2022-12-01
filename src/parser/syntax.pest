@@ -1,0 +1,31 @@
+WHITESPACE = _{ " " | "\t" | NEWLINE }
+
+// Viable comment prefixes for various file formats
+comment_prefix = _{ "//" | "#"  | "--" | "%" | "/*" | "*" | "**" }
+
+// The bois config is a block that's in between these start/end
+start_block = _{ comment_prefix ~ "bois_config_start" }
+end_block = _{ comment_prefix ~ "bois_config_end" }
+
+end_block_condition = _{ end_block ~ ANY* }
+
+// Allow multiple lines of input.
+// Each line is only allowed to consist of a comment prefix followed by characters
+// that aren't newlines.
+line_behind_comment = @{ (!(NEWLINE) ~ ANY)* }
+config_line = { comment_prefix ~ line_behind_comment }
+// Stop the config content as soon as we hit the end block
+config_content = {
+    ( !end_block_condition ~ config_line)*
+}
+
+// The rest of the file
+file_content = {
+    ANY*
+}
+
+// Expect a commented block, that's sandwhiched between the prefix and suffix.
+// It can be anywhere in the config file.
+full_config = {
+    SOI ~ start_block ~ config_content ~ end_block ~ file_content ~ EOI
+}

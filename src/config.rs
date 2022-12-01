@@ -45,6 +45,8 @@ impl Configuration {
     ///
     /// The default local config locations depends on the current target.
     pub fn read(from_file: &Option<PathBuf>) -> Result<(Configuration, bool)> {
+        info!("Parsing config files");
+
         // Load the config from a very specific file path
         if let Some(path) = from_file {
             // Open the file in read-only mode with buffer.
@@ -57,8 +59,7 @@ impl Configuration {
             return Ok((settings, true));
         };
 
-        info!("Parsing config files");
-
+        // Get the default path for the user's configuration directory.
         let Some(config_dir) = dirs::config_dir() else {
             panic!("Couldn't find user configuration directory.")
         };
@@ -110,6 +111,7 @@ impl Configuration {
             })?;
         }
 
+        // Serialize the configuration file and write it to disk
         let content = match serde_yaml::to_string(self) {
             Ok(content) => content,
             Err(error) => {
