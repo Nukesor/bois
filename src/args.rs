@@ -7,8 +7,13 @@ use clap::{ArgAction, Parser};
     author,
     version
 )]
-pub struct CliArguments {
+pub struct Arguments {
     /// Verbose mode (-v, -vv, -vvv)
     #[clap(short, long, action = ArgAction::Count)]
     pub verbose: u8,
+
+    /// The name of the machine.
+    /// This is usually automatically deducted via the hostname.
+    #[clap(short, long)]
+    pub name: String,
 }

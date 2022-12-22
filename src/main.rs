@@ -1,24 +1,52 @@
+use std::path::PathBuf;
+
 use anyhow::{Context, Result};
 use clap::Parser;
 
-use cli::CliArguments;
+use args::Arguments;
 use log::LevelFilter;
 use pest::Parser as PestParser;
 use pretty_env_logger::env_logger::Builder;
 
-mod cli;
+mod args;
 mod config;
 mod error;
+mod file;
 mod parser;
+
+struct MetaConfig {
+    config: config::Configuration,
+    hostname: String,
+    root_dir: PathBuf,
+    files: Vec<file::File>,
+}
+
+impl MetaConfig {
+    fn new() -> Result<Self> {
+        let hostname = hostname::get()
+            .context("Couldn't determine the machine's name.")?
+            .to_string_lossy()
+            .to_string();
+
+        Ok(MetaConfig {
+            config: (),
+            hostname,
+            root_dir: PathBuf::from("/home/nuke/.sys"),
+            files: Vec::new(),
+        })
+    }
+}
 
 fn main() -> Result<()> {
     // Read any .env files
     dotenv::dotenv().ok();
     // Parse commandline options.
-    let opt = CliArguments::parse();
+    let opt = Arguments::parse();
 
     // Initalize everything
     init_app(opt.verbose)?;
+
+    let hostname = hostname::get().context("Couldn't determine the machine's name.")?;
 
     let text = r#"# bois_config_start
     # this_is_some_test:
@@ -29,7 +57,6 @@ fn main() -> Result<()> {
 
     let parsed = parser::ConfigParser::parse(parser::Rule::full_config, text)
         .context("Failed to parse query")?;
-
     dbg!(parsed);
 
     Ok(())
