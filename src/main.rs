@@ -2,11 +2,11 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use clap::Parser;
+use pretty_env_logger::env_logger::Builder;
 
 use args::Arguments;
+use file::discover_files;
 use log::LevelFilter;
-use pest::Parser as PestParser;
-use pretty_env_logger::env_logger::Builder;
 
 mod args;
 mod config;
@@ -16,21 +16,26 @@ mod parser;
 
 struct MetaConfig {
     config: config::Configuration,
-    hostname: String,
+    machine_name: String,
     root_dir: PathBuf,
     files: Vec<file::File>,
 }
 
 impl MetaConfig {
-    fn new() -> Result<Self> {
-        let hostname = hostname::get()
-            .context("Couldn't determine the machine's name.")?
-            .to_string_lossy()
-            .to_string();
+    fn new(args: &Arguments) -> Result<Self> {
+        // Use the provided name or try to deduct it from the hostname.
+        let machine_name = if let Some(name) = &args.name {
+            name.clone()
+        } else {
+            hostname::get()
+                .context("Couldn't determine the machine's name.")?
+                .to_string_lossy()
+                .to_string()
+        };
 
         Ok(MetaConfig {
-            config: (),
-            hostname,
+            config: config::Configuration::default(),
+            machine_name,
             root_dir: PathBuf::from("/home/nuke/.sys"),
             files: Vec::new(),
         })
@@ -41,23 +46,14 @@ fn main() -> Result<()> {
     // Read any .env files
     dotenv::dotenv().ok();
     // Parse commandline options.
-    let opt = Arguments::parse();
+    let args = Arguments::parse();
 
     // Initalize everything
-    init_app(opt.verbose)?;
+    init_app(args.verbose)?;
 
-    let hostname = hostname::get().context("Couldn't determine the machine's name.")?;
+    let config = MetaConfig::new(&args)?;
 
-    let text = r#"# bois_config_start
-    # this_is_some_test:
-    #    - "Geil"
-    # bois_config_end
-    test
-    bois_config_end"#;
-
-    let parsed = parser::ConfigParser::parse(parser::Rule::full_config, text)
-        .context("Failed to parse query")?;
-    dbg!(parsed);
+    discover_files(&config.root_dir, &PathBuf::from("./"))?;
 
     Ok(())
 }

@@ -15,5 +15,5 @@ pub struct Arguments {
     /// The name of the machine.
     /// This is usually automatically deducted via the hostname.
     #[clap(short, long)]
-    pub name: String,
+    pub name: Option<String>,
 }
