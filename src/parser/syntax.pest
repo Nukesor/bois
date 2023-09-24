@@ -1,11 +1,12 @@
-WHITESPACE = _{ " " | "\t" | NEWLINE }
+whitespace = _{ " " | "\t" | NEWLINE }
 
-// Viable comment prefixes for various file formats
-comment_prefix = _{ "//" | "#"  | "--" | "%" | "/*" | "*" | "**" }
+// Viable comment prefixes for various file formats.
+// Can be prefixed with any amount of spaces.
+comment = _{ whitespace* ~ ("//" | "#"  | "--" | "%" | "/*" | "*" | "**" | "*/")}
 
 // The bois config is a block that's in between these start/end
-start_block = _{ comment_prefix ~ "bois_config_start" }
-end_block = _{ comment_prefix ~ "bois_config_end" }
+start_block = _{ comment ~ whitespace* ~ "bois_config_start" }
+end_block = _{ comment ~ whitespace* ~ "bois_config_end" }
 
 end_block_condition = _{ end_block ~ ANY* }
 
@@ -13,7 +14,7 @@ end_block_condition = _{ end_block ~ ANY* }
 // Each line is only allowed to consist of a comment prefix followed by characters
 // that aren't newlines.
 line_behind_comment = @{ (!(NEWLINE) ~ ANY)* }
-config_line = { comment_prefix ~ line_behind_comment }
+config_line = _{ comment ~ line_behind_comment }
 // Stop the config content as soon as we hit the end block
 config_content = {
     ( !end_block_condition ~ config_line)*
