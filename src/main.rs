@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
+use config::Configuration;
 use pretty_env_logger::env_logger::Builder;
 
 use args::Arguments;
@@ -23,9 +24,16 @@ fn main() -> Result<()> {
     // Initalize everything
     init_app(args.verbose)?;
 
-    let config = templating::prerender_state::PrerenderState::new(&args)?;
+    let (config, found_config) = Configuration::read(&args.config)?;
+    // In case we didn't find a configuration file, write a default configuration file
+    // to given path or to the default configuration path.
+    if found_config {
+        config.save(&args.config)?;
+    }
 
-    discover_files(&config.root_dir, &PathBuf::from("./"))?;
+    let prerender_state = templating::prerender_state::PrerenderState::new(&args)?;
+
+    discover_files(&prerender_state.root_dir, &PathBuf::from("./"))?;
 
     Ok(())
 }

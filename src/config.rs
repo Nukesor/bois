@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use log::info;
 use serde_derive::{Deserialize, Serialize};
 use shellexpand::tilde;
@@ -48,41 +48,40 @@ impl Configuration {
         info!("Parsing config files");
 
         // Load the config from a very specific file path
-        if let Some(path) = from_file {
-            // Open the file in read-only mode with buffer.
-            let file = File::open(path)
-                .map_err(|err| Error::IoPathError(path.clone(), "opening config file", err))?;
-            let reader = BufReader::new(file);
+        let path = if let Some(path) = from_file {
+            if !path.exists() || !path.is_file() {
+                bail!("Cannot find configuration file at path {path:?}");
+            }
 
-            let settings = serde_yaml::from_reader(reader)
-                .map_err(|err| Error::ConfigDeserialization(err.to_string()))?;
-            return Ok((settings, true));
+            path.clone()
+        } else {
+            // Get the default path for the user's configuration directory.
+            let config_dir = PathBuf::from("/etc/bois");
+            let path = config_dir.join("bois.yml");
+            info!("Looking for config at path: {path:?}");
+
+            // Use the default path, if we cannot find any file.
+            if !path.exists() || !path.is_file() {
+                info!("No config file found. Use default config.");
+                // Return a default configuration if we couldn't find a file.
+                return Ok((Configuration::default(), false));
+            };
+
+            path
         };
 
-        // Get the default path for the user's configuration directory.
-        let Some(config_dir) = dirs::config_dir() else {
-            panic!("Couldn't find user configuration directory.")
-        };
-        let path = config_dir.join("bois").join("bois.yml");
-        info!("Looking for config at path: {path:?}");
+        info!("Found config file at: {path:?}");
 
-        // Check if the file exists and parse it.
-        if path.exists() && path.is_file() {
-            info!("Found config file at: {path:?}");
+        // Open the file in read-only mode with buffer.
+        let file = File::open(&path)
+            .map_err(|err| Error::IoPathError(path, "opening config file.", err))?;
+        let reader = BufReader::new(file);
 
-            // Open the file in read-only mode with buffer.
-            let file = File::open(&path)
-                .map_err(|err| Error::IoPathError(path, "opening config file.", err))?;
-            let reader = BufReader::new(file);
+        // Read and deserialize the config file.
+        let settings = serde_yaml::from_reader(reader)
+            .map_err(|err| Error::ConfigDeserialization(err.to_string()))?;
 
-            let settings = serde_yaml::from_reader(reader)
-                .map_err(|err| Error::ConfigDeserialization(err.to_string()))?;
-            return Ok((settings, true));
-        }
-
-        info!("No config file found. Use default config.");
-        // Return a default configuration if we couldn't find a file.
-        Ok((Configuration::default(), false))
+        return Ok((settings, true));
     }
 
     /// Save the current configuration as a file to the given path. \
@@ -91,23 +90,16 @@ impl Configuration {
     pub fn save(&self, path: &Option<PathBuf>) -> Result<(), Error> {
         let config_path = if let Some(path) = path {
             path.clone()
-        } else if let Some(path) = dirs::config_dir() {
-            let path = path.join("bois");
-            path.join("bois.yml")
         } else {
-            return Err(Error::Generic(
-                "Failed to resolve default config directory. User home cannot be determined."
-                    .into(),
-            ));
+            PathBuf::from("/etc/bois/bois.yml")
         };
-        let config_dir = config_path
-            .parent()
-            .ok_or_else(|| Error::InvalidPath("Couldn't resolve config directory".into()))?;
+
+        let config_dir = PathBuf::from("/etc/bois");
 
         // Create the config dir, if it doesn't exist yet
         if !config_dir.exists() {
-            create_dir_all(config_dir).map_err(|err| {
-                Error::IoPathError(config_dir.to_path_buf(), "creating config dir", err)
+            create_dir_all(&config_dir).map_err(|err| {
+                Error::IoPathError(config_dir.clone(), "creating config dir", err)
             })?;
         }
 
@@ -120,12 +112,12 @@ impl Configuration {
                 )))
             }
         };
-        let mut file = File::create(&config_path).map_err(|err| {
-            Error::IoPathError(config_dir.to_path_buf(), "creating settings file", err)
-        })?;
-        file.write_all(content.as_bytes()).map_err(|err| {
-            Error::IoPathError(config_dir.to_path_buf(), "writing settings file", err)
-        })?;
+
+        // Write the serialized content to the file.
+        let mut file = File::create(&config_path)
+            .map_err(|err| Error::IoPathError(config_dir.clone(), "creating settings file", err))?;
+        file.write_all(content.as_bytes())
+            .map_err(|err| Error::IoPathError(config_dir, "writing settings file", err))?;
 
         Ok(())
     }

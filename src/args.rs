@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{ArgAction, Parser};
 
 #[derive(Parser, Debug)]
@@ -11,6 +13,10 @@ pub struct Arguments {
     /// Verbose mode (-v, -vv, -vvv)
     #[clap(short, long, action = ArgAction::Count)]
     pub verbose: u8,
+
+    /// The path to the configuration file that should be used.
+    #[clap(short, long)]
+    pub config: Option<PathBuf>,
 
     /// The name of the machine.
     /// This is usually automatically deducted via the hostname.
