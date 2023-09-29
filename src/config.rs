@@ -22,20 +22,37 @@ pub enum Mode {
 /// All settings which are used by the daemon
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct Configuration {
-    /// The current mode of operations.
-    /// Either in user/dotfile mode or in system configuration mode.
-    pub mode: Mode,
+    /// The bois directory, which contains all bois templates and alike.
+    bois_dir: PathBuf,
+
+    /// The target directory to which the files should be deployed.
+    target_dir: PathBuf,
 }
 
 impl Default for Configuration {
     fn default() -> Self {
-        Configuration { mode: Mode::User }
+        Configuration {
+            bois_dir: PathBuf::from("/etc/bois/"),
+            target_dir: PathBuf::from("/"),
+        }
     }
 }
 
 /// Little helper which expands a given path's `~` characters to a fully qualified path.
 pub fn expand_home(old_path: &Path) -> PathBuf {
     PathBuf::from(tilde(&old_path.to_string_lossy()).into_owned())
+}
+
+impl Configuration {
+    /// The config directory which contains all bois templates and alike.
+    pub fn bois_dir(&self) -> PathBuf {
+        expand_home(&self.bois_dir)
+    }
+
+    /// The target directory to which the configuration should be deployed.
+    pub fn target_dir(&self) -> PathBuf {
+        expand_home(&self.bois_dir)
+    }
 }
 
 impl Configuration {
@@ -49,6 +66,7 @@ impl Configuration {
 
         // Load the config from a very specific file path
         let path = if let Some(path) = from_file {
+            let path = expand_home(path);
             if !path.exists() || !path.is_file() {
                 bail!("Cannot find configuration file at path {path:?}");
             }

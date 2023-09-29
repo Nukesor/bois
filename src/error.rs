@@ -2,9 +2,6 @@ use std::path::PathBuf;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Error while building path: {}", .0)]
-    InvalidPath(String),
-
     #[error("Error while reading configuration:\n{}", .0)]
     ConfigDeserialization(String),
 

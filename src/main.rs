@@ -27,13 +27,13 @@ fn main() -> Result<()> {
     let (config, found_config) = Configuration::read(&args.config)?;
     // In case we didn't find a configuration file, write a default configuration file
     // to given path or to the default configuration path.
-    if found_config {
+    if !found_config {
         config.save(&args.config)?;
     }
 
-    let prerender_state = templating::prerender_state::PrerenderState::new(&args)?;
+    let _prerender_state = templating::prerender_state::PrerenderState::new(&args)?;
 
-    discover_files(&prerender_state.root_dir, &PathBuf::from("./"))?;
+    discover_files(&config.bois_dir(), &PathBuf::from("./"))?;
 
     Ok(())
 }

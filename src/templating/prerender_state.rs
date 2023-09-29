@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use anyhow::{Context, Result};
 
 use crate::{args::Arguments, config::Configuration, templating::file::File};
@@ -7,7 +5,6 @@ use crate::{args::Arguments, config::Configuration, templating::file::File};
 pub struct PrerenderState {
     pub config: Configuration,
     pub machine_name: String,
-    pub root_dir: PathBuf,
     pub files: Vec<File>,
 }
 
@@ -26,7 +23,6 @@ impl PrerenderState {
         Ok(PrerenderState {
             config: Configuration::default(),
             machine_name,
-            root_dir: PathBuf::from("/home/nuke/.sysconfig"),
             files: Vec::new(),
         })
     }
