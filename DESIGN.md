@@ -13,7 +13,6 @@
 - Can be tracked via Git
 - Multiple system configs in a single repository
 - Shared/Base rules (will be applied to all/some systems?)
-- Configuration follows same structure as real filesystem?
 - Simple Templating (Tera?)
 - Unix only
 
@@ -22,24 +21,31 @@
 - In file configuration
   - Permissions
   - Ownership
+  - Location
+- In folder configuration
+  - Folder permissions
+  - File default permissions
+  - Ownership
+  - Location
 - Some form of yaml/toml for variables
 
 ## Datastructures
 
 ### Folders
 
+Example folder structure for a computer named `HOSTNAME_1`.
+
 ```txt
 bois
 |-- base.yml
-|-- ${HOSTNAME_1}.yml
+|-- HOSTNAME_1.yml
 |-- base
-|   |-- etc
-|       |-- pacman.conf
+|   |-- pacman.conf
 |
-|-- $HOSTNAME_1
-|   |-- etc
-|       |-- modprobe.d
-|           |-- nobeep.conf
+|-- HOSTNAME_1
+|   |-- modprobe.d
+|       |-- nobeep.conf
+|
 |-- .deployed
 |   |-- etc
 |       |-- modprobe.d
@@ -50,17 +56,16 @@ bois
 ## Features
 
 - Subcommands
-  - `add --base` Track an file on your system to your repository. By default, adds the file to your system specific folder.
-  - `diff --apply` Compare the currently deployed config vs. the config that's in the repository.
-    Optionally apply changes on the system on a chunk-by-chunk basis to the repository?
-  - `deploy --force` Deploy all changes. Ask the user on critical changes (deletions) unless forced.
-- Simple addition of files via subcommand
+  - `diff` Compare the currently deployed config vs. the config that's in the repository.
+    - `--apply` Optionally apply changes on the system on a chunk-by-chunk basis to the repository?
+  - `deploy` Deploy all changes. Prompt the user for permission with a current file diff.
+    - `--force` Don't prompt the user with diff for input.
+- Simple addition of existing files in system via subcommand.
 - Automatic target detection via hostname
   - Simple migration to new PC via directory name change
-- Change detection on rendered files vs. existing files (`diff`)
-- State management?
-  - Save current deployed state.
-  - Allows cleanup of configuration files that're no longer tracked.
+- "State management"
+  - Save the current deployed state.
+    Needed for diff and similar
 
 ### Config
 
@@ -71,21 +76,4 @@ post_hooks:
     - 'systemctl enable --now some.service'
 variables:
     some_variable_1
-```
-
-### State
-
-Either Json or some other more more compact state file.
-
-```yaml
-base:
-    files:
-        - name: /etc/pacman.conf
-          hash: SHA256SUM of pacman.conf.
-          origin: bois/.deployed/etc/pacman.conf
-$HOSTNAME_1
-    files:
-        - name: /etc/pacman.conf
-          hash: SHA256SUM of deployed file.
-          origin: bois/.deployed/etc/pacman.conf
 ```
