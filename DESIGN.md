@@ -18,6 +18,14 @@
 
 ## Configuration
 
+### Host/Group configuration
+
+- Specific named files by group/hostname
+- Variables for group/hostname in that file
+- Packages?
+
+### File/Directory Configuration
+
 - In file configuration
   - Permissions
   - Ownership

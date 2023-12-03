@@ -5,15 +5,17 @@ use clap::Parser;
 use config::Configuration;
 use pretty_env_logger::env_logger::Builder;
 
-use args::Arguments;
-use log::{debug, LevelFilter};
-use templating::discover_files;
-
 mod args;
 mod config;
 mod error;
+mod file_config;
+mod group_config;
 mod parser;
 mod templating;
+
+use args::Arguments;
+use log::{debug, LevelFilter};
+use templating::discover_files;
 
 fn main() -> Result<()> {
     // Read any .env files

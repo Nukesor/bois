@@ -2,18 +2,17 @@ use std::fs::{self, read_to_string, DirEntry};
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-
 use log::debug;
 use pest::Parser;
 
-use crate::error::Error;
-use crate::parser;
-
-use self::file::{Directory, DirectoryConfig};
+use crate::{
+    error::Error,
+    file_config::{DirectoryConfig, FileConfig},
+    parser::{ConfigParser, Rule},
+};
 
 pub mod file;
 pub mod prerender_state;
-pub mod state;
 
 pub fn discover_files(root: &PathBuf, relative_path: &PathBuf) -> Result<file::Directory> {
     let directory_path = root.join(relative_path);
@@ -57,7 +56,7 @@ fn read_file(
     root: &PathBuf,
     relative_path: &PathBuf,
     entry: DirEntry,
-    directory: &mut Directory,
+    directory: &mut file::Directory,
 ) -> Result<()> {
     let file_name = entry.file_name().to_string_lossy().to_string();
     let entry_relative_path = relative_path.clone().join(&file_name);
@@ -73,13 +72,13 @@ fn read_file(
         let mut file_content = read_to_string(&path)
             .map_err(|err| Error::IoPathError(path.clone(), "reading file at", err))?;
 
-        let mut file_config: Option<file::FileConfig> = None;
+        let mut file_config: Option<FileConfig> = None;
 
         // Check if there's the key word for a in-file configuration block.
         // If so, try to parse the file as such.
         if file_content.contains("bois_config_start") {
             // Parse the bois configuration block
-            let mut parsed = parser::ConfigParser::parse(parser::Rule::full_config, &file_content)
+            let mut parsed = ConfigParser::parse(Rule::full_config, &file_content)
                 .context(format!("Failed to parse config block in file at {path:?}"))?;
 
             // The first parsed block is the bois configuration.
