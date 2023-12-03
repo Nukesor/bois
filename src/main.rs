@@ -6,7 +6,7 @@ use config::Configuration;
 use pretty_env_logger::env_logger::Builder;
 
 use args::Arguments;
-use log::LevelFilter;
+use log::{debug, LevelFilter};
 use templating::discover_files;
 
 mod args;
@@ -33,7 +33,9 @@ fn main() -> Result<()> {
 
     let _prerender_state = templating::prerender_state::PrerenderState::new(&args)?;
 
-    discover_files(&config.bois_dir(), &PathBuf::from("./"))?;
+    let directory = discover_files(&config.bois_dir(), &PathBuf::from("./"))?;
+
+    debug!("Config state: {directory:#?}");
 
     Ok(())
 }

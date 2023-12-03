@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use log::info;
 use serde_derive::{Deserialize, Serialize};
 use shellexpand::tilde;
@@ -22,6 +22,10 @@ pub enum Mode {
 /// All settings which are used by the daemon
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct Configuration {
+    /// The name of the machine.
+    /// If this is set to None, the hostname will be used
+    name: Option<String>,
+
     /// The bois directory, which contains all bois templates and alike.
     bois_dir: PathBuf,
 
@@ -32,6 +36,7 @@ pub struct Configuration {
 impl Default for Configuration {
     fn default() -> Self {
         Configuration {
+            name: None,
             bois_dir: PathBuf::from("/etc/bois/"),
             target_dir: PathBuf::from("/"),
         }
@@ -44,6 +49,25 @@ pub fn expand_home(old_path: &Path) -> PathBuf {
 }
 
 impl Configuration {
+    /// The name that should be used on this machine.
+    pub fn name(&self) -> Result<String> {
+        // Use the provided name, otherwise fallback to the hostname.
+        // Fail hard if neither works.
+        if let Some(name) = &self.name {
+            Ok(name.clone())
+        } else {
+            let hostname = hostname::get()
+                .context(
+                    "Couldn't determine the machine's name. \
+                     Alternatively set the name in the config file.",
+                )?
+                .to_string_lossy()
+                .to_string();
+
+            Ok(hostname)
+        }
+    }
+
     /// The config directory which contains all bois templates and alike.
     pub fn bois_dir(&self) -> PathBuf {
         expand_home(&self.bois_dir)
