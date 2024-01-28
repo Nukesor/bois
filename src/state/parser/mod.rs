@@ -1,5 +1,5 @@
 use pest_derive::Parser;
 
 #[derive(Parser)]
-#[grammar = "parser/syntax.pest"]
+#[grammar = "state/parser/syntax.pest"]
 pub struct ConfigParser;

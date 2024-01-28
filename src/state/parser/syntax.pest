@@ -2,7 +2,7 @@ whitespace = _{ " " | "\t" | NEWLINE }
 
 // Viable comment prefixes for various file formats.
 // Can be prefixed with any amount of spaces.
-comment = _{ whitespace* ~ ("//" | "#"  | "--" | "%" | "/*" | "*" | "**" | "*/")}
+comment = _{ whitespace* ~ ("//" | "#"  | "--" | "%" | "/*" | "*" | "**" | "*/" | "" )}
 
 // The bois config is a block that's in between these start/end
 start_block = _{ comment ~ whitespace* ~ "bois_config_start" }

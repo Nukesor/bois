@@ -1,18 +1,19 @@
+use pest::Parser;
 use std::fs::{self, read_to_string, DirEntry};
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use log::debug;
-use pest::Parser;
 
 use crate::{
     error::Error,
     file_config::{DirectoryConfig, FileConfig},
-    parser::{ConfigParser, Rule},
 };
+use parser::{ConfigParser, Rule};
 
 pub mod file;
-pub mod prerender_state;
+mod parser;
+pub mod state;
 
 pub fn discover_files(root: &PathBuf, relative_path: &PathBuf) -> Result<file::Directory> {
     let directory_path = root.join(relative_path);

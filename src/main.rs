@@ -10,12 +10,11 @@ mod config;
 mod error;
 mod file_config;
 mod group_config;
-mod parser;
-mod templating;
+mod state;
 
 use args::Arguments;
 use log::{debug, LevelFilter};
-use templating::discover_files;
+use state::discover_files;
 
 fn main() -> Result<()> {
     // Read any .env files
@@ -33,7 +32,7 @@ fn main() -> Result<()> {
         config.save(&args.config)?;
     }
 
-    let _prerender_state = templating::prerender_state::PrerenderState::new(&args)?;
+    let _state = state::state::State::new(&args)?;
 
     let directory = discover_files(&config.bois_dir(), &PathBuf::from("./"))?;
 
