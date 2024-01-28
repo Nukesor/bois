@@ -1,12 +1,19 @@
 # Design
 
+The core idea of _Bois_ is to provide a convenient **minimalistic** configuration file manager for your **personal** machines.
+Some core components of the system are to some degree managed by Bois, such as system services and installed packages.
+To some degree in this context means that the system's state isn't fully managed, but only as far as it concerns configuration files.
+
+Bois is **not** intended to be used as a provisioning service for remote machines, but for machines you're living on. It's also not intended to cover complex setups with multiple-dependency setups
+
 ## Tasks
 
 - Configuration management
-  - Hooks?
-- Package management?
-- systemd service management?
-  - Can be done via pre/post hooks?
+  - Hooks
+  - Package management
+  - systemd service management
+- Diffs between system-, last-deployed- and config directory state.
+- Changeset detection (Terraform style)
 
 ## Core concepts
 
@@ -20,9 +27,14 @@
 
 ### Host/Group configuration
 
-- Specific named files by group/hostname
-- Variables for group/hostname in that file
-- Packages?
+- Multiple top-level directories represent groups
+- Entry point groups
+  - Entry point groups are named as the hostname of the respective machine
+  - Defines other groups as dependencies
+  - May have global variable files
+  - May have local variable files
+- Normal groups
+  - Can **only** have local variable files
 
 ### File/Directory Configuration
 
@@ -36,6 +48,11 @@
   - Ownership
   - Location
 - Some form of yaml/toml for variables
+
+## Deployment process
+
+All state is loaded in the local `State` struct, which
+The state is saved to a temporary directory.
 
 ## Datastructures
 
