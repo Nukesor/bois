@@ -78,6 +78,38 @@ bois
 |       |-- pacman.conf
 ```
 
+## Deployment
+
+The deployment process is rather simple and can be devided into clear-cut steps.
+
+1. Check for current deployment \
+   If there exists a previous deployment, the actual deployed files are compared with the last known deployed state.
+   This step detects any changes on files that weren't handled by Bois. \
+   The user can then be warned that those changes might get overwritten on a new deploy.
+1. Read configuration and template files. \
+   In this step, all relevant files from the bois configuration directory are read and internally compiled into one large state struct.
+1. Compare the a possible previously deployed state, the actual system state and the state to-be deployed.
+   Based on this, a deterministic sequential changeset is created that consists of concrete executable steps to reach the desired system state.
+1. Execute all steps of the changeset to the system.
+   TODO: How do we handle error cases? What should be done during an error?
+         How do we recover from this?
+1. Save the serialized state to disk, so we can compare the current state during the next deployment.
+
+### Order
+
+The order in which files are deployed doesn't need to be super-configurable, but it should be deterministic.
+
+For this to work, Bois follows the following ordering :
+
+- `priority`: Configurable on a group, folder and file basis. Higher priority means earlier deployment/execution.
+- Recursively by **target** Folder/File names, just like `ls -R` is working.
+  ```txt
+  /etc/alsa/conf.d/10-samplerate.conf
+  /etc/alsa/conf.d/50-arcam-av-ctl.conf
+  /etc/thermald/thermal-cpu-cdev-order.xml
+  /etc/tlp.d/00-template.conf
+  ```
+
 ## Features
 
 - Subcommands
