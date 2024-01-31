@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use anyhow::Result;
 use clap::Parser;
 use config::Configuration;
@@ -8,13 +6,10 @@ use pretty_env_logger::env_logger::Builder;
 mod args;
 mod config;
 mod error;
-mod file_config;
-mod group_config;
 mod state;
 
 use args::Arguments;
-use log::{debug, LevelFilter};
-use state::discover_files;
+use log::LevelFilter;
 
 fn main() -> Result<()> {
     // Read any .env files
@@ -32,11 +27,11 @@ fn main() -> Result<()> {
         config.save(&args.config)?;
     }
 
-    let _state = state::state::State::new(&args)?;
+    let state = state::State::new(&config)?;
 
-    let directory = discover_files(&config.bois_dir(), &PathBuf::from("./"))?;
+    //let directory = discover_files(&config.bois_dir(), &PathBuf::from("./"))?;
 
-    debug!("Config state: {directory:#?}");
+    //debug!("Config state: {directory:#?}");
 
     Ok(())
 }

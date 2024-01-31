@@ -78,6 +78,12 @@ bois
 |       |-- pacman.conf
 ```
 
+### Data load order
+
+- At the very first, the group that's named like the current host is loaded.
+  This group then further specifies other groups that should be loaded.
+
+
 ## Deployment
 
 The deployment process is rather simple and can be devided into clear-cut steps.
