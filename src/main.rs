@@ -4,12 +4,13 @@ use config::Configuration;
 use pretty_env_logger::env_logger::Builder;
 
 mod args;
+mod changeset;
 mod config;
 mod error;
 mod state;
 
 use args::Arguments;
-use log::LevelFilter;
+use log::{debug, LevelFilter};
 
 fn main() -> Result<()> {
     // Read any .env files
@@ -27,17 +28,15 @@ fn main() -> Result<()> {
         config.save(&args.config)?;
     }
 
-    let state = state::State::new(&config)?;
+    let state = state::State::new(config)?;
 
-    //let directory = discover_files(&config.bois_dir(), &PathBuf::from("./"))?;
-
-    //debug!("Config state: {directory:#?}");
+    debug!("Config state: {state:#?}");
 
     Ok(())
 }
 
-/// Init better_panics
-/// Initialize logging
+/// Init better_panics.
+/// Initialize logging.
 fn init_app(verbosity: u8) -> Result<()> {
     // Beautify panics for better debug output.
     better_panic::install();

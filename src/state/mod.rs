@@ -26,15 +26,25 @@ pub struct State {
     pub groups: Vec<Group>,
     /// All variables that're available to all groups during templating.
     pub global_variables: HashMap<String, String>,
+    /// The current configuration
+    /// We have to save this as well, as we would otherwise loose information about
+    /// previous runs, if the config changed in the meantime such as, for instance, a different
+    /// root dir or new hostname.
+    pub configuration: Configuration,
 }
 
 impl State {
-    pub fn new(config: &Configuration) -> Result<Self> {
+    /// Build a new state from a current bois configuration.
+    /// This state only represents the desired state for the **current** machine.
+    pub fn new(configuration: Configuration) -> Result<Self> {
         let mut groups = Vec::new();
-        let hostgroup = read_group(&config.bois_dir(), &config.name()?)?;
+        // Read the initial group for this host.
+        // This specifieds all other dependencies.
+        let hostgroup = read_group(&configuration.bois_dir(), &configuration.name()?)?;
 
+        // Go through all dependencies and load them as well.
         for group_name in &hostgroup.dependencies {
-            let group = read_group(&config.bois_dir(), group_name)?;
+            let group = read_group(&configuration.bois_dir(), group_name)?;
             groups.push(group);
         }
 
@@ -43,6 +53,7 @@ impl State {
         Ok(State {
             groups,
             global_variables: HashMap::new(),
+            configuration,
         })
     }
 }
