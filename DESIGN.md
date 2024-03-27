@@ -62,20 +62,26 @@ Example folder structure for a computer named `HOSTNAME_1`.
 
 ```txt
 bois
-|-- base.yml
-|-- HOSTNAME_1.yml
 |-- base
+|   |-- bois.yml
 |   |-- pacman.conf
 |
 |-- HOSTNAME_1
+|   |-- bois.yml
 |   |-- modprobe.d
 |       |-- nobeep.conf
 |
+|-- HOSTNAME_2
+|   |-- bois.yml
+|   |-- systemd
+|       |-- network
+|           |-- 10-ethernet.network
+
 |-- .deployed
 |   |-- etc
+|       |-- pacman.conf
 |       |-- modprobe.d
 |           |-- nobeep.conf
-|       |-- pacman.conf
 ```
 
 ### Data load order
