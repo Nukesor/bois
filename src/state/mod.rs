@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use serde_derive::{Deserialize, Serialize};
 
 use crate::config::Configuration;
@@ -38,6 +38,20 @@ impl State {
     /// This state only represents the desired state for the **current** machine.
     pub fn new(configuration: Configuration) -> Result<Self> {
         let mut groups = Vec::new();
+
+        // Check whether the most important directories are present as expected.
+        let bois_dir = configuration.bois_dir();
+        if !bois_dir.exists() {
+            eprintln!("Couldn't find bois config directory at {bois_dir:?}. Aborting");
+            bail!("Couldn't find entry config directory.");
+        }
+
+        let start_dir = bois_dir.join(&configuration.name()?);
+        if !start_dir.exists() {
+            eprintln!("Couldn't find config directory for this machine at {start_dir:?}. Aborting");
+            bail!("Couldn't find entry config directory.");
+        }
+
         // Read the initial group for this host.
         // This specifieds all other dependencies.
         let hostgroup = read_group(&configuration.bois_dir(), &configuration.name()?)?;
