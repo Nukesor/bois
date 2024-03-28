@@ -5,8 +5,10 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::config::Configuration;
 
+pub mod directory;
 pub mod file;
-mod group;
+pub mod group;
+pub mod host;
 mod parser;
 
 use group::Group;
@@ -46,7 +48,7 @@ impl State {
             bail!("Couldn't find entry config directory.");
         }
 
-        let start_dir = bois_dir.join(&configuration.name()?);
+        let start_dir = bois_dir.join(configuration.name()?);
         if !start_dir.exists() {
             eprintln!("Couldn't find config directory for this machine at {start_dir:?}. Aborting");
             bail!("Couldn't find entry config directory.");

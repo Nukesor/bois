@@ -28,12 +28,14 @@ Bois is **not** intended to be used as a provisioning service for remote machine
 ### Host/Group configuration
 
 - Multiple top-level directories represent groups
-- Entry point groups
+- Entry/Host point groups
   - Entry point groups are named as the hostname of the respective machine
   - Defines other groups as dependencies
   - May have global variable files
   - May have local variable files
+  - Must have a `bois.yml`
 - Normal groups
+  - May have a `bois.yml`
   - Can **only** have local variable files
 
 ### File/Directory Configuration
@@ -63,7 +65,6 @@ Example folder structure for a computer named `HOSTNAME_1`.
 ```txt
 bois
 |-- base
-|   |-- bois.yml
 |   |-- pacman.conf
 |
 |-- HOSTNAME_1
@@ -88,7 +89,6 @@ bois
 
 - At the very first, the group that's named like the current host is loaded.
   This group then further specifies other groups that should be loaded.
-
 
 ## Deployment
 

@@ -123,7 +123,7 @@ impl Configuration {
         let settings = serde_yaml::from_reader(reader)
             .map_err(|err| Error::ConfigDeserialization(err.to_string()))?;
 
-        return Ok((settings, true));
+        Ok((settings, true))
     }
 
     /// Save the current configuration as a file to the given path. \
@@ -156,7 +156,7 @@ impl Configuration {
         };
 
         // Write the serialized content to the file.
-        let mut file = File::create(&config_path)
+        let mut file = File::create(config_path)
             .map_err(|err| Error::IoPathError(config_dir.clone(), "creating settings file", err))?;
         file.write_all(content.as_bytes())
             .map_err(|err| Error::IoPathError(config_dir, "writing settings file", err))?;
