@@ -51,6 +51,19 @@ Bois is **not** intended to be used as a provisioning service for remote machine
   - Location
 - Some form of yaml/toml for variables
 
+### Merging
+
+The idea for this configuration structure is, so defaults can be set at various levels (host, group, directory), which are then active for the respective space.
+This is, until a "lower" configuration overwrites that default.
+
+The hierarchy looks like this:
+
+```txt
+host < group < directory < subdirectory < file
+```
+
+I.e. defaults on a host level are overwritten by all other more specific configurations.
+
 ## Deployment process
 
 All state is loaded in the local `State` struct, which
@@ -64,16 +77,18 @@ Example folder structure for a computer named `HOSTNAME_1`.
 
 ```txt
 bois
+|-- bois.yml
 |-- base
+|   |-- group.yml
 |   |-- pacman.conf
 |
 |-- HOSTNAME_1
-|   |-- bois.yml
+|   |-- host.yml
 |   |-- modprobe.d
 |       |-- nobeep.conf
 |
 |-- HOSTNAME_2
-|   |-- bois.yml
+|   |-- host.yml
 |   |-- systemd
 |       |-- network
 |           |-- 10-ethernet.network
