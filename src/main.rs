@@ -7,6 +7,7 @@ mod args;
 mod changeset;
 mod config;
 mod error;
+mod helper;
 mod state;
 
 use args::Arguments;

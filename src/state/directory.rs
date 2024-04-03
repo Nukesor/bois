@@ -1,11 +1,11 @@
-use std::fs::read_to_string;
+use std::path::Path;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use serde_derive::{Deserialize, Serialize};
 
 use super::file::*;
-use crate::error::Error;
+use crate::{error::Error, helper::read_yaml};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Directory {
@@ -13,6 +13,15 @@ pub struct Directory {
     pub entries: Vec<Entry>,
     #[serde(default)]
     pub config: DirectoryConfig,
+}
+
+impl Directory {
+    pub fn new(path: &Path) -> Directory {
+        Directory {
+            path: path.to_path_buf(),
+            ..Directory::default()
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -25,27 +34,24 @@ pub struct DirectoryConfig {
 }
 
 /// Recursively discover all bois and non-bois configuration files in a group directory.
-pub fn read_directory(root: &PathBuf, relative_path: &PathBuf) -> Result<Directory> {
+pub fn read_directory(root: &Path, relative_path: &Path) -> Result<Directory> {
     let directory_path = root.join(relative_path);
+    // Read the `host.yml` from the host directory.
+    let directory_config = match read_yaml::<DirectoryConfig>(&directory_path, "bois") {
+        // Use the default, if no config has been found.
+        None => DirectoryConfig::default(),
+        Some(result) => match result {
+            Ok(config) => config,
+            Err(err) => return Err(err).context("Failed to read bois.yml in {directory_path:?}"),
+        },
+    };
+
     let entries = std::fs::read_dir(&directory_path)
         .map_err(|err| Error::IoPathError(directory_path.clone(), "reading", err))?;
 
-    let mut directory_config = DirectoryConfig::default();
-    // Check if there's a directory configuration file in here.
-    let dir_config_path = directory_path.join("bois.yml");
-    if dir_config_path.exists() {
-        let content = read_to_string(&dir_config_path)
-            .map_err(|err| Error::IoPathError(dir_config_path.clone(), "reading", err))?;
-
-        let config: DirectoryConfig = serde_yaml::from_str(&content).context(format!(
-            "Failed serializing config at path: {dir_config_path:?}"
-        ))?;
-        directory_config = config;
-    }
-
     // Create the representation for this directory
     let mut directory = Directory {
-        path: relative_path.clone(),
+        path: relative_path.to_path_buf(),
         entries: Vec::new(),
         config: directory_config,
     };

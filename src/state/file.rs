@@ -41,8 +41,9 @@ pub struct FileConfig {
 
 /// Read and, if applicable, parse a single configuration file.
 /// Add the file to the `&mut Directory`.
+///
 pub fn read_file(
-    root: &PathBuf,
+    root: &Path,
     relative_path: &Path,
     entry: DirEntry,
     directory: &mut Directory,
