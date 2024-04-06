@@ -64,20 +64,21 @@ The final binaries will be located in `target/release/bois`.
 ## Design Goals
 
 The main focus for bois is that it's supposed to be run on bare-metal **personal** machines, i.e. your desktop, laptop and maybe your home-server/NAS.
-It's also supposed to be from **inside** the system, in contrast to other provisioning tools.
+It's also supposed to be used from **inside** the system, in contrast to other tools, which provision systems from the outside (e.g. ssh or a orchestrator server).
 It aims to strike a balance between Chezmoi and Ansible, but on-host and for systems configuration.
 
 Additionally, there're a few "buzzwordy" design goals that need to be achieved:
 
-- Reproducability - Executing the same
-- Insight - It must be easy to both beforehand and retrospectivelly inspect any actions done by Bois.
+- Idempotency - Deploying identical files will be always result in the same outcome.
+- Insight - It must be easy to inspect any actions done by Bois, both beforehand and retrospectivelly.
 - Convenience - The CLI UI must be convenient and intuitive to use.
-  I.e. editing system files and deploying changes should work seamless and without too much of a merge hell.
+  I.e. editing system files and deploying changes should work seamless and without too much of a merge/prompt hell.
 - Safety - In contrast to other provisioning tools, Bois is to be safe.
   E.g. changes since the last deploy are not to be overwritten without a prompt.
-  The idea is to be rather a bit too verbose rather than sorry, at least by default.
-- Opinionated - Bois isn't supposed to be a solution for everything. Its feature scope will be limited to some basic functionality.
-  We don't want to build a second ansible. Hence the scope is limited to the following parts of the system (for the time being):
+  The idea is to be rather a bit too verbose than sorry, at least by default.
+- Opinionated - Bois isn't supposed to be a solution for everything and everyone.
+  Its feature scope will be limited to some basic functionality, I don't want to build a second Ansible.
+  Hence the scope is limited to the following parts of the system:
   - Configuration files
   - System packages (via package managers)
   - System services
@@ -90,6 +91,20 @@ Additionally, there're a few "buzzwordy" design goals that need to be achieved:
   It's main point in difference is, that it's designed to be used for a single machine per repository, without templating.
 
   Additionally, its focus lies on configuration management and not so much on further system state such as packages or services.
+- [`aconfmgr`](https://github.com/CyberShadow/aconfmgr) is very close to what bois aims to be, but focused on ArchLinux.
+  It features:
+  - Configuration file management
+  - Diffing and merging
+  - Package installation and removal
+  What bois has on top:
+  - Templating
+  - Builtin support for multiple machines
+  - Groups to allow modular package installation/configuration for various hosts.
+
+#### System configuration manager
+
+- [`etckeeper`](https://etckeeper.branchable.com/) is basically a dotfile manager but for your `/etc` system configuration.
+  It doesn't track any additional info such as installed packages and anything outside `/etc`.
 
 #### Dotfile managers
 
