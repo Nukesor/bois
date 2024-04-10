@@ -1,11 +1,11 @@
 use std::{fs::read_to_string, path::Path};
 
 use anyhow::{Context, Result};
-use serde::Deserialize;
+use serde::de::DeserializeOwned;
 
 use crate::error::Error;
 
-pub fn read_yaml<'de, T: Deserialize<'de>>(directory: &Path, filename: &str) -> Option<Result<T>> {
+pub fn read_yaml<T: DeserializeOwned>(directory: &Path, filename: &str) -> Option<Result<T>> {
     let mut path = directory.join(filename);
     // Check if the file exists with `yml` or `yaml` extension.
     path.set_extension("yml");
@@ -24,7 +24,7 @@ pub fn read_yaml<'de, T: Deserialize<'de>>(directory: &Path, filename: &str) -> 
     };
 
     Some(
-        serde_yaml::from_str(&content)
+        serde_yaml::from_str::<T>(&content)
             .context(format!("Failed serializing config at path: {path:?}")),
     )
 }

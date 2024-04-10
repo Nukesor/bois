@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::handlers::packages::PackageManager;
+
 /// This data struct represents the set of all changes that're going to be
 /// executed by bois to reach the desired system state.
 ///
@@ -16,8 +18,9 @@ pub struct PathChange {
 }
 
 enum Operation {
-    FileOperation(FileOperation),
-    DirectoryOperation(DirectoryOperation),
+    File(FileOperation),
+    Directory(DirectoryOperation),
+    Package(PackageOperation),
 }
 
 /// This enum represents all possible operations for single files.
@@ -54,4 +57,15 @@ pub enum DirectoryOperation {
         group: Option<String>,
     },
     Delete,
+}
+
+pub enum PackageOperation {
+    Remove {
+        manager: PackageManager,
+        name: String,
+    },
+    Add {
+        manager: PackageManager,
+        name: String,
+    },
 }

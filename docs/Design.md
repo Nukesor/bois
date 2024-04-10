@@ -125,6 +125,7 @@ The deployment process is rather simple and can be devided into clear-cut steps.
 ### Order
 
 The order in which files are deployed doesn't need to be super-configurable, but it should be deterministic.
+How does one handle conflicts? Silent overwriting based on priority? Or hard conflict error with good error message?
 
 For this to work, Bois follows the following ordering :
 
@@ -161,3 +162,45 @@ post_hooks:
 variables:
     some_variable_1
 ```
+
+### TODOS
+
+#### Error handling
+
+Introduce good error handling.
+  The idea would be to have two different error handling types.
+  1. Errors that happen during the preparation phase. This would include things like:
+    - Conflicts
+    - Changes that have been detected on the system and aren't yet incorporated.
+    - Config errors (wrong enum variants), etc.
+  2. Errors that happen during execution. These errors should result in the program exiting.
+    - These errors need to be very descriptive.
+    - They must clearly state at which operation the problem occured.
+
+Determine a good way of handling errors from other binaries, that're being called.
+E.g. pacman that has a network error.
+
+#### Execution order
+
+The order in which things are executed should be clearly defined.
+
+Global execution order:
+- At first, all removals should be executed.
+  Removals should be executed in the order of dependencies, with the host group being the first one.
+- Changes and additions are executed afterwards
+  They should also be executed in the order of dependencies, with the host group being the first one.
+
+Execution order of removals **inside** of groups/directories with the **same priority**.
+- Files/directories are executed in alphabetic order.
+  - Disable/stop services.
+  - Remove configuration files
+  - Uninstall packages
+
+Execution order **inside** of groups/directories with the **same priority**.
+- Files/directories are executed in alphabetic order.
+  - Install packages
+  - Add configuration files
+  - Start/enable services
+
+Keeping this order is important, as configuration files may depend on directories being created during package installation.
+Services may depend on configuration files.
