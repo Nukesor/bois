@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::Path};
 
-use anyhow::{bail, Context, Result};
+use anyhow::Result;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::{handlers::packages::PackageManager, helper::read_yaml};
@@ -16,6 +16,7 @@ pub struct Group {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct GroupConfig {
     /// The content of this group's directory.
     #[serde(default)]
@@ -38,14 +39,7 @@ pub fn read_group(root: &Path, name: &str) -> Result<Group> {
     let group_dir = root.join(name);
 
     // Read the `group.yml` from the group directory.
-    let Some(group_config) = read_yaml::<GroupConfig>(&group_dir, "group") else {
-        bail!("Couldn't find group.yml in {group_dir:?}");
-    };
-    // Handle any deserialization issues of the group.yml
-    let group_config = match group_config {
-        Ok(group_config) => group_config,
-        Err(err) => return Err(err).context("Failed to read group.yml in {group_dir:?}"),
-    };
+    let config = read_yaml::<GroupConfig>(&group_dir, "group")?;
 
     // Recursively read all files in directory
     let mut directory = Directory::new(&group_dir);
@@ -59,8 +53,5 @@ pub fn read_group(root: &Path, name: &str) -> Result<Group> {
     //    read_file(root, &Path::new(""), entry, &mut files)?;
     //}
 
-    Ok(Group {
-        config: group_config,
-        directory,
-    })
+    Ok(Group { config, directory })
 }

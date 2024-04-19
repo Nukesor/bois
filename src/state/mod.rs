@@ -43,14 +43,8 @@ impl State {
         // Check whether the most important directories are present as expected.
         let bois_dir = configuration.bois_dir();
         if !bois_dir.exists() {
-            eprintln!("Couldn't find bois config directory at {bois_dir:?}. Aborting");
-            bail!("Couldn't find entry config directory.");
-        }
-
-        let start_dir = bois_dir.join(configuration.name()?);
-        if !start_dir.exists() {
-            eprintln!("Couldn't find config directory for this machine at {start_dir:?}. Aborting");
-            bail!("Couldn't find entry config directory.");
+            eprintln!("Couldn't find bois config directory at {bois_dir:?}. Aborting.");
+            bail!("Couldn't find config directory.");
         }
 
         // Read the initial group for this host.

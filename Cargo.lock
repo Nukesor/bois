@@ -99,6 +99,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "bois"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "better-panic",
+ "chrono",
+ "clap",
+ "dirs",
+ "dotenv",
+ "hostname",
+ "log",
+ "pest",
+ "pest_derive",
+ "pretty_assertions",
+ "pretty_env_logger",
+ "rstest",
+ "rstest_reuse",
+ "serde",
+ "serde_derive",
+ "serde_yaml",
+ "shellexpand",
+ "strum",
+ "strum_macros",
+ "tera",
+ "thiserror",
+]
+
+[[package]]
 name = "bstr"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -208,34 +236,6 @@ checksum = "3538270d33cc669650c4b093848450d380def10c331d38c768e34cac80576e6e"
 dependencies = [
  "termcolor",
  "unicode-width",
-]
-
-[[package]]
-name = "config"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "better-panic",
- "chrono",
- "clap",
- "dirs",
- "dotenv",
- "hostname",
- "log",
- "pest",
- "pest_derive",
- "pretty_assertions",
- "pretty_env_logger",
- "rstest",
- "rstest_reuse",
- "serde",
- "serde_derive",
- "serde_yaml",
- "shellexpand",
- "strum",
- "strum_macros",
- "tera",
- "thiserror",
 ]
 
 [[package]]

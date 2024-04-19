@@ -19,6 +19,7 @@ pub struct Host {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct HostConfig {
     /// Default that should be applied to all files.
     #[serde(default)]
@@ -33,6 +34,7 @@ pub struct HostConfig {
     #[serde(default)]
     pub dependencies: Vec<String>,
     /// Packages that should always be installed for this host.
+    #[serde(default)]
     pub packages: HashMap<PackageManager, Vec<String>>,
 }
 
@@ -47,15 +49,13 @@ pub struct HostDefaults {
 pub fn read_host(root: &Path, name: &str) -> Result<Host> {
     let host_dir = root.join(name);
 
+    if !host_dir.exists() {
+        eprintln!("Couldn't find config directory for this machine at {host_dir:?}. Aborting.");
+        bail!("Couldn't find host config directory.");
+    }
+
     // Read the `host.yml` from the host directory.
-    let Some(host_config) = read_yaml::<HostConfig>(&host_dir, "host") else {
-        bail!("Couldn't find host.yml in {host_dir:?}");
-    };
-    // Handle any deserialization issues of the host.yml
-    let host_config = match host_config {
-        Ok(host_config) => host_config,
-        Err(err) => return Err(err).context("Failed to read host.yml in {host_dir:?}"),
-    };
+    let config = read_yaml::<HostConfig>(&host_dir, "host")?;
 
     // Recursively read all files in directory
     let mut files = Directory::new(&host_dir);
@@ -70,7 +70,7 @@ pub fn read_host(root: &Path, name: &str) -> Result<Host> {
     //}
 
     Ok(Host {
-        config: host_config,
+        config,
         files,
         groups: Vec::new(),
     })

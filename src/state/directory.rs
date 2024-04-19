@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde_derive::{Deserialize, Serialize};
 
 use super::file::*;
@@ -25,6 +25,7 @@ impl Directory {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct DirectoryConfig {
     pub owner: Option<String>,
     pub group: Option<String>,
@@ -37,14 +38,7 @@ pub struct DirectoryConfig {
 pub fn read_directory(root: &Path, relative_path: &Path) -> Result<Directory> {
     let directory_path = root.join(relative_path);
     // Read the `host.yml` from the host directory.
-    let directory_config = match read_yaml::<DirectoryConfig>(&directory_path, "bois") {
-        // Use the default, if no config has been found.
-        None => DirectoryConfig::default(),
-        Some(result) => match result {
-            Ok(config) => config,
-            Err(err) => return Err(err).context("Failed to read bois.yml in {directory_path:?}"),
-        },
-    };
+    let directory_config = read_yaml::<DirectoryConfig>(&directory_path, "bois")?;
 
     let entries = std::fs::read_dir(&directory_path)
         .map_err(|err| Error::IoPathError(directory_path.clone(), "reading", err))?;

@@ -24,6 +24,7 @@ pub enum Mode {
 pub struct Configuration {
     /// The name of the machine.
     /// If this is set to None, the hostname will be used
+    #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
 
     /// The bois directory, which contains all bois templates and alike.

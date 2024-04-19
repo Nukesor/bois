@@ -1,5 +1,5 @@
 [package]
-name = "config"
+name = "bois"
 version = "0.1.0"
 authors = ["Arne Beer <contact@arne.beer>"]
 homepage = "https://github.com/nukesor/pueue"
