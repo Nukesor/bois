@@ -36,7 +36,7 @@ pub struct GroupDefaults {
 }
 
 pub fn read_group(root: &Path, name: &str) -> Result<Group> {
-    let group_dir = root.join(name);
+    let group_dir = root.join("groups").join(name);
 
     // Read the `group.yml` from the group directory.
     let config = read_yaml::<GroupConfig>(&group_dir, "group")?;

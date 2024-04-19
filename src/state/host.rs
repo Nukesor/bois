@@ -47,7 +47,7 @@ pub struct HostDefaults {
 }
 
 pub fn read_host(root: &Path, name: &str) -> Result<Host> {
-    let host_dir = root.join(name);
+    let host_dir = root.join("hosts").join(name);
 
     if !host_dir.exists() {
         eprintln!("Couldn't find config directory for this machine at {host_dir:?}. Aborting.");
