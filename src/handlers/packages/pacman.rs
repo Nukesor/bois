@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{collections::HashSet, process::Command};
 
 use anyhow::{bail, Context, Result};
 
@@ -10,10 +10,13 @@ pub fn remove_package(op: PackageOperation) -> Result<()> {
     Ok(())
 }
 
-pub fn get_installed_packages() -> Result<Vec<String>> {
-    // Get an up-to-date list of all pacman packages.
+/// Receive a list of **exlicitly** installed packages on the system.
+/// Ignore packages that are installed as a dependency, as they might be removed at any point in
+/// time when another package is uninstalled as a side-effect.
+pub fn get_installed_packages() -> Result<HashSet<String>> {
+    // Get all explicitly installed packages
     let output = Command::new("pacman")
-        .args(["-S", "-y", "-s"])
+        .args(["--query", "--quiet", "--explicit"])
         .output()
         .context("Failed to read pacman packages list")?;
 
@@ -24,6 +27,8 @@ pub fn get_installed_packages() -> Result<Vec<String>> {
         );
     }
 
+    // Interpret the output as utf8 and split by lines.
+    // Each package is on its own line.
     let packages =
         String::from_utf8(output.stderr).context("Couldn't deserialize pacman packages")?;
 

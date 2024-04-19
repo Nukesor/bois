@@ -15,10 +15,7 @@ mod system_state;
 use args::Arguments;
 use log::{debug, LevelFilter};
 
-use crate::{
-    handlers::packages::{pacman, PackageManager},
-    system_state::SystemState,
-};
+use crate::system_state::SystemState;
 
 fn main() -> Result<()> {
     // Read any .env files
@@ -39,10 +36,7 @@ fn main() -> Result<()> {
     let state = state::State::new(config)?;
     debug!("Config state: {state:#?}");
 
-    let mut system_state = SystemState::default();
-    system_state
-        .installed_packages
-        .insert(PackageManager::Pacman, pacman::get_installed_packages()?);
+    let mut system_state = SystemState::new();
 
     Ok(())
 }
