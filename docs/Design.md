@@ -51,7 +51,7 @@ Bois is **not** intended to be used as a provisioning service for remote machine
   - Location
 - Some form of yaml/toml for variables
 
-### Merging
+### Configuration aggregation/merging
 
 The idea for this configuration structure is, so defaults can be set at various levels (host, group, directory), which are then active for the respective space.
 This is, until a "lower" configuration overwrites that default.
@@ -204,3 +204,38 @@ Execution order **inside** of groups/directories with the **same priority**.
 
 Keeping this order is important, as configuration files may depend on directories being created during package installation.
 Services may depend on configuration files.
+
+
+### Diffing during deployment
+
+There're different scenarios that need different diffs and handling.
+Let's start with the most simple one, a clean deployment.
+
+#### First run
+
+1. The configuration is read.
+1. The "should-be" state is compared with the current state of the system.
+1. A changeset is created that transforms the current state into the desired state.
+1. Save the current "should-be" state in serialized form to disk.
+
+This is rather straight forward.
+
+#### Successive runs
+
+It now starts to become a bit more tricky, as we also need to do **cleanup** and we want to detect any untracked changes by the user or programs on the system.
+
+1. Read the configuration and determine the "should-be" state.
+1. Compare the **previous** "should-be" state with the current system state.
+   This shows us any changes that were made to the system since the last deployment.
+   We want to inform the user about these changes and give them a chance to incorporate them before they're overwritten by the next deployment.
+1. Compare the **previous** "should-be" state with the **current** "should-be" state.
+   This allows us to see whether there're any:
+   - Files, directories that need removal
+   - Services that need to be stopped
+   - Packages to be uninstalled.
+   This will result in a "cleanup" changeset that will be executed before the new deployment runs.
+1. At this point, we're done with the complex logic and we continue as if we do a first-time deployment.
+1. The "should-be" state is compared with the current state of the system.
+1. A changeset is created that transforms the current state into the desired state.
+1. Save the current "should-be" state in serialized form to disk.
+

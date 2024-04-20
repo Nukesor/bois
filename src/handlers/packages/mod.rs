@@ -17,15 +17,15 @@ pub enum PackageManager {
     Apt,
 }
 
-pub fn handle_package_operation(op: PackageOperation) -> Result<()> {
+pub fn handle_package_operation(op: &PackageOperation) -> Result<()> {
     match op {
         PackageOperation::Add { manager, name } => match manager {
-            PackageManager::Pacman => todo!(),
+            PackageManager::Pacman => pacman::install_package(name),
             PackageManager::Paru => todo!(),
             PackageManager::Apt => todo!(),
         },
         PackageOperation::Remove { manager, name } => match manager {
-            PackageManager::Pacman => todo!(),
+            PackageManager::Pacman => pacman::uninstall_package(name),
             PackageManager::Paru => todo!(),
             PackageManager::Apt => todo!(),
         },

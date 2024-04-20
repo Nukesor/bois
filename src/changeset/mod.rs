@@ -1,31 +1,57 @@
 use std::path::PathBuf;
 
-use crate::handlers::packages::PackageManager;
+use crate::handlers::{packages::PackageManager, services::ServiceManager};
+
+pub mod config_to_host;
 
 /// This data struct represents the set of all changes that're going to be
 /// executed by bois to reach the desired system state.
 ///
 /// This includes all possible operations for all stages.
-struct ChangeSet {
-    //pub service_changes: Vec<ServiceChange>,
-    //pub package_changes: Vec<PackageChange>,
-    pub file_changes: Vec<PathChange>,
+type ChangeSet = Vec<Change>;
+
+#[derive(Debug)]
+pub enum Change {
+    PathChange(PathOperation),
+    PackageChange(PackageOperation),
+    ServiceChange(ServiceOperation),
 }
 
-pub struct PathChange {
-    path: PathBuf,
-    operation: Operation,
+#[derive(Debug)]
+pub enum PackageOperation {
+    Remove {
+        manager: PackageManager,
+        name: String,
+    },
+    Add {
+        manager: PackageManager,
+        name: String,
+    },
 }
 
-enum Operation {
+#[derive(Debug)]
+pub enum ServiceOperation {
+    Enable {
+        manager: ServiceManager,
+        name: String,
+    },
+    Disable {
+        manager: ServiceManager,
+        name: String,
+    },
+}
+
+#[derive(Debug)]
+pub enum PathOperation {
     File(FileOperation),
     Directory(DirectoryOperation),
-    Package(PackageOperation),
 }
 
 /// This enum represents all possible operations for single files.
+#[derive(Debug)]
 pub enum FileOperation {
     Create {
+        path: PathBuf,
         content: Vec<u8>,
         permissions: i32,
         owner: String,
@@ -34,6 +60,7 @@ pub enum FileOperation {
     /// All fields on modify are optional, as not all properties necessarily need
     /// to be modified.
     Modify {
+        path: PathBuf,
         content: Option<Vec<u8>>,
         permissions: Option<i32>,
         owner: Option<String>,
@@ -43,8 +70,10 @@ pub enum FileOperation {
 }
 
 /// This enum represents all possible operations for directories.
+#[derive(Debug)]
 pub enum DirectoryOperation {
     Create {
+        path: PathBuf,
         permissions: i32,
         owner: String,
         group: String,
@@ -52,20 +81,12 @@ pub enum DirectoryOperation {
     /// All fields on modify are optional, as not all properties necessarily need
     /// to be modified.
     Modify {
+        path: PathBuf,
         permissions: Option<i32>,
         owner: Option<String>,
         group: Option<String>,
     },
-    Delete,
-}
-
-pub enum PackageOperation {
-    Remove {
-        manager: PackageManager,
-        name: String,
-    },
-    Add {
-        manager: PackageManager,
-        name: String,
+    Delete {
+        path: PathBuf,
     },
 }

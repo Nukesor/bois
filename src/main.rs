@@ -15,7 +15,7 @@ mod system_state;
 use args::Arguments;
 use log::{debug, LevelFilter};
 
-use crate::system_state::SystemState;
+use crate::{changeset::config_to_host, handlers::handle_changeset, system_state::SystemState};
 
 fn main() -> Result<()> {
     // Read any .env files
@@ -39,7 +39,11 @@ fn main() -> Result<()> {
     // Run some basic checks on the read state.
     state.lint();
 
-    let mut system_state = SystemState::new();
+    let mut system_state = SystemState::new()?;
+
+    let changeset = config_to_host::create_changeset(&state, &mut system_state)?;
+    println!("Changeset: {changeset:#?}");
+    handle_changeset(changeset)?;
 
     Ok(())
 }

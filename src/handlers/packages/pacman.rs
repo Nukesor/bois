@@ -2,10 +2,31 @@ use std::{collections::HashSet, process::Command};
 
 use anyhow::{bail, Context, Result};
 
-use crate::changeset::PackageOperation;
+/// Install a package via pacman.
+/// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
+/// Otherwise they wouldn't be detected by us if they were installed as a dependency.
+pub fn install_package(name: &str) -> Result<()> {
+    println!("Installing package {name} via pacman");
+    // TODO: Error handling
+    let _output = Command::new("pacman")
+        .args(["--sync", "--refresh", "--asexplicit", "--noconfirm", name])
+        .output()
+        .context("Failed to install pacman package {}")?;
 
-pub fn remove_package(op: PackageOperation) -> Result<()> {
-    let packages = get_installed_packages()?;
+    Ok(())
+}
+
+/// Uninstall a package via pacman.
+/// Don't instruct pacman to create backup files, as all configuration is handled by bois.
+/// Also recursively remove dependencies, we don't want to clutter the system with unneeded
+/// dependencies. Any dependencies that're still needed should be explicitly required.
+pub fn uninstall_package(name: &str) -> Result<()> {
+    println!("Uninstalling package {name} via pacman");
+    // TODO: Error handling
+    let _output = Command::new("pacman")
+        .args(["--remove", "--nosave", "--noconfirm", name])
+        .output()
+        .context("Failed to install pacman package {}")?;
 
     Ok(())
 }
@@ -30,7 +51,7 @@ pub fn get_installed_packages() -> Result<HashSet<String>> {
     // Interpret the output as utf8 and split by lines.
     // Each package is on its own line.
     let packages =
-        String::from_utf8(output.stderr).context("Couldn't deserialize pacman packages")?;
+        String::from_utf8(output.stdout).context("Couldn't deserialize pacman packages")?;
 
     Ok(packages.lines().map(ToOwned::to_owned).collect())
 }
