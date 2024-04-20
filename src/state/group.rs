@@ -1,4 +1,7 @@
-use std::{collections::HashMap, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+};
 
 use anyhow::Result;
 use serde_derive::{Deserialize, Serialize};
@@ -9,6 +12,8 @@ use super::directory::*;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Group {
+    /// The name of this group
+    pub name: String,
     /// The top-level configuration file for this group.
     pub config: GroupConfig,
     /// The content of this group's directory.
@@ -26,7 +31,7 @@ pub struct GroupConfig {
     pub variables: HashMap<String, String>,
     /// Packages that should always be installed for this group.
     #[serde(default)]
-    pub packages: HashMap<PackageManager, Vec<String>>,
+    pub packages: HashMap<PackageManager, HashSet<String>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -53,5 +58,9 @@ pub fn read_group(root: &Path, name: &str) -> Result<Group> {
     //    read_file(root, &Path::new(""), entry, &mut files)?;
     //}
 
-    Ok(Group { config, directory })
+    Ok(Group {
+        name: name.to_string(),
+        config,
+        directory,
+    })
 }

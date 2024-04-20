@@ -73,6 +73,8 @@ Additionally, there're a few "buzzwordy" design goals that need to be achieved:
 - Insight - It must be easy to inspect any actions done by Bois, both beforehand and retrospectivelly.
 - Convenience - The CLI UI must be convenient and intuitive to use.
   I.e. editing system files and deploying changes should work seamless and without too much of a merge/prompt hell.
+- Clear semantics - Commands should be well named, the documentation should be concise and precise.
+  There should be as little ambiguity as possible. E.g. avoid subcommands like `update` and `upgrade` that do entirely different things.
 - Safety - In contrast to other provisioning tools, Bois is to be safe.
   E.g. changes since the last deploy are not to be overwritten without a prompt.
   The idea is to be rather a bit too verbose than sorry, at least by default.

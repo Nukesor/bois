@@ -1,6 +1,9 @@
-use std::{collections::HashMap, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use serde_derive::{Deserialize, Serialize};
 
 use crate::{handlers::packages::PackageManager, helper::read_yaml};
@@ -35,7 +38,7 @@ pub struct HostConfig {
     pub dependencies: Vec<String>,
     /// Packages that should always be installed for this host.
     #[serde(default)]
-    pub packages: HashMap<PackageManager, Vec<String>>,
+    pub packages: HashMap<PackageManager, HashSet<String>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]

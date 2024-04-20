@@ -36,6 +36,9 @@ fn main() -> Result<()> {
     let state = state::State::new(config)?;
     debug!("Config state: {state:#?}");
 
+    // Run some basic checks on the read state.
+    state.lint();
+
     let mut system_state = SystemState::new();
 
     Ok(())

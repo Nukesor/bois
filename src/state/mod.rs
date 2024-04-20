@@ -1,9 +1,10 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::{bail, Result};
+use log::warn;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::config::Configuration;
+use crate::{config::Configuration, handlers::packages::PackageManager};
 
 pub mod directory;
 pub mod file;
@@ -62,5 +63,42 @@ impl State {
             global_variables: HashMap::new(),
             configuration,
         })
+    }
+
+    /// Run a few sanity checks on a given state. Such check include:
+    /// - Check for duplicate package declarations
+    pub fn lint(&self) {
+        self.lint_packages();
+    }
+
+    /// Check whether there're any duplicate packages for a given package manager.
+    fn lint_packages(&self) {
+        // This list will contain all discovered packages.
+        let mut all_packages: HashMap<PackageManager, HashSet<String>> = HashMap::new();
+
+        // Check all host packages.
+        for (manager, packages) in self.host.config.packages.iter() {
+            let known_packages = all_packages.entry(*manager).or_insert(HashSet::new());
+
+            // Print a warning for all duplicate packages
+            for duplicate in packages.intersection(&known_packages) {
+                warn!("Found duplicate package {duplicate} in host.yml");
+            }
+        }
+
+        // Check all group packages.
+        for group in self.host.groups.iter() {
+            for (manager, packages) in group.config.packages.iter() {
+                let known_packages = all_packages.entry(*manager).or_insert(HashSet::new());
+
+                // Print a warning for all duplicate packages
+                for duplicate in packages.intersection(&known_packages) {
+                    warn!(
+                        "Found duplicate package {duplicate} in group.yml for group {}",
+                        group.name
+                    );
+                }
+            }
+        }
     }
 }
