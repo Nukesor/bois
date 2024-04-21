@@ -1,14 +1,15 @@
 use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
+use serde_derive::{Deserialize, Serialize};
 
-use crate::handlers::packages::{get_installed_packages, pacman, PackageManager};
+use crate::handlers::packages::{get_installed_packages, PackageManager};
 
 /// This state holds all important information about the system we're running on.
 ///
 /// It's supposed to be passed around and updated while performing operations.
 /// The idea is to minimize calls to external tools such as package managers or systemd.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct SystemState {
     installed_packages: HashMap<PackageManager, HashSet<String>>,
 }

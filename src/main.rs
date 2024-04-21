@@ -13,9 +13,9 @@ mod state;
 mod system_state;
 
 use args::Arguments;
-use log::{debug, LevelFilter};
+use log::{debug, info, LevelFilter};
 
-use crate::{changeset::config_to_host, handlers::handle_changeset, system_state::SystemState};
+use crate::{changeset::state_to_host, handlers::handle_changeset, system_state::SystemState};
 
 fn main() -> Result<()> {
     // Read any .env files
@@ -33,17 +33,45 @@ fn main() -> Result<()> {
         config.save(&args.config)?;
     }
 
-    let state = state::State::new(config)?;
-    debug!("Config state: {state:#?}");
-
-    // Run some basic checks on the read state.
-    state.lint();
-
+    // This struct will hold state of the current system to compare it with the desired state.
+    // This doesn't contain all system state, only stuff like packages and system services.
+    // It's basically a cache struct, so we don't repeatedly run the same queries all the time.
     let mut system_state = SystemState::new()?;
 
-    let changeset = config_to_host::create_changeset(&state, &mut system_state)?;
-    println!("Changeset: {changeset:#?}");
-    handle_changeset(changeset)?;
+    // Read the current desired system state from the files in the specified bois directory.
+    let desired_state = state::State::new(config)?;
+    debug!("Config state: {desired_state:#?}");
+    // Run some basic checks on the read state.
+    desired_state.lint();
+
+    // Read the state of the previous run, if existant.
+    // This state will be used to determine:
+    // - Any changes on the system's files since the last deployment
+    // - Cleanup work that might need to be done for the new desired state.
+    let previous_state = state::State::read_previous()?;
+    if let Some(previous_state) = previous_state {
+        // First, we create a changeset between the last desired state at the point of the last deployment
+        // and the current system statement.
+        // This will allows us to detect any changes that were done to the system.
+        // The changes done to the system will basically be the reverted actions of the changeset.
+        let changeset = state_to_host::create_changeset(&previous_state, &mut system_state)?;
+        if !changeset.is_empty() {
+            info!("Some untracked changes were detected on the system since last deployment.");
+            for change in changeset {
+                println!("Change (reverted): {change:?}");
+            }
+        }
+    }
+
+    // Create and execute the changeset to reach the actual desired state.
+    {
+        let changeset = state_to_host::create_changeset(&desired_state, &mut system_state)?;
+        println!("Changeset: {changeset:#?}");
+        handle_changeset(changeset)?;
+    }
+
+    // Save the current desired state to disk for the next run.
+    desired_state.save()?;
 
     Ok(())
 }

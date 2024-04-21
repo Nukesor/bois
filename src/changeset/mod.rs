@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::handlers::{packages::PackageManager, services::ServiceManager};
 
-pub mod config_to_host;
+pub mod state_to_host;
 
 /// This data struct represents the set of all changes that're going to be
 /// executed by bois to reach the desired system state.

@@ -1,10 +1,15 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    fs::{create_dir_all, File},
+    io::{BufReader, Write},
+    path::PathBuf,
+};
 
 use anyhow::{bail, Result};
-use log::warn;
+use log::{info, warn};
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{config::Configuration, handlers::packages::PackageManager};
+use crate::{config::Configuration, error::Error, handlers::packages::PackageManager};
 
 pub mod directory;
 pub mod file;
@@ -100,5 +105,71 @@ impl State {
                 }
             }
         }
+    }
+
+    /// Try to read the state of a previous deployment.
+    /// This state will be used to determine:
+    /// - Any changes on the system's files since the last deployment
+    /// - Cleanup work that might need to be done for the new desired state.
+    ///
+    /// Will return a Ok(None), if no previous state could be found.
+    pub fn read_previous() -> Result<Option<Self>> {
+        // Get the path for the deployed state.
+        let application_dir = PathBuf::from("/var/lib/bois");
+        let path = application_dir.join("deployed_state.yml");
+        info!("Looking for previous state file at {path:?}");
+
+        // Return None if we cannot find any file.
+        if !path.exists() || !path.is_file() {
+            info!("No state file found. Use default config.");
+            return Ok(None);
+        };
+
+        info!("Found previous deployed state at: {path:?}");
+
+        // Open the file in read-only mode with buffer.
+        let file = File::open(&path)
+            .map_err(|err| Error::IoPathError(path, "opening config file.", err))?;
+        let reader = BufReader::new(file);
+
+        // Read and deserialize the config file.
+        let state = serde_yaml::from_reader(reader)
+            .map_err(|err| Error::ConfigDeserialization(err.to_string()))?;
+
+        Ok(state)
+    }
+
+    /// Save the current desired state as a file. \
+    /// Read the `self.read` docs on why we need this file at all.
+    pub fn save(&self) -> Result<(), Error> {
+        let application_dir = PathBuf::from("/var/lib/bois");
+        let path = application_dir.join("deployed_state.yml");
+        info!("Looking for previous state file at {path:?}");
+
+        // Create the dir, if it doesn't exist yet
+        if !application_dir.exists() {
+            create_dir_all(&application_dir).map_err(|err| {
+                Error::IoPathError(application_dir.clone(), "creating state dir", err)
+            })?;
+        }
+
+        // Serialize the configuration file and write it to disk
+        let content = match serde_yaml::to_string(self) {
+            Ok(content) => content,
+            Err(error) => {
+                return Err(Error::Generic(format!(
+                    "Configuration file serialization failed:\n{error}"
+                )))
+            }
+        };
+
+        // Write the serialized content to the file.
+        let mut file = File::create(path).map_err(|err| {
+            Error::IoPathError(application_dir.clone(), "creating state file", err)
+        })?;
+        file.write_all(content.as_bytes())
+            .map_err(|err| Error::IoPathError(application_dir, "writing state file", err))?;
+
+        Ok(())
     }
 }
