@@ -10,18 +10,14 @@ use super::{Change, ChangeSet, PackageOperation};
 /// Compare a new desired State with a previously deployed state.
 /// This is used to determine any necessary **cleanup** operations, in case the previous deployment
 /// enabled services or contained files, packages that're no longer desired.
-pub fn create_changeset(
-    state: &State,
-    state: &State,
-    system_state: &mut SystemState,
-) -> Result<ChangeSet> {
+pub fn create_changeset(old_state: &State, new_state: &State) -> Result<ChangeSet> {
     let mut changeset = Vec::new();
 
-    let host_changset = handle_host(&state.host, system_state)?;
+    let host_changset = handle_host(&old_state.host, &new_state.host)?;
     changeset.extend(host_changset);
 
-    for group in state.host.groups.iter() {
-        let group_changset = handle_group(&group, system_state)?;
+    for old_group in old_state.host.groups.iter() {
+        let group_changset = handle_group(&old_group, new_group)?;
         changeset.extend(group_changset);
     }
 
@@ -30,7 +26,7 @@ pub fn create_changeset(
 
 /// Create the changeset that's needed to reach the desired state of the [HostConfig] from the
 /// current system's state.
-fn handle_host(host: &Host, system_state: &mut SystemState) -> Result<ChangeSet> {
+fn handle_host(old_state: &Host, new_state: &Host) -> Result<ChangeSet> {
     let mut changeset = Vec::new();
 
     // Compare all desired packages in the top-level config with the currently installed one's.

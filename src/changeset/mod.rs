@@ -2,7 +2,9 @@ use std::path::PathBuf;
 
 use crate::handlers::{packages::PackageManager, services::ServiceManager};
 
+pub mod compiled_state;
 pub mod state_to_host;
+pub mod state_to_state;
 pub mod tree;
 
 /// This data struct represents the set of all changes that're going to be

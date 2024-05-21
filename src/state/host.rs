@@ -61,7 +61,7 @@ pub fn read_host(root: &Path, name: &str) -> Result<Host> {
     let config = read_yaml::<HostConfig>(&host_dir, "host")?;
 
     // Recursively read all files in directory
-    let mut files = Directory::new(&host_dir);
+    let files = Directory::new(&host_dir);
     //let entries = std::fs::read_dir(&host_dir)
     //    .map_err(|err| Error::IoPathError(host_dir.clone(), "reading", err))?;
     //// Go through all entries in this directory
