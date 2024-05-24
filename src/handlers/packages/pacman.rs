@@ -1,12 +1,13 @@
 use std::{collections::HashSet, process::Command};
 
 use anyhow::{bail, Context, Result};
+use log::debug;
 
 /// Install a package via pacman.
 /// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
 /// Otherwise they wouldn't be detected by us if they were installed as a dependency.
 pub fn install_package(name: &str) -> Result<()> {
-    println!("Installing package {name} via pacman");
+    debug!("Installing package {name} via pacman");
     // TODO: Error handling
     let _output = Command::new("pacman")
         .args(["--sync", "--refresh", "--asexplicit", "--noconfirm", name])
@@ -21,7 +22,7 @@ pub fn install_package(name: &str) -> Result<()> {
 /// Also recursively remove dependencies, we don't want to clutter the system with unneeded
 /// dependencies. Any dependencies that're still needed should be explicitly required.
 pub fn uninstall_package(name: &str) -> Result<()> {
-    println!("Uninstalling package {name} via pacman");
+    debug!("Uninstalling package {name} via pacman");
     // TODO: Error handling
     let _output = Command::new("pacman")
         .args(["--remove", "--nosave", "--noconfirm", name])

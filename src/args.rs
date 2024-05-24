@@ -22,4 +22,21 @@ pub struct Arguments {
     /// This is usually automatically deducted via the hostname.
     #[clap(short, long)]
     pub name: Option<String>,
+
+    #[command(subcommand)]
+    pub subcommand: Subcommand,
+}
+
+#[derive(Parser, Debug)]
+pub enum Subcommand {
+    /// Run a dry-run on the current system and see all changes that would executed.
+    Plan,
+    /// Check the system for any changes since the last deployment.
+    /// If any are found, try to integrate them back into the configuration.
+    Absorb,
+    /// Actually deploy all changes to the system
+    Deploy,
+    /// Show the diff between the current system and the target.
+    /// This only shows differences in system services and packages.
+    Diff,
 }

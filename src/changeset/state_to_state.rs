@@ -10,7 +10,7 @@ use super::{compiled_state::CompiledState, ChangeSet};
 /// deployed on the system.
 /// We're not interested in where these files come from but rather only wether those files need to
 /// be removed, which is why this simplified and easier to handle representation is sufficient.
-pub fn create_changeset(old_state: &State, new_state: &State) -> ChangeSet {
+pub fn create_changeset(old_state: &State, new_state: &State) -> Option<ChangeSet> {
     let mut changeset = ChangeSet::new();
 
     let old_compiled_state = CompiledState::from_state(old_state);
@@ -18,7 +18,11 @@ pub fn create_changeset(old_state: &State, new_state: &State) -> ChangeSet {
 
     handle_packages(&mut changeset, &old_compiled_state, &new_compiled_state);
 
-    changeset
+    if changeset.is_empty() {
+        None
+    } else {
+        Some(changeset)
+    }
 }
 
 /// Check for any packages that exist on the old state (the currently deployed system)

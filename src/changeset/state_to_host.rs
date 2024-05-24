@@ -7,7 +7,10 @@ use crate::{
 
 use super::{Change, ChangeSet, PackageOperation};
 
-pub fn create_changeset(state: &State, system_state: &mut SystemState) -> Result<ChangeSet> {
+pub fn create_changeset(
+    state: &State,
+    system_state: &mut SystemState,
+) -> Result<Option<ChangeSet>> {
     let mut changeset = Vec::new();
 
     let host_changset = handle_host(&state.host, system_state)?;
@@ -18,7 +21,11 @@ pub fn create_changeset(state: &State, system_state: &mut SystemState) -> Result
         changeset.extend(group_changset);
     }
 
-    Ok(changeset)
+    if changeset.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(changeset))
+    }
 }
 
 /// Create the changeset that's needed to reach the desired state of the [HostConfig] from the
