@@ -47,7 +47,7 @@ pub fn read_group(root: &Path, name: &str) -> Result<Group> {
     let config = read_yaml::<GroupConfig>(&group_dir, "group")?;
 
     // Recursively read all files in directory
-    let mut directory = Directory::new(&group_dir);
+    let directory = Directory::new(&group_dir);
     //let entries = std::fs::read_dir(&group_dir)
     //    .map_err(|err| Error::IoPathError(group_dir.clone(), "reading", err))?;
     //// Go through all entries in this directory

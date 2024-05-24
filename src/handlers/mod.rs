@@ -14,9 +14,7 @@ pub mod services;
 pub fn handle_changeset(changeset: Vec<Change>) -> Result<()> {
     for change in changeset.iter() {
         match change {
-            Change::PathChange(_) => todo!(),
             Change::PackageChange(op) => handle_package_operation(op)?,
-            Change::ServiceChange(_) => todo!(),
         }
     }
 

@@ -74,10 +74,10 @@ impl Configuration {
         expand_home(&self.bois_dir)
     }
 
-    /// The target directory to which the configuration should be deployed.
-    pub fn target_dir(&self) -> PathBuf {
-        expand_home(&self.bois_dir)
-    }
+    ///// The target directory to which the configuration should be deployed.
+    //pub fn target_dir(&self) -> PathBuf {
+    //    expand_home(&self.bois_dir)
+    //}
 }
 
 impl Configuration {
