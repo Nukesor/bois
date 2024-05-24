@@ -5,12 +5,12 @@ use log::debug;
 
 /// Install a package via pacman.
 /// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
-/// Otherwise they wouldn't be detected by us if they were installed as a dependency.
+/// Otherwise they wouldn't be detected by us if they already were installed as a dependency.
 pub fn install_package(name: &str) -> Result<()> {
     debug!("Installing package {name} via pacman");
     // TODO: Error handling
     let _output = Command::new("pacman")
-        .args(["--sync", "--refresh", "--asexplicit", "--noconfirm", name])
+        .args(["--sync", "--refresh", "--noconfirm", name])
         .output()
         .context("Failed to install pacman package {}")?;
 
@@ -38,7 +38,7 @@ pub fn uninstall_package(name: &str) -> Result<()> {
 pub fn get_installed_packages() -> Result<HashSet<String>> {
     // Get all explicitly installed packages
     let output = Command::new("pacman")
-        .args(["--query", "--quiet", "--explicit"])
+        .args(["--query", "--quiet"])
         .output()
         .context("Failed to read pacman packages list")?;
 

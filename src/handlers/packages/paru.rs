@@ -45,7 +45,7 @@ pub fn uninstall_package(name: &str) -> Result<()> {
 pub fn get_installed_packages() -> Result<HashSet<String>> {
     // Get all explicitly installed packages
     let output = Command::new("pacman")
-        .args(["--query", "--quiet", "--foreign", "--explicit"])
+        .args(["--query", "--quiet", "--foreign"])
         .output()
         .context("Failed to read foreign pacman package list")?;
 
