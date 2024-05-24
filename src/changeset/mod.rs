@@ -11,7 +11,7 @@ pub mod tree;
 /// executed by bois to reach the desired system state.
 ///
 /// This includes all possible operations for all stages.
-type ChangeSet = Vec<Change>;
+pub type ChangeSet = Vec<Change>;
 
 #[derive(Debug)]
 pub enum Change {

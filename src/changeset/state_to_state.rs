@@ -1,70 +1,60 @@
-use anyhow::Result;
+use crate::state::State;
 
-use crate::{
-    state::{group::Group, host::Host, State},
-    system_state::SystemState,
-};
-
-use super::{Change, ChangeSet, PackageOperation};
+use super::{compiled_state::CompiledState, ChangeSet};
 
 /// Compare a new desired State with a previously deployed state.
 /// This is used to determine any necessary **cleanup** operations, in case the previous deployment
 /// enabled services or contained files, packages that're no longer desired.
-pub fn create_changeset(old_state: &State, new_state: &State) -> Result<ChangeSet> {
-    let mut changeset = Vec::new();
+///
+/// We do this by creating a "compiled state", which represents the final state that will be
+/// deployed on the system.
+/// We're not interested in where these files come from but rather only wether those files need to
+/// be removed, which is why this simplified and easier to handle representation is sufficient.
+pub fn create_changeset(old_state: &State, new_state: &State) -> ChangeSet {
+    let mut changeset = ChangeSet::new();
 
-    let host_changset = handle_host(&old_state.host, &new_state.host)?;
-    changeset.extend(host_changset);
+    let old_compiled_state = CompiledState::from_state(old_state);
+    let new_compiled_state = CompiledState::from_state(new_state);
 
-    for old_group in old_state.host.groups.iter() {
-        let group_changset = handle_group(&old_group, new_group)?;
-        changeset.extend(group_changset);
-    }
+    handle_packages(&mut changeset, &old_compiled_state, &new_compiled_state);
 
-    Ok(changeset)
+    changeset
 }
 
-/// Create the changeset that's needed to reach the desired state of the [HostConfig] from the
-/// current system's state.
-fn handle_host(old_state: &Host, new_state: &Host) -> Result<ChangeSet> {
-    let mut changeset = Vec::new();
+/// Check for any packages that exist on the old state (the currently deployed system)
+pub fn handle_packages(
+    changeset: &mut ChangeSet,
+    old_state: &CompiledState,
+    new_state: &CompiledState,
+) {
+    // Iterate over all package managers on the old system and their respective packages.
+    // Check for each package whether it existed on the old system. If not, queue a change to remove it.
+    for (manager, old_packages) in old_state.deployed_packages.iter() {
+        let Some(new_packages) = new_state.deployed_packages.get(&manager) else {
+            // If we cannot find a package manager, remove all packages that were deployed for it.
+            for package in old_packages {
+                changeset.push(super::Change::PackageChange(
+                    super::PackageOperation::Remove {
+                        manager: *manager,
+                        name: package.clone(),
+                    },
+                ))
+            }
+            continue;
+        };
 
-    // Compare all desired packages in the top-level config with the currently installed one's.
-    // TODO: How to handle package-groups? E.g. xorg-apps
-    for (manager, packages) in host.config.packages.iter() {
-        let installed_packages = system_state.installed_packages(*manager)?;
-        for package in packages {
-            // If a package is not found, schedule it to be installed.
-            if !installed_packages.contains(package) {
-                changeset.push(Change::PackageChange(PackageOperation::Add {
+        for package in old_packages {
+            if new_packages.contains(package) {
+                continue;
+            }
+
+            // Package wasn't found in new state, queue for removal.
+            changeset.push(super::Change::PackageChange(
+                super::PackageOperation::Remove {
                     manager: *manager,
                     name: package.clone(),
-                }))
-            }
+                },
+            ))
         }
     }
-
-    Ok(changeset)
-}
-
-/// Create the changeset that's needed to reach the desired state of a given [GroupConfig] from the
-/// current system's state.
-fn handle_group(group: &Group, system_state: &mut SystemState) -> Result<ChangeSet> {
-    let mut changeset = Vec::new();
-
-    // Compare all desired packages in the top-level config with the currently installed one's.
-    for (manager, packages) in group.config.packages.iter() {
-        let installed_packages = system_state.installed_packages(*manager)?;
-        for package in packages {
-            // If a package is not found, schedule it to be installed.
-            if !installed_packages.contains(package) {
-                changeset.push(Change::PackageChange(PackageOperation::Add {
-                    manager: *manager,
-                    name: package.clone(),
-                }))
-            }
-        }
-    }
-
-    Ok(changeset)
 }

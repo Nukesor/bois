@@ -29,7 +29,7 @@ use self::{
 ///     - Directories
 ///     - Files/Templates
 ///     - In-file and in-directory configuration
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct State {
     /// The diffent groups that're managed by bois.
     pub host: Host,

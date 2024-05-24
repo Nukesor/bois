@@ -10,7 +10,7 @@ use crate::{handlers::packages::PackageManager, helper::read_yaml};
 
 use super::directory::*;
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Group {
     /// The name of this group
     pub name: String,

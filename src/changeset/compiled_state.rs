@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     handlers::{packages::PackageManager, services::ServiceManager},
-    state::{host::Host, State},
+    state::{group::Group, host::Host, State},
 };
 
 /// This struct represents a rough compiled overview of all
@@ -24,13 +24,13 @@ pub struct CompiledState {
 }
 
 impl CompiledState {
-    pub fn from_state(state: State) -> Self {
+    pub fn from_state(state: &State) -> Self {
         let mut compiled_state = Self::default();
 
         handle_host(&mut compiled_state, &state.host);
 
         for group in state.host.groups.iter() {
-            handle_group(&mut compiled_state, &state.host);
+            handle_group(&mut compiled_state, &group);
         }
 
         compiled_state
@@ -49,9 +49,9 @@ fn handle_host(compiled_state: &mut CompiledState, host: &Host) {
     }
 }
 
-fn handle_group(compiled_state: &mut CompiledState, host: &Host) {
+fn handle_group(compiled_state: &mut CompiledState, group: &Group) {
     // Merge all packages from the host config file into the compiled packages lists.
-    for (manager, packages) in host.config.packages.iter() {
+    for (manager, packages) in group.config.packages.iter() {
         let compiled_packages = compiled_state
             .deployed_packages
             .entry(*manager)

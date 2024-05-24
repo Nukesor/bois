@@ -15,7 +15,11 @@ mod system_state;
 use args::Arguments;
 use log::{debug, info, LevelFilter};
 
-use crate::{changeset::state_to_host, handlers::handle_changeset, system_state::SystemState};
+use crate::{
+    changeset::{state_to_host, state_to_state, ChangeSet},
+    handlers::handle_changeset,
+    system_state::SystemState,
+};
 
 fn main() -> Result<()> {
     // Read any .env files
@@ -49,26 +53,43 @@ fn main() -> Result<()> {
     // - Any changes on the system's files since the last deployment
     // - Cleanup work that might need to be done for the new desired state.
     let previous_state = state::State::read_previous()?;
-    if let Some(previous_state) = previous_state {
-        // First, we create a changeset between the last desired state at the point of the last deployment
-        // and the current system statement.
-        // This will allows us to detect any changes that were done to the system.
-        // The changes done to the system will basically be the reverted actions of the changeset.
-        let changeset = state_to_host::create_changeset(&previous_state, &mut system_state)?;
-        if !changeset.is_empty() {
-            info!("Some untracked changes were detected on the system since last deployment.");
-            for change in changeset {
-                println!("Change (reverted): {change:?}");
-            }
+
+    // ---------- Step 1: Detect system changes ----------
+    // Create the changeset between the current system and the last deployment.
+    // This will allows us to detect any changes that were done to the system,
+    // The changes done to the system will basically be the reverted actions of the changeset.
+    let system_changes = match &previous_state {
+        Some(state) => state_to_host::create_changeset(&state, &mut system_state)?,
+        None => ChangeSet::new(),
+    };
+
+    if !system_changes.is_empty() {
+        info!("Some untracked changes were detected on the system since last deployment.");
+        for change in system_changes {
+            println!("Change (reverted): {change:?}");
         }
     }
 
-    // Create and execute the changeset to reach the actual desired state.
-    {
-        let changeset = state_to_host::create_changeset(&desired_state, &mut system_state)?;
-        println!("Changeset: {changeset:#?}");
-        handle_changeset(changeset)?;
+    // ---------- Step 2: Detect changes that need cleanup ----------
+    // Determine any cleanup that needs to be done due to changes in configuration since the
+    // last deployment.
+    let cleanup_changes = match &previous_state {
+        Some(state) => state_to_state::create_changeset(state, &desired_state),
+        None => ChangeSet::new(),
+    };
+
+    if !cleanup_changes.is_empty() {
+        info!("Cleanup changes that need to be checked:");
+        for change in cleanup_changes {
+            println!("Change (reverted): {change:?}");
+        }
     }
+
+    // ---------- Step 3: Detect changes that need cleanup ----------
+    // Create and execute the changeset to reach the actual desired state.
+    let changeset = state_to_host::create_changeset(&desired_state, &mut system_state)?;
+    println!("Changeset: {changeset:#?}");
+    handle_changeset(changeset)?;
 
     // Save the current desired state to disk for the next run.
     desired_state.save()?;

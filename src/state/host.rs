@@ -11,7 +11,7 @@ use crate::{handlers::packages::PackageManager, helper::read_yaml};
 use super::{directory::*, group::Group};
 
 /// A Host is related to a
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Host {
     /// The top-level configuration file for this host.
     pub config: HostConfig,
