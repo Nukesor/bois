@@ -16,10 +16,8 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     let mut system_state = SystemState::new()?;
 
     // Read the current desired system state from the files in the specified bois directory.
-    let desired_state = State::new(config)?;
+    let desired_state = State::new(config, &mut system_state)?;
     trace!("Config state: {desired_state:#?}");
-    // Run some basic checks on the read state.
-    desired_state.lint();
 
     // Read the state of the previous run, if existant.
     // This state will be used to determine:
@@ -83,7 +81,9 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
         }
     }
 
-    desired_state.save()?;
+    if !dry_run {
+        desired_state.save()?;
+    }
 
     Ok(())
 }

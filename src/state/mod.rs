@@ -9,7 +9,12 @@ use anyhow::{bail, Result};
 use log::{info, warn};
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{config::Configuration, error::Error, handlers::packages::PackageManager};
+use crate::{
+    config::Configuration,
+    error::Error,
+    handlers::packages::{pacman::get_packages_for_group, PackageManager},
+    system_state::SystemState,
+};
 
 pub mod directory;
 pub mod file;
@@ -40,12 +45,15 @@ pub struct State {
     /// previous runs, if the config changed in the meantime such as, for instance, a different
     /// root dir or new hostname.
     pub configuration: Configuration,
+
+    /// The compiled list of all packages that should be installed for this current configuration.
+    pub packages: HashMap<PackageManager, HashSet<String>>,
 }
 
 impl State {
     /// Build a new state from a current bois configuration.
     /// This state only represents the desired state for the **current** machine.
-    pub fn new(configuration: Configuration) -> Result<Self> {
+    pub fn new(configuration: Configuration, system_state: &mut SystemState) -> Result<Self> {
         // Check whether the most important directories are present as expected.
         let bois_dir = configuration.bois_dir();
         if !bois_dir.exists() {
@@ -63,38 +71,36 @@ impl State {
             host.groups.push(group);
         }
 
-        Ok(State {
+        let mut state = State {
             host,
             global_variables: HashMap::new(),
             configuration,
-        })
-    }
+            packages: HashMap::new(),
+        };
 
-    /// Run a few sanity checks on a given state. Such check include:
-    /// - Check for duplicate package declarations
-    pub fn lint(&self) {
-        self.lint_packages();
+        state.load_packages(system_state)?;
+
+        Ok(state)
     }
 
     /// Check whether there're any duplicate packages for a given package manager.
-    fn lint_packages(&self) {
-        // This list will contain all discovered packages.
-        let mut all_packages: HashMap<PackageManager, HashSet<String>> = HashMap::new();
-
+    fn load_packages(&mut self, system_state: &mut SystemState) -> Result<()> {
         // Check all host packages.
         for (manager, packages) in self.host.config.packages.iter() {
-            let known_packages = all_packages.entry(*manager).or_insert(HashSet::new());
+            let known_packages = self.packages.entry(*manager).or_insert(HashSet::new());
 
             // Print a warning for all duplicate packages
             for duplicate in packages.intersection(&known_packages) {
                 warn!("Found duplicate package {duplicate} in host.yml");
             }
+
+            known_packages.extend(packages.clone());
         }
 
         // Check all group packages.
         for group in self.host.groups.iter() {
             for (manager, packages) in group.config.packages.iter() {
-                let known_packages = all_packages.entry(*manager).or_insert(HashSet::new());
+                let known_packages = self.packages.entry(*manager).or_insert(HashSet::new());
 
                 // Print a warning for all duplicate packages
                 for duplicate in packages.intersection(&known_packages) {
@@ -103,8 +109,38 @@ impl State {
                         group.name
                     );
                 }
+
+                known_packages.extend(packages.clone());
             }
         }
+
+        // If there're any groups for any of the package managers, unroll the group and remove the
+        // group from the list off packages to install.
+        for (manager, ref mut packages) in self.packages.iter_mut() {
+            let mut detected_groups = HashSet::new();
+            let mut group_packages = HashSet::new();
+            let groups_on_system = system_state.detected_package_groups(*manager)?;
+            println!("{groups_on_system:?}");
+
+            for name in packages.iter() {
+                // Check if any package is a group
+                if groups_on_system.contains(name) {
+                    println!("Found group for {name}");
+                    // Safe the group and its packages so we can fix the package list.
+                    detected_groups.insert(name.clone());
+                    group_packages.extend(get_packages_for_group(name)?)
+                }
+            }
+
+            // Add all packages from detected groups.
+            packages.extend(group_packages);
+            // Remove all groups.
+            packages.retain(|name| !detected_groups.contains(name));
+
+            //println!("{packages:#?}");
+        }
+
+        Ok(())
     }
 
     /// Try to read the state of a previous deployment.

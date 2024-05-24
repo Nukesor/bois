@@ -26,6 +26,7 @@ pub struct CompiledState {
 impl CompiledState {
     pub fn from_state(state: &State) -> Self {
         let mut compiled_state = Self::default();
+        compiled_state.deployed_packages = state.packages.clone();
 
         handle_host(&mut compiled_state, &state.host);
 
@@ -37,26 +38,6 @@ impl CompiledState {
     }
 }
 
-fn handle_host(compiled_state: &mut CompiledState, host: &Host) {
-    // Merge all packages from the host config file into the compiled packages lists.
-    for (manager, packages) in host.config.packages.iter() {
-        let compiled_packages = compiled_state
-            .deployed_packages
-            .entry(*manager)
-            .or_default();
+fn handle_host(_compiled_state: &mut CompiledState, _host: &Host) {}
 
-        compiled_packages.extend(packages.clone().into_iter());
-    }
-}
-
-fn handle_group(compiled_state: &mut CompiledState, group: &Group) {
-    // Merge all packages from the host config file into the compiled packages lists.
-    for (manager, packages) in group.config.packages.iter() {
-        let compiled_packages = compiled_state
-            .deployed_packages
-            .entry(*manager)
-            .or_default();
-
-        compiled_packages.extend(packages.clone().into_iter());
-    }
-}
+fn handle_group(_compiled_state: &mut CompiledState, _group: &Group) {}

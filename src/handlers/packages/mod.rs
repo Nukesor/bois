@@ -41,3 +41,12 @@ pub fn get_installed_packages(manager: PackageManager) -> Result<HashSet<String>
         PackageManager::Apt => todo!(),
     }
 }
+
+/// Return the set of all explicitly installed packages on the system.
+pub fn get_detected_groups(manager: PackageManager) -> Result<HashSet<String>> {
+    match manager {
+        PackageManager::Pacman => pacman::detect_installed_groups(),
+        PackageManager::Paru => Ok(HashSet::new()),
+        PackageManager::Apt => todo!(),
+    }
+}
