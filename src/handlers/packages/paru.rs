@@ -1,0 +1,65 @@
+use std::{collections::HashSet, process::Command};
+
+use anyhow::{bail, Context, Result};
+use log::debug;
+
+/// Install a package via paru.
+/// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
+/// Otherwise they wouldn't be detected by us if they were installed as a dependency.
+pub fn install_package(name: &str) -> Result<()> {
+    debug!("Installing package {name} via paru");
+    // TODO: Error handling
+    let _output = Command::new("paru")
+        .args([
+            "--sync",
+            "--refresh",
+            "--asexplicit",
+            "--aur",
+            "--noconfirm",
+            name,
+        ])
+        .output()
+        .context("Failed to install paru package {}")?;
+
+    Ok(())
+}
+
+/// Uninstall a package via paru.
+/// Don't instruct paru to create backup files, as all configuration is handled by bois.
+/// Also recursively remove dependencies, we don't want to clutter the system with unneeded
+/// dependencies. Any dependencies that're still needed should be explicitly required.
+pub fn uninstall_package(name: &str) -> Result<()> {
+    debug!("Uninstalling package {name} via paru");
+    // TODO: Error handling
+    let _output = Command::new("pacman")
+        .args(["--remove", "--nosave", "--noconfirm", name])
+        .output()
+        .context("Failed to uninstall paru AUR package {}")?;
+
+    Ok(())
+}
+
+/// Receive a list of **exlicitly** installed packages on the system.
+/// Ignore packages that are installed as a dependency, as they might be removed at any point in
+/// time when another package is uninstalled as a side-effect.
+pub fn get_installed_packages() -> Result<HashSet<String>> {
+    // Get all explicitly installed packages
+    let output = Command::new("pacman")
+        .args(["--query", "--quiet", "--foreign", "--explicit"])
+        .output()
+        .context("Failed to read foreign pacman package list")?;
+
+    if !output.status.success() {
+        bail!(
+            "Failed to get paru package list:\n{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    // Interpret the output as utf8 and split by lines.
+    // Each package is on its own line.
+    let packages =
+        String::from_utf8(output.stdout).context("Couldn't deserialize pacman packages")?;
+
+    Ok(packages.lines().map(ToOwned::to_owned).collect())
+}

@@ -7,6 +7,7 @@ use strum_macros::Display;
 use crate::changeset::PackageOperation;
 
 pub mod pacman;
+pub mod paru;
 
 #[derive(Hash, PartialEq, Eq, Clone, Copy, Debug, Display, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -21,12 +22,12 @@ pub fn handle_package_operation(op: &PackageOperation) -> Result<()> {
     match op {
         PackageOperation::Add { manager, name } => match manager {
             PackageManager::Pacman => pacman::install_package(name),
-            PackageManager::Paru => todo!(),
+            PackageManager::Paru => paru::install_package(name),
             PackageManager::Apt => todo!(),
         },
         PackageOperation::Remove { manager, name } => match manager {
             PackageManager::Pacman => pacman::uninstall_package(name),
-            PackageManager::Paru => todo!(),
+            PackageManager::Paru => paru::uninstall_package(name),
             PackageManager::Apt => todo!(),
         },
     }
@@ -36,7 +37,7 @@ pub fn handle_package_operation(op: &PackageOperation) -> Result<()> {
 pub fn get_installed_packages(manager: PackageManager) -> Result<HashSet<String>> {
     match manager {
         PackageManager::Pacman => pacman::get_installed_packages(),
-        PackageManager::Paru => todo!(),
+        PackageManager::Paru => paru::get_installed_packages(),
         PackageManager::Apt => todo!(),
     }
 }
