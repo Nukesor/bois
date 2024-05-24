@@ -34,9 +34,9 @@ pub fn handle_package_operation(op: &PackageOperation) -> Result<()> {
 }
 
 /// Return the set of all explicitly installed packages on the system.
-pub fn get_installed_packages(manager: PackageManager) -> Result<HashSet<String>> {
+pub fn get_installed_packages(manager: PackageManager, explicit: bool) -> Result<HashSet<String>> {
     match manager {
-        PackageManager::Pacman => pacman::get_installed_packages(),
+        PackageManager::Pacman => pacman::get_installed_packages(explicit),
         PackageManager::Paru => paru::get_installed_packages(),
         PackageManager::Apt => todo!(),
     }

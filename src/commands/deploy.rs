@@ -1,8 +1,8 @@
 use anyhow::Result;
-use log::{info, trace};
+use log::trace;
 
 use crate::{
-    changeset::{state_to_host, state_to_state, ChangeSet},
+    changeset::{state_to_host, state_to_state},
     config::Configuration,
     handlers::handle_changeset,
     state::State,
@@ -48,14 +48,13 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
 
     // ------------------- Execution phase -------------------
     // We now start to actually execute commands.
-    // Save the current desired state to disk for the next run.
 
     // ---------- Step 4: Ask whether system changes should be absorbed. ----------
     // TODO: Logic to absorb system state
     if let Some(changes) = system_changes {
         println!("Some untracked changes were detected on the system since last deployment.");
         for change in changes {
-            println!("  Change (reverted): {change:?}");
+            println!("  (reverted) {change:?}");
         }
     }
 
@@ -74,13 +73,14 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     if let Some(changes) = new_changes {
         println!("New changes that need to be deployed:");
         for change in changes.iter() {
-            println!(" {change:?}");
+            println!("  {change:?}");
         }
         if !dry_run {
             handle_changeset(&changes)?;
         }
     }
 
+    // Save the current desired state to disk for the next run.
     if !dry_run {
         desired_state.save()?;
     }

@@ -8,18 +8,20 @@ use log::debug;
 /// Otherwise they wouldn't be detected by us if they were installed as a dependency.
 pub fn install_package(name: &str) -> Result<()> {
     debug!("Installing package {name} via paru");
-    // TODO: Error handling
-    let _output = Command::new("paru")
-        .args([
-            "--sync",
-            "--refresh",
-            "--asexplicit",
-            "--aur",
-            "--noconfirm",
-            name,
-        ])
+    // TODO: Check how to install packages with paru as root.
+    //       Probable approach: Patch paru to support building with devtools instead of chroot.
+    let output = Command::new("paru")
+        .args(["--sync", "--refresh", "--aur", "--noconfirm", name])
         .output()
         .context("Failed to install paru package {}")?;
+
+    if !output.status.success() {
+        bail!(
+            "Failed to uninstall paru package:\n{name}:\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        );
+    }
 
     Ok(())
 }
@@ -30,11 +32,19 @@ pub fn install_package(name: &str) -> Result<()> {
 /// dependencies. Any dependencies that're still needed should be explicitly required.
 pub fn uninstall_package(name: &str) -> Result<()> {
     debug!("Uninstalling package {name} via paru");
-    // TODO: Error handling
-    let _output = Command::new("pacman")
+
+    let output = Command::new("pacman")
         .args(["--remove", "--nosave", "--noconfirm", name])
         .output()
         .context("Failed to uninstall paru AUR package {}")?;
+
+    if !output.status.success() {
+        bail!(
+            "Failed to uninstall paru package:\n{name}:\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        );
+    }
 
     Ok(())
 }
@@ -51,8 +61,9 @@ pub fn get_installed_packages() -> Result<HashSet<String>> {
 
     if !output.status.success() {
         bail!(
-            "Failed to get paru package list:\n{}",
-            String::from_utf8_lossy(&output.stderr)
+            "Failed to get foreing pacman packages:\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
         );
     }
 

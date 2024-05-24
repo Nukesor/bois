@@ -66,7 +66,7 @@ impl State {
         let mut host = read_host(&configuration.bois_dir(), &configuration.name()?)?;
 
         // Go through all dependencies and load them as well.
-        for group_name in &host.config.dependencies {
+        for group_name in &host.config.groups {
             let group = read_group(&configuration.bois_dir(), group_name)?;
             host.groups.push(group);
         }
@@ -120,12 +120,10 @@ impl State {
             let mut detected_groups = HashSet::new();
             let mut group_packages = HashSet::new();
             let groups_on_system = system_state.detected_package_groups(*manager)?;
-            println!("{groups_on_system:?}");
 
             for name in packages.iter() {
                 // Check if any package is a group
                 if groups_on_system.contains(name) {
-                    println!("Found group for {name}");
                     // Safe the group and its packages so we can fix the package list.
                     detected_groups.insert(name.clone());
                     group_packages.extend(get_packages_for_group(name)?)
@@ -136,8 +134,6 @@ impl State {
             packages.extend(group_packages);
             // Remove all groups.
             packages.retain(|name| !detected_groups.contains(name));
-
-            //println!("{packages:#?}");
         }
 
         Ok(())

@@ -26,16 +26,16 @@ pub struct Host {
 pub struct HostConfig {
     /// Default that should be applied to all files.
     #[serde(default)]
-    pub defaults: HostDefaults,
-    /// All variables that're available for templating to all groups.
+    pub file_defaults: HostDefaults,
+    /// All variables that're available for templating to the host files and all groups.
     #[serde(default)]
     pub global_variables: HashMap<String, String>,
-    /// All variables that're available for templating for files in this host's directory.
+    /// All variables that're only available for templating files in this directory.
     #[serde(default)]
-    pub variables: HashMap<String, String>,
-    /// Other groups that're required by this group.
+    pub local_variables: HashMap<String, String>,
+    /// Groups that're required by this host.
     #[serde(default)]
-    pub dependencies: Vec<String>,
+    pub groups: Vec<String>,
     /// Packages that should always be installed for this host.
     #[serde(default)]
     pub packages: HashMap<PackageManager, HashSet<String>>,
