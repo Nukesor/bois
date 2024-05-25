@@ -9,10 +9,18 @@ use log::debug;
 pub(super) fn install_package(name: &str) -> Result<()> {
     debug!("Installing package {name} via pacman");
     // TODO: Error handling
-    let _output = Command::new("pacman")
+    let output = Command::new("pacman")
         .args(["--sync", "--refresh", "--noconfirm", name])
         .output()
         .context("Failed to install pacman package {}")?;
+
+    if !output.status.success() {
+        bail!(
+            "Failed to install pacman package:\n{name}:\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        );
+    }
 
     Ok(())
 }
@@ -24,10 +32,18 @@ pub(super) fn install_package(name: &str) -> Result<()> {
 pub(super) fn uninstall_package(name: &str) -> Result<()> {
     debug!("Uninstalling package {name} via pacman");
     // TODO: Error handling
-    let _output = Command::new("pacman")
+    let output = Command::new("pacman")
         .args(["--remove", "--nosave", "--noconfirm", name])
         .output()
         .context("Failed to install pacman package {}")?;
+
+    if !output.status.success() {
+        bail!(
+            "Failed to uninstall pacman package:\n{name}:\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        );
+    }
 
     Ok(())
 }
@@ -49,8 +65,9 @@ pub fn get_installed_packages(explicit: bool) -> Result<HashSet<String>> {
 
     if !output.status.success() {
         bail!(
-            "Failed to get pacman package list:\n{}",
-            String::from_utf8_lossy(&output.stderr)
+            "Failed to query installed pacman packages:\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
         );
     }
 
