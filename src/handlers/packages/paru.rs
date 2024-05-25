@@ -9,9 +9,24 @@ use log::debug;
 pub fn install_package(name: &str) -> Result<()> {
     debug!("Installing package {name} via paru");
     // TODO: Check how to install packages with paru as root.
-    //       Probable approach: Patch paru to support building with devtools instead of chroot.
-    let output = Command::new("paru")
-        .args(["--sync", "--refresh", "--aur", "--noconfirm", name])
+    //       Possible solutions:
+    //          - Patch paru to support building with devtools instead of chroot.
+    //          - Figure out how to build packages as a different users without needing any kind of
+    //            sudo permissions.
+    let output = Command::new("sudo")
+        .args([
+            "-u",
+            "aur",
+            "paru",
+            "--sync",
+            "--refresh",
+            "--aur",
+            "--noconfirm",
+            "--chroot=/var/lib/aur/chroot",
+            "--clonedir=/var/lib/aur/build",
+            "--localrepo",
+            name,
+        ])
         .output()
         .context("Failed to install paru package {}")?;
 
