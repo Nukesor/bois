@@ -8,11 +8,8 @@ use log::debug;
 /// Otherwise they wouldn't be detected by us if they were installed as a dependency.
 pub fn install_package(name: &str) -> Result<()> {
     debug!("Installing package {name} via paru");
-    // TODO: Check how to install packages with paru as root.
-    //       Possible solutions:
-    //          - Patch paru to support building with devtools instead of chroot.
-    //          - Figure out how to build packages as a different users without needing any kind of
-    //            sudo permissions.
+    // TODO: Check if there's a more elegant way of doing this.
+    //       See the docs/AUR.md section on the current approach.
     let output = Command::new("sudo")
         .args([
             "-u",
@@ -22,9 +19,6 @@ pub fn install_package(name: &str) -> Result<()> {
             "--refresh",
             "--aur",
             "--noconfirm",
-            "--chroot=/var/lib/aur/chroot",
-            "--clonedir=/var/lib/aur/build",
-            "--localrepo",
             name,
         ])
         .output()
