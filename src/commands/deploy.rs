@@ -38,7 +38,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // Determine any cleanup that needs to be done due to changes in configuration since the
     // last deployment.
     let cleanup_changes = match &previous_state {
-        Some(state) => state_to_state::create_changeset(state, &desired_state),
+        Some(state) => state_to_state::create_changeset(&mut system_state, state, &desired_state)?,
         None => None,
     };
 
