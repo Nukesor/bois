@@ -10,9 +10,8 @@ use crate::{handlers::packages::PackageManager, system_state::SystemState};
 /// Otherwise they wouldn't be detected by us if they already were installed as a dependency.
 pub(super) fn install_package(name: &str) -> Result<()> {
     debug!("Installing package {name} via pacman");
-    // TODO: Error handling
     let output = Command::new("pacman")
-        .args(["--sync", "--refresh", "--noconfirm", name])
+        .args(["--sync", "--refresh", "--noconfirm", "--asexplicit", name])
         .output()
         .context("Failed to install pacman package {}")?;
 
@@ -62,11 +61,8 @@ pub(super) fn uninstall_package(system_state: &mut SystemState, name: &str) -> R
 /// Receive a list of **exlicitly** installed packages on the system.
 /// Ignore packages that are installed as a dependency, as they might be removed at any point in
 /// time when another package is uninstalled as a side-effect.
-pub fn get_installed_packages(explicit: bool) -> Result<HashSet<String>> {
-    let mut args = Vec::from(["--query", "--quiet"]);
-    if explicit {
-        args.push("--explicit")
-    }
+pub fn get_installed_packages() -> Result<HashSet<String>> {
+    let args = Vec::from(["--query", "--quiet", "--explicit"]);
 
     // Get all explicitly installed packages
     let output = Command::new("pacman")
@@ -94,7 +90,6 @@ pub fn get_installed_packages(explicit: bool) -> Result<HashSet<String>> {
 
 /// Query the list of all packages that belong to a specific group.
 pub fn get_packages_for_group(name: &str) -> Result<HashSet<String>> {
-    // Get all explicitly installed packages
     let output = Command::new("pacman")
         .args(["--sync", "--groups", name])
         .output()
@@ -130,7 +125,6 @@ pub fn get_packages_for_group(name: &str) -> Result<HashSet<String>> {
 /// The `pacman -Qm` package lists all packages that belong to a group in a
 /// `group-name package-name` tuple per line.
 pub fn detect_installed_groups() -> Result<HashSet<String>> {
-    // Get all explicitly installed packages
     let output = Command::new("pacman")
         .args(["--query", "--groups", "--quiet"])
         .output()

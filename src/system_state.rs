@@ -37,7 +37,7 @@ impl SystemState {
     }
 
     pub fn update_packages(&mut self, manager: PackageManager) -> Result<()> {
-        let list = get_installed_packages(manager, false)?;
+        let list = get_installed_packages(manager)?;
         self.installed_packages.insert(manager, list);
 
         Ok(())
