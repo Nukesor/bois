@@ -1,6 +1,7 @@
 use crate::handlers::packages::PackageManager;
 
 pub mod compiled_state;
+pub mod host_to_state;
 pub mod state_to_host;
 pub mod state_to_state;
 //pub mod tree;

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use log::info;
 
 use crate::{state::State, system_state::SystemState};
 
@@ -36,25 +37,20 @@ pub fn create_changeset(
     }
 }
 
-/// Check for any packages that exist on the old state (the currently deployed system)
+/// Check all package managers on the old system and their respective packages.
+/// Check for each package whether it existed on the old system.
+/// If not, queue a change to remove it.
 pub fn handle_packages(
     system_state: &mut SystemState,
     changeset: &mut ChangeSet,
     old_state: &CompiledState,
     new_state: &CompiledState,
 ) -> Result<()> {
-    // Iterate over all package managers on the old system and their respective packages.
-    // Check for each package whether it existed on the old system. If not, queue a change to remove it.
     for (manager, old_packages) in old_state.deployed_packages.iter() {
-        let installed_packages = system_state.installed_packages(*manager)?;
+        // First up, check if there're any packages for this package manager at all.
+        // If we cannot find a package manager, remove all packages that were deployed for it.
         let Some(new_packages) = new_state.deployed_packages.get(&manager) else {
-            // If we cannot find a package manager, remove all packages that were deployed for it.
             for package in old_packages {
-                // Ignore it if it has already been removed from the target system.
-                if !installed_packages.contains(package) {
-                    continue;
-                }
-
                 changeset.push(super::Change::PackageChange(
                     super::PackageOperation::Remove {
                         manager: *manager,
@@ -65,8 +61,17 @@ pub fn handle_packages(
             continue;
         };
 
-        for package in old_packages {
+        // Now we compare the old and the new desired state, queuing removal of packages if they're
+        // no longer explicitly installed.
+        let installed_packages = system_state.installed_packages(*manager)?;
+        for package in new_packages {
             if new_packages.contains(package) {
+                continue;
+            }
+
+            // Ignore it if it has already been removed from the target system.
+            if !installed_packages.contains(package) {
+                info!("Package '{package}'t o be removed does no longer exist on system.");
                 continue;
             }
 

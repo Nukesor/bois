@@ -2,7 +2,7 @@ use anyhow::Result;
 use log::trace;
 
 use crate::{
-    changeset::{state_to_host, state_to_state},
+    changeset::{host_to_state, state_to_host, state_to_state},
     config::Configuration,
     handlers::handle_changeset,
     state::State,
@@ -14,6 +14,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // This doesn't contain all system state, only stuff like packages and system services.
     // It's basically a cache struct, so we don't repeatedly run the same queries all the time.
     let mut system_state = SystemState::new()?;
+    trace!("System state: {system_state:#?}");
 
     // Read the current desired system state from the files in the specified bois directory.
     let desired_state = State::new(config, &mut system_state)?;
@@ -24,13 +25,14 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // - Any changes on the system's files since the last deployment
     // - Cleanup work that might need to be done for the new desired state.
     let previous_state = State::read_previous()?;
+    trace!("Previous state: {previous_state:#?}");
 
     // ---------- Step 1: Detect system changes ----------
     // Create the changeset between the current system and the last deployment.
     // This will allows us to detect any changes that were done to the system,
     // The changes done to the system will basically be the reverted actions of the changeset.
     let system_changes = match &previous_state {
-        Some(state) => state_to_host::create_changeset(&state, &mut system_state)?,
+        Some(state) => host_to_state::create_changeset(&mut system_state, &state, &desired_state)?,
         None => None,
     };
 
@@ -65,7 +67,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
             println!("  {change:?}");
         }
         if !dry_run {
-            handle_changeset(&changes)?;
+            handle_changeset(&mut system_state, &changes)?;
         }
     }
 
@@ -76,7 +78,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
             println!("  {change:?}");
         }
         if !dry_run {
-            handle_changeset(&changes)?;
+            handle_changeset(&mut system_state, &changes)?;
         }
     }
 

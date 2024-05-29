@@ -50,17 +50,11 @@ impl SystemState {
         let list = if let Some(packages) = self.detected_package_groups.get(&manager) {
             packages.clone()
         } else {
-            self.update_detect_groups(manager)?;
+            let list = get_detected_groups(manager)?;
+            self.detected_package_groups.insert(manager, list);
             self.detected_package_groups.get(&manager).unwrap().clone()
         };
 
         Ok(list)
-    }
-
-    pub fn update_detect_groups(&mut self, manager: PackageManager) -> Result<()> {
-        let list = get_detected_groups(manager)?;
-        self.detected_package_groups.insert(manager, list);
-
-        Ok(())
     }
 }

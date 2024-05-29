@@ -1,7 +1,9 @@
 use std::{collections::HashSet, process::Command};
 
 use anyhow::{bail, Context, Result};
-use log::debug;
+use log::{debug, info};
+
+use crate::{handlers::packages::PackageManager, system_state::SystemState};
 
 /// Install a package via pacman.
 /// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
@@ -29,9 +31,14 @@ pub(super) fn install_package(name: &str) -> Result<()> {
 /// Don't instruct pacman to create backup files, as all configuration is handled by bois.
 /// Also recursively remove dependencies, we don't want to clutter the system with unneeded
 /// dependencies. Any dependencies that're still needed should be explicitly required.
-pub(super) fn uninstall_package(name: &str) -> Result<()> {
+pub(super) fn uninstall_package(system_state: &mut SystemState, name: &str) -> Result<()> {
     debug!("Uninstalling package {name} via pacman");
-    // TODO: Error handling
+    let installed_packages = system_state.installed_packages(PackageManager::Pacman)?;
+    if !installed_packages.contains(name) {
+        info!("Package {name} is already uninstalled.");
+        return Ok(());
+    }
+
     let output = Command::new("pacman")
         .args(["--remove", "--nosave", "--noconfirm", name])
         .output()
@@ -44,6 +51,10 @@ pub(super) fn uninstall_package(name: &str) -> Result<()> {
             String::from_utf8_lossy(&output.stderr),
         );
     }
+
+    // Update the installed packages cache.
+    // Packages might be uninstalled when packages due to dependency removal.
+    system_state.update_packages(PackageManager::Pacman)?;
 
     Ok(())
 }
