@@ -62,7 +62,7 @@ pub(super) fn uninstall_package(system_state: &mut SystemState, name: &str) -> R
 /// Ignore packages that are installed as a dependency, as they might be removed at any point in
 /// time when another package is uninstalled as a side-effect.
 pub fn get_installed_packages() -> Result<HashSet<String>> {
-    let args = Vec::from(["--query", "--quiet", "--explicit"]);
+    let args = Vec::from(["--query", "--quiet", "--explicit", "--native"]);
 
     // Get all explicitly installed packages
     let output = Command::new("pacman")

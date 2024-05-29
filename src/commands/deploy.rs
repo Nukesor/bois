@@ -17,7 +17,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     trace!("System state: {system_state:#?}");
 
     // Read the current desired system state from the files in the specified bois directory.
-    let desired_state = State::new(config, &mut system_state)?;
+    let desired_state = State::new(&config, &mut system_state)?;
     trace!("Config state: {desired_state:#?}");
 
     // Read the state of the previous run, if existant.
@@ -56,7 +56,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     if let Some(changes) = system_changes {
         println!("Some untracked changes were detected on the system since last deployment.");
         for change in changes {
-            println!("  (reverted) {change:?}");
+            println!("  {change:?}");
         }
     }
 

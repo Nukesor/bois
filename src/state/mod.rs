@@ -53,7 +53,7 @@ pub struct State {
 impl State {
     /// Build a new state from a current bois configuration.
     /// This state only represents the desired state for the **current** machine.
-    pub fn new(configuration: Configuration, system_state: &mut SystemState) -> Result<Self> {
+    pub fn new(configuration: &Configuration, system_state: &mut SystemState) -> Result<Self> {
         // Check whether the most important directories are present as expected.
         let bois_dir = configuration.bois_dir();
         if !bois_dir.exists() {
@@ -74,7 +74,7 @@ impl State {
         let mut state = State {
             host,
             global_variables: HashMap::new(),
-            configuration,
+            configuration: configuration.clone(),
             packages: HashMap::new(),
         };
 

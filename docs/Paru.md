@@ -13,3 +13,4 @@ It needs to be able to call `pacman` though, so there's a bit of setup that need
    ```
    aur ALL=(ALL) NOPASSWD: /usr/bin/pacman
    ```
+3. TODO: Make the user configurable.
