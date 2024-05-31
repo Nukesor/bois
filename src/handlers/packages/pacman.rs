@@ -1,7 +1,7 @@
 use std::{collections::HashSet, process::Command};
 
 use anyhow::{bail, Context, Result};
-use log::{debug, info};
+use log::info;
 
 use crate::{handlers::packages::PackageManager, system_state::SystemState};
 
@@ -9,9 +9,9 @@ use crate::{handlers::packages::PackageManager, system_state::SystemState};
 /// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
 /// Otherwise they wouldn't be detected by us if they already were installed as a dependency.
 pub(super) fn install_package(name: &str) -> Result<()> {
-    debug!("Installing package {name} via pacman");
+    println!("Installing package {name} via pacman");
     let output = Command::new("pacman")
-        .args(["--sync", "--refresh", "--noconfirm", "--asexplicit", name])
+        .args(["--sync", "--refresh", "--noconfirm", name])
         .output()
         .context("Failed to install pacman package {}")?;
 
@@ -31,7 +31,7 @@ pub(super) fn install_package(name: &str) -> Result<()> {
 /// Also recursively remove dependencies, we don't want to clutter the system with unneeded
 /// dependencies. Any dependencies that're still needed should be explicitly required.
 pub(super) fn uninstall_package(system_state: &mut SystemState, name: &str) -> Result<()> {
-    debug!("Uninstalling package {name} via pacman");
+    println!("Uninstalling package {name} via pacman");
     let installed_packages = system_state.installed_packages(PackageManager::Pacman)?;
     if !installed_packages.contains(name) {
         info!("Package {name} is already uninstalled.");

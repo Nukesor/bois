@@ -1,3 +1,8 @@
+//! This module contains logic to compare the last deployed state with the new desired state.
+//! This allows us to detect whether any previously deployed changes are now to be removed.
+//!
+//! Anything that exists in the previous deploy, but can no longer be found in the new state needs
+//! to be cleaned up.
 use anyhow::Result;
 use log::info;
 
@@ -64,14 +69,14 @@ pub fn handle_packages(
         // Now we compare the old and the new desired state, queuing removal of packages if they're
         // no longer explicitly installed.
         let installed_packages = system_state.installed_packages(*manager)?;
-        for package in new_packages {
-            if new_packages.contains(package) {
+        for old_package in old_packages {
+            if new_packages.contains(old_package) {
                 continue;
             }
 
             // Ignore it if it has already been removed from the target system.
-            if !installed_packages.contains(package) {
-                info!("Package '{package}'t o be removed does no longer exist on system.");
+            if !installed_packages.contains(old_package) {
+                info!("Package '{old_package}' to be removed does no longer exist on system.");
                 continue;
             }
 
@@ -79,7 +84,7 @@ pub fn handle_packages(
             changeset.push(super::Change::PackageChange(
                 super::PackageOperation::Remove {
                     manager: *manager,
-                    name: package.clone(),
+                    name: old_package.clone(),
                 },
             ))
         }

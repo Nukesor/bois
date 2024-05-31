@@ -1,13 +1,12 @@
 use std::{collections::HashSet, process::Command};
 
 use anyhow::{bail, Context, Result};
-use log::debug;
 
 /// Install a package via paru.
 /// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
 /// Otherwise they wouldn't be detected by us if they were installed as a dependency.
 pub fn install_package(name: &str) -> Result<()> {
-    debug!("Installing package {name} via paru");
+    println!("Installing package {name} via paru");
     // TODO: Check if there's a more elegant way of doing this.
     //       See the docs/AUR.md section on the current approach.
     let output = Command::new("sudo")
@@ -40,7 +39,7 @@ pub fn install_package(name: &str) -> Result<()> {
 /// Also recursively remove dependencies, we don't want to clutter the system with unneeded
 /// dependencies. Any dependencies that're still needed should be explicitly required.
 pub fn uninstall_package(name: &str) -> Result<()> {
-    debug!("Uninstalling package {name} via paru");
+    println!("Uninstalling package {name} via paru");
 
     let output = Command::new("pacman")
         .args(["--remove", "--nosave", "--noconfirm", name])

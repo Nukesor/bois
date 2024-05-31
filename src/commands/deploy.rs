@@ -20,7 +20,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     let desired_state = State::new(&config, &mut system_state)?;
     trace!("Config state: {desired_state:#?}");
 
-    // Read the state of the previous run, if existant.
+    // Read the state of the previous run, if existing.
     // This state will be used to determine:
     // - Any changes on the system's files since the last deployment
     // - Cleanup work that might need to be done for the new desired state.

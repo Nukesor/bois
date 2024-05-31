@@ -1,3 +1,7 @@
+//! This module contains logic to compare the current state with the state of the last deploy.
+//! This allows us to detect any untracked changes on the system that have been done since the
+//! last deploy.
+//! We can then inform the user about these changes, so they aren't unintentionally overwritten.
 use anyhow::Result;
 
 use crate::{

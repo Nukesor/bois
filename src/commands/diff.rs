@@ -17,6 +17,7 @@ fn diff_packages(config: &Configuration) -> Result<()> {
     let desired_state = State::new(config, &mut system_state)?;
     trace!("Config state: {desired_state:#?}");
 
+    let mut untracked_changes_exist = false;
     for (manager, packages) in desired_state.packages {
         // Get all untracked packages in a sorted list
         let installed_packages = system_state.installed_packages(manager)?;
@@ -24,6 +25,14 @@ fn diff_packages(config: &Configuration) -> Result<()> {
             .into_iter()
             .filter(|pkg| !packages.contains(pkg))
             .collect();
+
+        // Continue if there're no untracked packages.
+        if untracked_packages.is_empty() {
+            continue;
+        }
+        untracked_changes_exist = true;
+
+        // Sort the packages, otherwise the output is non-deterministic, which is just bad UI.
         untracked_packages.sort();
 
         // Format the strings a bit, so the output is nice.
@@ -36,6 +45,10 @@ fn diff_packages(config: &Configuration) -> Result<()> {
             "Untracked packages on system for manager {manager}:\n{}",
             untracked_packages.join("\n")
         );
+    }
+
+    if !untracked_changes_exist {
+        println!("Packages: match boi's definition")
     }
 
     Ok(())
