@@ -93,15 +93,18 @@ Additionally, there're a few "buzzwordy" design goals that need to be achieved:
   It's main point in difference is, that it's designed to be used for a single machine per repository, without templating.
 
   Additionally, its focus lies on configuration management and not so much on further system state such as packages or services.
+
 - [`aconfmgr`](https://github.com/CyberShadow/aconfmgr) is very close to what bois aims to be, but focused on ArchLinux.
   It features:
   - Configuration file management
   - Diffing and merging
   - Package installation and removal
-  What bois has on top:
-  - Templating
-  - Builtin support for multiple machines
-  - Groups to allow modular package installation/configuration for various hosts.
+
+What bois has on top:
+
+- Templating
+- Builtin support for multiple machines
+- Groups to allow modular package installation/configuration for various hosts.
 
 #### System configuration manager
 
