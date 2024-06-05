@@ -87,10 +87,10 @@ impl State {
     fn load_packages(&mut self, system_state: &mut SystemState) -> Result<()> {
         // Check all host packages.
         for (manager, packages) in self.host.config.packages.iter() {
-            let known_packages = self.packages.entry(*manager).or_insert(HashSet::new());
+            let known_packages = self.packages.entry(*manager).or_default();
 
             // Print a warning for all duplicate packages
-            for duplicate in packages.intersection(&known_packages) {
+            for duplicate in packages.intersection(known_packages) {
                 warn!("Found duplicate package {duplicate} in host.yml");
             }
 
@@ -100,10 +100,10 @@ impl State {
         // Check all group packages.
         for group in self.host.groups.iter() {
             for (manager, packages) in group.config.packages.iter() {
-                let known_packages = self.packages.entry(*manager).or_insert(HashSet::new());
+                let known_packages = self.packages.entry(*manager).or_default();
 
                 // Print a warning for all duplicate packages
-                for duplicate in packages.intersection(&known_packages) {
+                for duplicate in packages.intersection(known_packages) {
                     warn!(
                         "Found duplicate package {duplicate} in group.yml for group {}",
                         group.name
@@ -160,8 +160,8 @@ impl State {
         info!("Found previous deployed state at: {path:?}");
 
         // Open the file in read-only mode with buffer.
-        let file = File::open(&path)
-            .map_err(|err| Error::IoPathError(path, "opening config file.", err))?;
+        let file =
+            File::open(&path).map_err(|err| Error::IoPath(path, "opening config file.", err))?;
         let reader = BufReader::new(file);
 
         // Read and deserialize the config file.
@@ -180,9 +180,8 @@ impl State {
 
         // Create the dir, if it doesn't exist yet
         if !application_dir.exists() {
-            create_dir_all(&application_dir).map_err(|err| {
-                Error::IoPathError(application_dir.clone(), "creating state dir", err)
-            })?;
+            create_dir_all(&application_dir)
+                .map_err(|err| Error::IoPath(application_dir.clone(), "creating state dir", err))?;
         }
 
         // Serialize the configuration file and write it to disk
@@ -196,11 +195,10 @@ impl State {
         };
 
         // Write the serialized content to the file.
-        let mut file = File::create(path).map_err(|err| {
-            Error::IoPathError(application_dir.clone(), "creating state file", err)
-        })?;
+        let mut file = File::create(path)
+            .map_err(|err| Error::IoPath(application_dir.clone(), "creating state file", err))?;
         file.write_all(content.as_bytes())
-            .map_err(|err| Error::IoPathError(application_dir, "writing state file", err))?;
+            .map_err(|err| Error::IoPath(application_dir, "writing state file", err))?;
 
         Ok(())
     }

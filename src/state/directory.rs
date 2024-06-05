@@ -41,7 +41,7 @@ pub fn read_directory(root: &Path, relative_path: &Path) -> Result<Directory> {
     let directory_config = read_yaml::<DirectoryConfig>(&directory_path, "bois")?;
 
     let entries = std::fs::read_dir(&directory_path)
-        .map_err(|err| Error::IoPathError(directory_path.clone(), "reading", err))?;
+        .map_err(|err| Error::IoPath(directory_path.clone(), "reading", err))?;
 
     // Create the representation for this directory
     let mut directory = Directory {
@@ -52,8 +52,8 @@ pub fn read_directory(root: &Path, relative_path: &Path) -> Result<Directory> {
 
     // Go through all entries in this directory
     for entry in entries {
-        let entry = entry
-            .map_err(|err| Error::IoPathError(directory_path.clone(), "reading entry", err))?;
+        let entry =
+            entry.map_err(|err| Error::IoPath(directory_path.clone(), "reading entry", err))?;
 
         read_file(root, relative_path, entry, &mut directory)?;
     }

@@ -116,8 +116,8 @@ impl Configuration {
         info!("Found config file at: {path:?}");
 
         // Open the file in read-only mode with buffer.
-        let file = File::open(&path)
-            .map_err(|err| Error::IoPathError(path, "opening config file.", err))?;
+        let file =
+            File::open(&path).map_err(|err| Error::IoPath(path, "opening config file.", err))?;
         let reader = BufReader::new(file);
 
         // Read and deserialize the config file.
@@ -141,9 +141,8 @@ impl Configuration {
 
         // Create the config dir, if it doesn't exist yet
         if !config_dir.exists() {
-            create_dir_all(&config_dir).map_err(|err| {
-                Error::IoPathError(config_dir.clone(), "creating config dir", err)
-            })?;
+            create_dir_all(&config_dir)
+                .map_err(|err| Error::IoPath(config_dir.clone(), "creating config dir", err))?;
         }
 
         // Serialize the configuration file and write it to disk
@@ -158,9 +157,9 @@ impl Configuration {
 
         // Write the serialized content to the file.
         let mut file = File::create(config_path)
-            .map_err(|err| Error::IoPathError(config_dir.clone(), "creating settings file", err))?;
+            .map_err(|err| Error::IoPath(config_dir.clone(), "creating settings file", err))?;
         file.write_all(content.as_bytes())
-            .map_err(|err| Error::IoPathError(config_dir, "writing settings file", err))?;
+            .map_err(|err| Error::IoPath(config_dir, "writing settings file", err))?;
 
         Ok(())
     }

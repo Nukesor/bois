@@ -32,7 +32,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // This will allows us to detect any changes that were done to the system,
     // The changes done to the system will basically be the reverted actions of the changeset.
     let system_changes = match &previous_state {
-        Some(state) => host_to_state::create_changeset(&mut system_state, &state, &desired_state)?,
+        Some(state) => host_to_state::create_changeset(&mut system_state, state, &desired_state)?,
         None => None,
     };
 

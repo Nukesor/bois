@@ -54,7 +54,7 @@ pub fn handle_packages(
     for (manager, old_packages) in old_state.deployed_packages.iter() {
         // First up, check if there're any packages for this package manager at all.
         // If we cannot find a package manager, remove all packages that were deployed for it.
-        let Some(new_packages) = new_state.deployed_packages.get(&manager) else {
+        let Some(new_packages) = new_state.deployed_packages.get(manager) else {
             for package in old_packages {
                 changeset.push(super::Change::PackageChange(
                     super::PackageOperation::Remove {

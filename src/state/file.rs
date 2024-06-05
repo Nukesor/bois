@@ -64,7 +64,7 @@ pub fn read_file(
         directory.entries.push(Entry::Directory(sub_directory));
     } else if path.is_file() {
         let mut file_content = read_to_string(&path)
-            .map_err(|err| Error::IoPathError(path.clone(), "reading file at", err))?;
+            .map_err(|err| Error::IoPath(path.clone(), "reading file at", err))?;
 
         let mut file_config = FileConfig::default();
 

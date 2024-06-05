@@ -19,8 +19,7 @@ pub fn read_yaml<T: DeserializeOwned>(directory: &Path, filename: &str) -> Resul
     }
 
     let content =
-        read_to_string(&path).map_err(|err| Error::IoPathError(path.clone(), "reading", err))?;
+        read_to_string(&path).map_err(|err| Error::IoPath(path.clone(), "reading", err))?;
 
-    serde_yaml::from_str::<T>(&content)
-        .map_err(|err| Error::DeserializationError(path.clone(), err))
+    serde_yaml::from_str::<T>(&content).map_err(|err| Error::Deserialization(path.clone(), err))
 }

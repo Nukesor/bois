@@ -12,14 +12,14 @@ pub enum Error {
     FileNotFound(String, PathBuf),
 
     #[error("I/O error while {}:\n{}", .0, .1)]
-    IoError(String, std::io::Error),
+    Io(String, std::io::Error),
 
     #[error("Unexpected I/O error:\n{}", .0)]
-    RawIoError(#[from] std::io::Error),
+    RawIo(#[from] std::io::Error),
 
     #[error("I/O error at path {:?} while {}:\n{}", .0, .1, .2)]
-    IoPathError(PathBuf, &'static str, std::io::Error),
+    IoPath(PathBuf, &'static str, std::io::Error),
 
     #[error("Deserialization error for file {:?}:\n {}", .0, .1)]
-    DeserializationError(PathBuf, serde_yaml::Error),
+    Deserialization(PathBuf, serde_yaml::Error),
 }

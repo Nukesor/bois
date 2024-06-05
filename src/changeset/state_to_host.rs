@@ -23,7 +23,7 @@ pub fn create_changeset(
 
     // Create changeset for files and system services on group configs.
     for group in state.host.groups.iter() {
-        let group_changset = handle_group(&group, system_state)?;
+        let group_changset = handle_group(group, system_state)?;
         changeset.extend(group_changset);
     }
 

@@ -25,13 +25,15 @@ pub struct CompiledState {
 
 impl CompiledState {
     pub fn from_state(state: &State) -> Self {
-        let mut compiled_state = Self::default();
-        compiled_state.deployed_packages = state.packages.clone();
+        let mut compiled_state = Self {
+            deployed_packages: state.packages.clone(),
+            ..Default::default()
+        };
 
         handle_host(&mut compiled_state, &state.host);
 
         for group in state.host.groups.iter() {
-            handle_group(&mut compiled_state, &group);
+            handle_group(&mut compiled_state, group);
         }
 
         compiled_state
