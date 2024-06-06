@@ -60,7 +60,7 @@ pub fn uninstall_package(name: &str) -> Result<()> {
 /// Receive a list of **exlicitly** installed packages on the system.
 /// Ignore packages that are installed as a dependency, as they might be removed at any point in
 /// time when another package is uninstalled as a side-effect.
-pub fn get_installed_packages() -> Result<HashSet<String>> {
+pub fn explicit_packages() -> Result<HashSet<String>> {
     // Get all explicitly installed packages
     let output = Command::new("pacman")
         .args(["--query", "--quiet", "--foreign"])

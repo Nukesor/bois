@@ -53,7 +53,10 @@ fn handle_packages(
 
     // Compare all desired packages in the old config with the currently installed ones.
     for (manager, old_packages) in old_state.packages.iter() {
-        let installed_packages = system_state.installed_packages(*manager)?;
+        // We compare to all packages including dependencies.
+        // So in case package has been demoted to a dependency but is still installed,
+        // it won't show up as a detected change.
+        let installed_packages = system_state.packages(*manager)?;
         for old_package in old_packages {
             if !installed_packages.contains(old_package) {
                 // Check if the removed package is supposed to be there.

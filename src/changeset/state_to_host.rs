@@ -40,7 +40,10 @@ fn handle_packages(state: &State, system_state: &mut SystemState) -> Result<Chan
 
     // Compare all desired packages in the top-level config with the currently installed one's.
     for (manager, packages) in state.packages.iter() {
-        let installed_packages = system_state.installed_packages(*manager)?;
+        // We look at all installed packages, including dependencies.
+        // In caes some desired package has already been installed as a dependency,
+        // we shouldn't try to re-install it.
+        let installed_packages = system_state.packages(*manager)?;
         for package in packages {
             // If a package is not found, schedule it to be installed.
             if !installed_packages.contains(package) {

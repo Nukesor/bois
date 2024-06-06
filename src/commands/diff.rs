@@ -19,8 +19,11 @@ fn diff_packages(config: &Configuration) -> Result<()> {
 
     let mut untracked_changes_exist = false;
     for (manager, packages) in desired_state.packages {
-        // Get all untracked packages in a sorted list
-        let installed_packages = system_state.installed_packages(manager)?;
+        // Get all explicitly installed packages in a sorted list.
+        // We don't want to consider dependencies, as they're not important.
+        let installed_packages = system_state.explicit_packages(manager)?;
+
+        // Now filter all packages that are specified in the bois configuration.
         let mut untracked_packages: Vec<String> = installed_packages
             .into_iter()
             .filter(|pkg| !packages.contains(pkg))

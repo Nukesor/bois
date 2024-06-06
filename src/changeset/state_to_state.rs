@@ -68,7 +68,7 @@ pub fn handle_packages(
 
         // Now we compare the old and the new desired state, queuing removal of packages if they're
         // no longer explicitly installed.
-        let installed_packages = system_state.installed_packages(*manager)?;
+        let installed_packages = system_state.explicit_packages(*manager)?;
         for old_package in old_packages {
             if new_packages.contains(old_package) {
                 continue;

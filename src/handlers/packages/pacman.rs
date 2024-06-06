@@ -32,7 +32,7 @@ pub(super) fn install_package(name: &str) -> Result<()> {
 /// dependencies. Any dependencies that're still needed should be explicitly required.
 pub(super) fn uninstall_package(system_state: &mut SystemState, name: &str) -> Result<()> {
     println!("Uninstalling package {name} via pacman");
-    let installed_packages = system_state.installed_packages(PackageManager::Pacman)?;
+    let installed_packages = system_state.explicit_packages(PackageManager::Pacman)?;
     if !installed_packages.contains(name) {
         info!("Package {name} is already uninstalled.");
         return Ok(());
@@ -43,6 +43,9 @@ pub(super) fn uninstall_package(system_state: &mut SystemState, name: &str) -> R
         .output()
         .context("Failed to install pacman package {}")?;
 
+    // TODO: Handle the case where a package to be removed is a dependency of another installed
+    // package. In that case, it might be nice to check for that specific error and declare that
+    // package as a dependency instead.
     if !output.status.success() {
         bail!(
             "Failed to uninstall pacman package:\n{name}:\nStdout: {}\nStderr: {}",
@@ -58,10 +61,38 @@ pub(super) fn uninstall_package(system_state: &mut SystemState, name: &str) -> R
     Ok(())
 }
 
+/// Receive a list of **all** installed packages on the system, including dependencies.
+pub fn packages() -> Result<HashSet<String>> {
+    let args = Vec::from(["--query", "--quiet", "--native"]);
+
+    // Get all explicitly installed packages
+    let output = Command::new("pacman")
+        .args(args)
+        .output()
+        .context("Failed to read pacman packages list")?;
+
+    if !output.status.success() {
+        bail!(
+            "Failed to query installed pacman packages:\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        );
+    }
+
+    // Interpret the output as utf8 and split by lines.
+    // Each package is on its own line.
+    let packages =
+        String::from_utf8(output.stdout).context("Couldn't parse pacman output as utf-8")?;
+
+    let packages: HashSet<String> = packages.lines().map(ToOwned::to_owned).collect();
+
+    Ok(packages)
+}
+
 /// Receive a list of **exlicitly** installed packages on the system.
 /// Ignore packages that are installed as a dependency, as they might be removed at any point in
 /// time when another package is uninstalled as a side-effect.
-pub fn get_installed_packages() -> Result<HashSet<String>> {
+pub fn explicit_packages() -> Result<HashSet<String>> {
     let args = Vec::from(["--query", "--quiet", "--explicit", "--native"]);
 
     // Get all explicitly installed packages
