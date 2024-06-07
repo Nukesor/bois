@@ -1,10 +1,11 @@
 use anyhow::Result;
 
 use crate::{changeset::Change, system_state::SystemState};
-
-use self::packages::handle_package_operation;
+use packages::handle_package_operation;
+use paths::handle_path_operation;
 
 pub mod packages;
+pub mod paths;
 pub mod services;
 
 /// Execute a full set of changes.
@@ -15,6 +16,7 @@ pub fn handle_changeset(system_state: &mut SystemState, changeset: &[Change]) ->
     for change in changeset.iter() {
         match change {
             Change::PackageChange(op) => handle_package_operation(system_state, op)?,
+            Change::PathChange(op) => handle_path_operation(system_state, op)?,
         }
     }
 
