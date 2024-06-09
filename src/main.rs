@@ -51,7 +51,8 @@ fn init_app(verbosity: u8) -> Result<()> {
         0 => LevelFilter::Error,
         1 => LevelFilter::Warn,
         2 => LevelFilter::Info,
-        _ => LevelFilter::Debug,
+        3 => LevelFilter::Debug,
+        _ => LevelFilter::Trace,
     };
     Builder::new().filter_level(level).init();
 

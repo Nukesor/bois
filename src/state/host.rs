@@ -6,9 +6,9 @@ use std::{
 use anyhow::{bail, Result};
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{handlers::packages::PackageManager, helper::read_yaml};
+use crate::{error::Error, handlers::packages::PackageManager, helper::read_yaml};
 
-use super::{directory::*, group::Group};
+use super::{directory::*, file::read_file, group::Group};
 
 /// A Host is related to a
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -60,17 +60,18 @@ pub fn read_host(root: &Path, name: &str) -> Result<Host> {
     // Read the `host.yml` from the host directory.
     let config = read_yaml::<HostConfig>(&host_dir, "host")?;
 
-    // Recursively read all files in directory
-    let files = Directory::new(&host_dir);
-    //let entries = std::fs::read_dir(&host_dir)
-    //    .map_err(|err| Error::IoPathError(host_dir.clone(), "reading", err))?;
-    //// Go through all entries in this directory
-    //for entry in entries {
-    //    let entry =
-    //        entry.map_err(|err| Error::IoPathError(host_dir.clone(), "reading entry", err))?;
+    // Now we recursively read all files in the host directory
+    // First, read the directory entries.
+    let mut files = Directory::new(&host_dir);
+    let entries = std::fs::read_dir(&host_dir)
+        .map_err(|err| Error::IoPath(host_dir.clone(), "reading host dir", err))?;
+    // Now got through all entries in this directory and recursively read them.
+    for entry in entries {
+        let entry =
+            entry.map_err(|err| Error::IoPath(host_dir.clone(), "reading host dir entry", err))?;
 
-    //    read_file(root, &Path::new(""), entry, &mut files)?;
-    //}
+        read_file(root, &host_dir, entry, &mut files)?;
+    }
 
     Ok(Host {
         config,

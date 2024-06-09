@@ -1,6 +1,6 @@
 whitespace = _{ " " | "\t" | NEWLINE }
 
-// Viable comment prefixes for various file formats.
+// Comment syntax for various file formats.
 // Can be prefixed with any amount of spaces.
 comment = _{ whitespace* ~ ("//" | "#"  | "--" | "%" | "/*" | "*" | "**" | "*/" | "" )}
 

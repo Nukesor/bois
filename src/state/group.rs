@@ -6,9 +6,9 @@ use std::{
 use anyhow::Result;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{handlers::packages::PackageManager, helper::read_yaml};
+use crate::{error::Error, handlers::packages::PackageManager, helper::read_yaml};
 
-use super::directory::*;
+use super::{directory::*, file::read_file};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Group {
@@ -47,16 +47,16 @@ pub fn read_group(root: &Path, name: &str) -> Result<Group> {
     let config = read_yaml::<GroupConfig>(&group_dir, "group")?;
 
     // Recursively read all files in directory
-    let directory = Directory::new(&group_dir);
-    //let entries = std::fs::read_dir(&group_dir)
-    //    .map_err(|err| Error::IoPathError(group_dir.clone(), "reading", err))?;
-    //// Go through all entries in this directory
-    //for entry in entries {
-    //    let entry =
-    //        entry.map_err(|err| Error::IoPathError(group_dir.clone(), "reading entry", err))?;
+    let mut directory = Directory::new(&group_dir);
+    let entries = std::fs::read_dir(&group_dir)
+        .map_err(|err| Error::IoPath(group_dir.clone(), "reading", err))?;
 
-    //    read_file(root, &Path::new(""), entry, &mut files)?;
-    //}
+    // Go through all entries in this directory
+    for entry in entries {
+        let entry = entry.map_err(|err| Error::IoPath(group_dir.clone(), "reading entry", err))?;
+
+        read_file(root, &group_dir, entry, &mut directory)?;
+    }
 
     Ok(Group {
         name: name.to_string(),
