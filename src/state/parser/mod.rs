@@ -1,4 +1,7 @@
-use std::{fs::read_to_string, path::PathBuf};
+use std::{
+    fs::read_to_string,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{bail, Context, Result};
 use log::debug;
@@ -55,13 +58,15 @@ pub fn read_file_with_parser(path: PathBuf) -> Result<File> {
 
     // Create a new representation of a file with all necessary information.
     Ok(File {
-        path,
+        relative_path: path,
         config: file_config,
         content: file_content,
     })
 }
 
-pub fn parse_file(path: PathBuf) -> Result<File> {
+pub fn parse_file(root: &Path, relative_path: &Path) -> Result<File> {
+    let path = root.join(relative_path);
+
     let full_file_content =
         read_to_string(&path).map_err(|err| Error::IoPath(path.clone(), "reading file at", err))?;
 
@@ -79,7 +84,7 @@ pub fn parse_file(path: PathBuf) -> Result<File> {
     // FileConfig straight away.
     if !contains_config {
         return Ok(File {
-            path,
+            relative_path: path,
             content: full_file_content,
             config: FileConfig::default(),
         });
@@ -139,7 +144,7 @@ pub fn parse_file(path: PathBuf) -> Result<File> {
     let content = lines_iter.collect::<Vec<&str>>().join("\n");
 
     Ok(File {
-        path,
+        relative_path: relative_path.to_path_buf(),
         config,
         content,
     })

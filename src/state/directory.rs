@@ -10,7 +10,10 @@ use crate::{error::Error, helper::read_yaml};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Directory {
-    pub path: PathBuf,
+    /// The relative path to the source file.
+    /// Relative to the root directory of the configuration (i.e. Host/Group directory).
+    /// We need this information to determine the destination on the target file system.
+    pub relative_path: PathBuf,
     pub entries: Vec<Entry>,
     #[serde(default)]
     pub config: DirectoryConfig,
@@ -19,7 +22,7 @@ pub struct Directory {
 impl Directory {
     pub fn new(path: &Path) -> Directory {
         Directory {
-            path: path.to_path_buf(),
+            relative_path: path.to_path_buf(),
             ..Directory::default()
         }
     }
@@ -51,7 +54,7 @@ pub fn read_directory(root: &Path, relative_path: &Path) -> Result<Directory> {
 
     // Create the representation for this directory
     let mut directory = Directory {
-        path: relative_path.to_path_buf(),
+        relative_path: relative_path.to_path_buf(),
         entries: Vec::new(),
         config: directory_config,
     };

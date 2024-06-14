@@ -16,9 +16,10 @@ pub enum Entry {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct File {
-    /// The path to the source file.
-    /// Relative to the root directory of the configuration.
-    pub path: PathBuf,
+    /// The relative path to the source file.
+    /// Relative to the root directory of the configuration (i.e. Host/Group directory).
+    /// We need this information to determine the destination on the target file system.
+    pub relative_path: PathBuf,
 
     /// The parsed configuration block for this file, if one exists.
     #[serde(default)]
@@ -30,6 +31,10 @@ pub struct File {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FileConfig {
+    /// If this is set, this path will be used as a destination.
+    /// If it's an relative path, it'll be treated as relative to the default target directory.
+    /// If it's an absolute path, that absolute path will be used.
+    pub path: Option<PathBuf>,
     pub owner: Option<String>,
     pub group: Option<String>,
     /// This is represented as a octal `Oo755` in yaml.
@@ -53,16 +58,16 @@ pub fn read_file(
         return Ok(());
     }
 
-    let entry_relative_path = relative_path.to_path_buf().join(&file_name);
+    let relative_path = relative_path.to_path_buf().join(&file_name);
 
     // Recursively discover new directories
     let path = entry.path();
     if path.is_dir() {
-        let sub_directory = read_directory(root, &entry_relative_path)?;
+        let sub_directory = read_directory(root, &relative_path)?;
         directory.entries.push(Entry::Directory(sub_directory));
     } else if path.is_file() {
         trace!("Reading file {path:?}");
-        let file = parse_file(path)?;
+        let file = parse_file(root, &relative_path)?;
         directory.entries.push(Entry::File(file));
     }
 
