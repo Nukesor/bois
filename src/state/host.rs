@@ -8,7 +8,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::{error::Error, handlers::packages::PackageManager, helper::read_yaml};
 
-use super::{directory::*, file::read_file, group::Group};
+use super::{directory::*, file::read_entry, group::Group};
 
 /// A Host is related to a
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -70,7 +70,12 @@ pub fn read_host(root: &Path, name: &str) -> Result<Host> {
         let entry =
             entry.map_err(|err| Error::IoPath(host_dir.clone(), "reading host dir entry", err))?;
 
-        read_file(root, &host_dir, entry, &mut files)?;
+        // Don't include the host configuration file. It's already handled above
+        //if entry.file_name() == "host.yml" {
+        //    continue;
+        //}
+
+        read_entry(&host_dir, Path::new(""), entry, &mut files, None)?;
     }
 
     Ok(Host {

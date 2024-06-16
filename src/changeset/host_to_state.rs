@@ -9,13 +9,13 @@ use crate::{
     system_state::SystemState,
 };
 
-use super::{Change, ChangeSet, PackageOperation};
+use super::{Change, Changeset, PackageOperation};
 
 pub fn create_changeset(
     system_state: &mut SystemState,
     old_state: &State,
     new_state: &State,
-) -> Result<Option<ChangeSet>> {
+) -> Result<Option<Changeset>> {
     let mut changeset = Vec::new();
 
     // Create changeset for missing packages.
@@ -48,7 +48,7 @@ fn handle_packages(
     system_state: &mut SystemState,
     old_state: &State,
     new_state: &State,
-) -> Result<ChangeSet> {
+) -> Result<Changeset> {
     let mut changeset = Vec::new();
 
     // Compare all desired packages in the old config with the currently installed ones.
@@ -81,7 +81,7 @@ fn handle_packages(
 
 /// Create the changeset that's needed to reach the desired state of the [HostConfig] from the
 /// current system's state.
-fn handle_host(_host: &Host, _system_state: &mut SystemState) -> Result<ChangeSet> {
+fn handle_host(_host: &Host, _system_state: &mut SystemState) -> Result<Changeset> {
     let changeset = Vec::new();
 
     Ok(changeset)
@@ -89,7 +89,7 @@ fn handle_host(_host: &Host, _system_state: &mut SystemState) -> Result<ChangeSe
 
 /// Create the changeset that's needed to reach the desired state of a given [GroupConfig] from the
 /// current system's state.
-fn handle_group(_group: &Group, _system_state: &mut SystemState) -> Result<ChangeSet> {
+fn handle_group(_group: &Group, _system_state: &mut SystemState) -> Result<Changeset> {
     let changeset = Vec::new();
 
     Ok(changeset)

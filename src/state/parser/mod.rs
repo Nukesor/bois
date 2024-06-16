@@ -64,7 +64,12 @@ pub fn read_file_with_parser(path: PathBuf) -> Result<File> {
     })
 }
 
-pub fn parse_file(root: &Path, relative_path: &Path) -> Result<File> {
+/// Read and, if applicable, parse a single configuration file.
+pub fn read_file(
+    root: &Path,
+    relative_path: &Path,
+    path_override: Option<PathBuf>,
+) -> Result<File> {
     let path = root.join(relative_path);
 
     let full_file_content =
@@ -84,7 +89,7 @@ pub fn parse_file(root: &Path, relative_path: &Path) -> Result<File> {
     // FileConfig straight away.
     if !contains_config {
         return Ok(File {
-            relative_path: path,
+            relative_path: relative_path.to_path_buf(),
             content: full_file_content,
             config: FileConfig::default(),
         });
@@ -138,7 +143,15 @@ pub fn parse_file(root: &Path, relative_path: &Path) -> Result<File> {
     }
 
     debug!("Found config block in file {path:?}:\n{config_content:#?}");
-    let config = serde_yaml::from_str(&config_content.join("\n"))?;
+    let mut config: FileConfig = serde_yaml::from_str(&config_content.join("\n"))?;
+
+    // Check if there's an active path override from a parent directory.
+    // If the file doesn't have its own override, use the one from the parent.
+    if let Some(path_override) = path_override {
+        if config.path.is_none() {
+            config.path = Some(path_override)
+        }
+    }
 
     // Now, read the rest of the actual
     let content = lines_iter.collect::<Vec<&str>>().join("\n");

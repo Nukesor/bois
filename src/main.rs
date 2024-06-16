@@ -1,6 +1,8 @@
 // Allow dead code while prototyping.
+#![allow(clippy::assigning_clones)]
+// Allow dead code while prototyping.
 #![allow(dead_code)]
-use anyhow::Result;
+use anyhow::{bail, Result};
 use clap::Parser;
 use log::LevelFilter;
 use pretty_env_logger::env_logger::Builder;
@@ -42,6 +44,7 @@ fn main() -> Result<()> {
             "Bois target directory doesn't exist: {:?}",
             config.target_dir()
         );
+        bail!("Target directory not found");
     }
 
     if !config.bois_dir().exists() {
@@ -49,6 +52,7 @@ fn main() -> Result<()> {
             "Bois config directory doesn't exist: {:?}",
             config.bois_dir()
         );
+        bail!("Config directory not found");
     }
 
     run_subcommand(config, &args.subcommand)?;

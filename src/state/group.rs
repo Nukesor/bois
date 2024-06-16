@@ -8,7 +8,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::{error::Error, handlers::packages::PackageManager, helper::read_yaml};
 
-use super::{directory::*, file::read_file};
+use super::{directory::*, file::read_entry};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Group {
@@ -55,7 +55,12 @@ pub fn read_group(root: &Path, name: &str) -> Result<Group> {
     for entry in entries {
         let entry = entry.map_err(|err| Error::IoPath(group_dir.clone(), "reading entry", err))?;
 
-        read_file(root, &group_dir, entry, &mut directory)?;
+        // Don't include the group configuration file. It's already handled above
+        if entry.file_name() == "group.yml" {
+            continue;
+        }
+
+        read_entry(&group_dir, Path::new(""), entry, &mut directory, None)?;
     }
 
     Ok(Group {

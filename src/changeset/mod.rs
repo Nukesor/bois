@@ -12,7 +12,7 @@ pub mod state_to_state;
 /// executed by bois to reach the desired system state.
 ///
 /// This includes all possible operations for all stages.
-pub type ChangeSet = Vec<Change>;
+pub type Changeset = Vec<Change>;
 
 #[derive(Debug)]
 pub enum Change {

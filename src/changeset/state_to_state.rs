@@ -8,7 +8,7 @@ use log::info;
 
 use crate::{state::State, system_state::SystemState};
 
-use super::{compiled_state::CompiledState, ChangeSet};
+use super::{compiled_state::CompiledState, Changeset};
 
 /// Compare a new desired State with a previously deployed state.
 /// This is used to determine any necessary **cleanup** operations, in case the previous deployment
@@ -22,8 +22,8 @@ pub fn create_changeset(
     system_state: &mut SystemState,
     old_state: &State,
     new_state: &State,
-) -> Result<Option<ChangeSet>> {
-    let mut changeset = ChangeSet::new();
+) -> Result<Option<Changeset>> {
+    let mut changeset = Changeset::new();
 
     let old_compiled_state = CompiledState::from_state(old_state);
     let new_compiled_state = CompiledState::from_state(new_state);
@@ -47,7 +47,7 @@ pub fn create_changeset(
 /// If not, queue a change to remove it.
 pub fn handle_packages(
     system_state: &mut SystemState,
-    changeset: &mut ChangeSet,
+    changeset: &mut Changeset,
     old_state: &CompiledState,
     new_state: &CompiledState,
 ) -> Result<()> {

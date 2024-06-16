@@ -7,7 +7,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use super::directory::*;
 use crate::constants::{CURRENT_GROUP, CURRENT_USER};
-use crate::state::parser::parse_file;
+use crate::state::parser::read_file;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Entry {
@@ -47,38 +47,55 @@ pub struct FileConfig {
     pub template: bool,
 }
 
-/// Read and, if applicable, parse a single configuration file.
-/// Add the file to the `&mut Directory`.
+/// Process a directory entry.
+/// This function is a convenient wrapper that calls the `read_{directory|file}` functions.
+/// In here we do some preparation, such as appending the name of the entry to the relative path
+/// and the path_override, if applicable.
 ///
-pub fn read_file(
+/// Params:
+/// `root` The root of the bois configuration directory.
+///        We need this to be able to read the file from the filesystem.
+/// `entry` The actual file entry.
+/// `directory` The representation of the directory we're currently processing.
+///             All files/directories must be added to this `Directory`.
+pub fn read_entry(
     root: &Path,
     relative_path: &Path,
     entry: DirEntry,
     directory: &mut Directory,
+    mut path_override: Option<PathBuf>,
 ) -> Result<()> {
-    let file_name = entry.file_name().to_string_lossy().to_string();
+    let file_name = entry.file_name();
 
     // Don't include our own configuration files.
+    // Those are already handled in the `read_directory` function.
     if file_name == "bois.yml" {
         return Ok(());
     }
 
-    let relative_path = relative_path.to_path_buf().join(&file_name);
+    let relative_path = relative_path.join(&file_name);
+
+    // If there's an active override, adjust the override for the next level.
+    if let Some(path) = path_override {
+        path_override = Some(path.join(&file_name));
+    }
 
     // Recursively discover new directories
     let path = entry.path();
     if path.is_dir() {
-        let sub_directory = read_directory(root, &relative_path)?;
+        let sub_directory = read_directory(root, &relative_path, path_override)?;
         directory.entries.push(Entry::Directory(sub_directory));
     } else if path.is_file() {
         trace!("Reading file {path:?}");
-        let file = parse_file(root, &relative_path)?;
+        let file = read_file(root, &relative_path, path_override)?;
         directory.entries.push(Entry::File(file));
     }
 
     Ok(())
 }
 
+/// This impl block contains convenience getters for file metadata, which fall back to
+/// default values.
 impl FileConfig {
     pub fn permissions(&self) -> u32 {
         self.permissions.unwrap_or(0o640)
