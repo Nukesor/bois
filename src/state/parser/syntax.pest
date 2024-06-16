@@ -5,10 +5,9 @@ whitespace = _{ " " | "\t" | NEWLINE }
 comment = _{ whitespace* ~ ("//" | "#"  | "--" | "%" | "/*" | "*" | "**" | "*/" | "" )}
 
 // The bois config is a block that's in between these start/end
-start_block = _{ comment ~ whitespace* ~ "bois_config_start" }
-end_block = _{ comment ~ whitespace* ~ "bois_config_end" }
+config_delimiter = _{ comment ~ whitespace* ~ "bois_config" }
 
-end_block_condition = _{ end_block ~ ANY* }
+config_end_condition = _{ config_delimiter ~ ANY* }
 
 // Allow multiple lines of input.
 // Each line is only allowed to consist of a comment prefix followed by characters
@@ -17,7 +16,7 @@ line_behind_comment = @{ (!(NEWLINE) ~ ANY)* }
 config_line = _{ comment ~ line_behind_comment }
 // Stop the config content as soon as we hit the end block
 config_content = {
-    ( !end_block_condition ~ config_line)*
+    ( !config_end_condition ~ config_line)*
 }
 
 // The rest of the file
@@ -28,5 +27,5 @@ file_content = {
 // Expect a commented block, that's sandwhiched between the prefix and suffix.
 // It can be anywhere in the config file.
 full_config = {
-    SOI ~ start_block ~ config_content ~ end_block ~ file_content ~ EOI
+    SOI ~ config_delimiter ~ config_content ~ config_delimiter ~ file_content ~ EOI
 }

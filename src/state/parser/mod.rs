@@ -27,7 +27,7 @@ pub fn read_file_with_parser(path: PathBuf) -> Result<File> {
     if file_content
         .lines()
         .next()
-        .map(|line| line.contains("bois_config_start"))
+        .map(|line| line.contains("bois_config"))
         .unwrap_or(false)
     {
         // Parse the bois configuration block
@@ -70,13 +70,13 @@ pub fn parse_file(root: &Path, relative_path: &Path) -> Result<File> {
     let full_file_content =
         read_to_string(&path).map_err(|err| Error::IoPath(path.clone(), "reading file at", err))?;
 
-    // Check, if the first line of the file contains the bois_config_start keyword.
+    // Check, if the first line of the file contains the bois_config keyword.
     // If so, there's a bois config block in that file and we have to parse it.
     let contains_config = {
         let mut lines_iter = full_file_content.lines();
         lines_iter
             .next()
-            .map(|line| line.contains("bois_config_start"))
+            .map(|line| line.contains("bois_config"))
             .unwrap_or(false)
     };
 
@@ -91,21 +91,21 @@ pub fn parse_file(root: &Path, relative_path: &Path) -> Result<File> {
     }
 
     // If we have a config block.
-    // 1. Take all lines between `bois_config_start` and `bois_config_end`. For each line
+    // 1. Take all lines between `bois_config` and `bois_config`. For each line
     //   - Strip any comment trailing spaces
     //   - Strip any comment symbols
     // 2. Deserialize the config
 
     // Create an iterator over lines, as we have to read and clean up lines until we hit
-    // `bois_config_end`.
+    // `bois_config`.
     let mut lines_iter = full_file_content.lines();
-    // Skip the first line, since we know that it's the bois_config_start line.
+    // Skip the first line, since we know that it's the bois_config line.
     lines_iter.next();
 
     let mut config_complete = false;
     let mut config_content: Vec<String> = Vec::new();
     for line in lines_iter.by_ref() {
-        if line.contains("bois_config_end") {
+        if line.contains("bois_config") {
             config_complete = true;
             break;
         }
@@ -134,7 +134,7 @@ pub fn parse_file(root: &Path, relative_path: &Path) -> Result<File> {
     }
 
     if !config_complete {
-        bail!("Didn't encounter 'bois_config_end' block while reading file {path:?}");
+        bail!("Didn't encounter 'bois_config' block while reading file {path:?}");
     }
 
     debug!("Found config block in file {path:?}:\n{config_content:#?}");
