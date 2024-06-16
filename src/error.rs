@@ -22,4 +22,7 @@ pub enum Error {
 
     #[error("Deserialization error for file {:?}:\n {}", .0, .1)]
     Deserialization(PathBuf, serde_yaml::Error),
+
+    #[error("Permission error while {:?}", .0)]
+    Permission(&'static str),
 }

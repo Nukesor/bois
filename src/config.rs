@@ -28,9 +28,11 @@ pub struct Configuration {
     name: Option<String>,
 
     /// The bois directory, which contains all bois templates and alike.
+    /// This must be a path to an existing directory.
     bois_dir: PathBuf,
 
     /// The target directory to which the files should be deployed.
+    /// This must be a path to an existing directory.
     target_dir: PathBuf,
 }
 
@@ -74,10 +76,10 @@ impl Configuration {
         expand_home(&self.bois_dir)
     }
 
-    ///// The target directory to which the configuration should be deployed.
-    //pub fn target_dir(&self) -> PathBuf {
-    //    expand_home(&self.bois_dir)
-    //}
+    /// The target directory to which the configuration should be deployed.
+    pub fn target_dir(&self) -> PathBuf {
+        expand_home(&self.target_dir)
+    }
 }
 
 impl Configuration {

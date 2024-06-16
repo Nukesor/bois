@@ -16,7 +16,7 @@ pub struct Host {
     /// The top-level configuration file for this host.
     pub config: HostConfig,
     /// The content of this group's directory.
-    pub files: Directory,
+    pub directory: Directory,
     /// Will contain all groups that have been specified as dependencies.
     pub groups: Vec<Group>,
 }
@@ -75,7 +75,7 @@ pub fn read_host(root: &Path, name: &str) -> Result<Host> {
 
     Ok(Host {
         config,
-        files,
+        directory: files,
         groups: Vec::new(),
     })
 }

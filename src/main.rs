@@ -9,6 +9,7 @@ mod args;
 mod changeset;
 mod commands;
 mod config;
+mod constants;
 mod error;
 mod handlers;
 mod helper;
@@ -33,6 +34,21 @@ fn main() -> Result<()> {
     // to given path or to the default configuration path.
     if !found_config {
         config.save(&args.config)?;
+    }
+
+    // Do some basic sanity checks
+    if !config.target_dir().exists() {
+        log::error!(
+            "Bois target directory doesn't exist: {:?}",
+            config.target_dir()
+        );
+    }
+
+    if !config.bois_dir().exists() {
+        log::error!(
+            "Bois config directory doesn't exist: {:?}",
+            config.bois_dir()
+        );
     }
 
     run_subcommand(config, &args.subcommand)?;

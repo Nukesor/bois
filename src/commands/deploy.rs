@@ -46,7 +46,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
 
     // ---------- Step 3: Detect changes that need cleanup ----------
     // Create and execute the changeset to reach the actual desired state.
-    let new_changes = state_to_host::create_changeset(&desired_state, &mut system_state)?;
+    let new_changes = state_to_host::create_changeset(&config, &desired_state, &mut system_state)?;
 
     // ------------------- Execution phase -------------------
     // We now start to actually execute commands.

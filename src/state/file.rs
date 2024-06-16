@@ -6,6 +6,7 @@ use log::trace;
 use serde_derive::{Deserialize, Serialize};
 
 use super::directory::*;
+use crate::constants::{CURRENT_GROUP, CURRENT_USER};
 use crate::state::parser::parse_file;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -37,9 +38,13 @@ pub struct FileConfig {
     pub path: Option<PathBuf>,
     pub owner: Option<String>,
     pub group: Option<String>,
-    /// This is represented as a octal `Oo755` in yaml.
+    /// This is represented as a octal `Oo640` in yaml.
     /// It's automatically parsed to a u32, which can then be used by the std lib.
     pub permissions: Option<u32>,
+    /// Whether this file should be treated as a template.
+    /// Defaults to `false` to prevent unwanted behavior.
+    #[serde(default)]
+    pub template: bool,
 }
 
 /// Read and, if applicable, parse a single configuration file.
@@ -72,4 +77,18 @@ pub fn read_file(
     }
 
     Ok(())
+}
+
+impl FileConfig {
+    pub fn permissions(&self) -> u32 {
+        self.permissions.unwrap_or(0o640)
+    }
+
+    pub fn owner(&self) -> String {
+        self.owner.clone().unwrap_or(CURRENT_USER.clone())
+    }
+
+    pub fn group(&self) -> String {
+        self.group.clone().unwrap_or(CURRENT_GROUP.clone())
+    }
 }

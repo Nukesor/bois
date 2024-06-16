@@ -109,6 +109,7 @@ dependencies = [
  "dirs",
  "dotenv",
  "hostname",
+ "lazy_static",
  "log",
  "pest",
  "pest_derive",
@@ -124,6 +125,7 @@ dependencies = [
  "strum_macros",
  "tera",
  "thiserror",
+ "users",
 ]
 
 [[package]]
@@ -1399,6 +1401,16 @@ name = "unsafe-libyaml"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1e5fa573d8ac5f1a856f8d7be41d390ee973daf97c806b2c1a465e4e1406e68"
+
+[[package]]
+name = "users"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24cc0f6d6f267b73e5a2cadf007ba8f9bc39c6a6f9666f8cf25ea809a153b032"
+dependencies = [
+ "libc",
+ "log",
+]
 
 [[package]]
 name = "version_check"
