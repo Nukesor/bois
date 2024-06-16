@@ -9,7 +9,9 @@ use crate::{changeset::PackageOperation, system_state::SystemState};
 pub mod pacman;
 pub mod paru;
 
-#[derive(Hash, PartialEq, Eq, Clone, Copy, Debug, Display, Deserialize, Serialize)]
+#[derive(
+    Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Display, Deserialize, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum PackageManager {

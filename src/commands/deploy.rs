@@ -2,11 +2,12 @@ use anyhow::Result;
 use log::trace;
 
 use crate::{
-    changeset::{host_to_state, state_to_host, state_to_state},
+    changeset::{host_to_state, state_to_host, state_to_state, Change},
     config::Configuration,
     handlers::handle_changeset,
     state::State,
     system_state::SystemState,
+    ui::{print_package_additions, print_path_changes},
 };
 
 pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
@@ -73,12 +74,38 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
 
     // ---------- Step 6: Execute actual new deployment tasks ----------
     if let Some(changes) = new_changes {
-        println!("New changes that need to be deployed:");
-        for change in changes.iter() {
-            println!("  {change:?}");
+        // Filter all package related changes.
+        let (package_changes, rest): (Vec<_>, Vec<_>) = changes
+            .into_iter()
+            .partition(|change| matches!(change, Change::PackageChange(_)));
+
+        // Print all package related changes .
+        if !package_changes.is_empty() {
+            println!("The following packages are going to be installed:\n");
+            print_package_additions(&package_changes);
+
+            println!();
         }
+
+        // Print all file related changes.
+        let (path_changes, _service_changes): (Vec<_>, Vec<_>) = rest
+            .into_iter()
+            .partition(|change| matches!(change, Change::PathChange(_)));
+
+        if !path_changes.is_empty() {
+            println!("The following file changes are going to be deployed:\n");
+            print_path_changes(&path_changes);
+            println!();
+        }
+
+        // Execute all package related changes.
         if !dry_run {
-            handle_changeset(&mut system_state, &changes)?;
+            handle_changeset(&mut system_state, &package_changes)?;
+        }
+
+        // Execute all path related changes.
+        if !dry_run {
+            handle_changeset(&mut system_state, &path_changes)?;
         }
     }
 
