@@ -71,9 +71,9 @@ pub fn read_host(root: &Path, name: &str) -> Result<Host> {
             entry.map_err(|err| Error::IoPath(host_dir.clone(), "reading host dir entry", err))?;
 
         // Don't include the host configuration file. It's already handled above
-        //if entry.file_name() == "host.yml" {
-        //    continue;
-        //}
+        if entry.file_name() == "host.yml" {
+            continue;
+        }
 
         read_entry(&host_dir, Path::new(""), entry, &mut files, None)?;
     }

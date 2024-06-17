@@ -94,7 +94,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
 
         if !path_changes.is_empty() {
             println!("The following file changes are going to be deployed:\n");
-            print_path_changes(&path_changes);
+            print_path_changes(&path_changes)?;
             println!();
         }
 
