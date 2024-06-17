@@ -1,11 +1,11 @@
-use std::path::Path;
+use std::{os::unix::fs::PermissionsExt, path::Path};
 
 use anyhow::Result;
 use file_owner::PathExt;
 
 use crate::error::Error;
 
-pub fn create_directory(path: &Path, _permissions: &u32, owner: &str, group: &str) -> Result<()> {
+pub fn create_directory(path: &Path, permissions: &u32, owner: &str, group: &str) -> Result<()> {
     // A previous change might have already created this directory.
     if !path.exists() {
         // Create the directory
@@ -13,7 +13,9 @@ pub fn create_directory(path: &Path, _permissions: &u32, owner: &str, group: &st
             .map_err(|err| Error::IoPath(path.to_path_buf(), "creating directory.", err))?;
     }
 
-    // TODO: Figure out a neat way to handle permissions.
+    let metadata = std::fs::metadata(path)
+        .map_err(|err| Error::IoPath(path.to_path_buf(), "reading metadata", err))?;
+    metadata.permissions().set_mode(*permissions);
 
     path.set_owner(owner)
         .map_err(|err| Error::FileOwnership(path.to_path_buf(), "setting owner", err))?;
@@ -30,8 +32,11 @@ pub fn modify_directory(
     owner: &Option<String>,
     group: &Option<String>,
 ) -> Result<()> {
-    if let Some(_permissions) = permissions {
-        // TODO: Figure out a neat way to handle permissions.
+    if let Some(permissions) = permissions {
+        let metadata = std::fs::metadata(path)
+            .map_err(|err| Error::IoPath(path.to_path_buf(), "reading metadata", err))?;
+
+        metadata.permissions().set_mode(*permissions);
     }
 
     if let Some(owner) = owner {

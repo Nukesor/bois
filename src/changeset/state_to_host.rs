@@ -15,7 +15,8 @@ use crate::{
 };
 
 use super::{
-    Change, Changeset, DirectoryOperation, FileOperation, PackageOperation, PathOperation,
+    helper::equal_permissions, Change, Changeset, DirectoryOperation, FileOperation,
+    PackageOperation, PathOperation,
 };
 
 pub fn create_changeset(
@@ -156,7 +157,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
                 .map_err(|err| Error::IoPath(path.clone(), "reading metadata", err))?;
 
             // Check whether permissions patch
-            if metadata.permissions().mode() != file.config.permissions() {
+            if !equal_permissions(metadata.permissions().mode(), file.config.permissions()) {
                 println!(
                     "File: {path:?} {:#o} vs {:#o}",
                     metadata.permissions().mode(),
@@ -243,7 +244,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
                 .map_err(|err| Error::IoPath(path.clone(), "reading metadata", err))?;
 
             // Check whether permissions patch
-            if metadata.permissions().mode() != dir.config.permissions() {
+            if !equal_permissions(metadata.permissions().mode(), dir.config.permissions()) {
                 modified_permissions = Some(dir.config.permissions());
             }
 

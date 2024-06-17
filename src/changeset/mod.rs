@@ -7,6 +7,7 @@ pub mod host_to_state;
 pub mod state_to_host;
 pub mod state_to_state;
 //pub mod tree;
+pub mod helper;
 
 /// This data struct represents the set of all changes that're going to be
 /// executed by bois to reach the desired system state.
