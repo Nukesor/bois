@@ -157,6 +157,11 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
 
             // Check whether permissions patch
             if metadata.permissions().mode() != file.config.permissions() {
+                println!(
+                    "File: {path:?} {:#o} vs {:#o}",
+                    metadata.permissions().mode(),
+                    file.config.permissions()
+                );
                 modified_permissions = Some(file.config.permissions());
             }
 

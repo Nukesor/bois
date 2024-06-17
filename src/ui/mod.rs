@@ -53,13 +53,16 @@ pub fn print_path_changes(changes: &Changeset) {
                 }
                 crate::changeset::FileOperation::Modify {
                     path,
+                    content,
                     permissions,
                     owner,
                     group,
-                    ..
                 } => {
                     println!("Changes for file:");
                     println!("  Path: {path:?}");
+                    if let Some(_content) = content {
+                        println!("  Content changed");
+                    }
                     if let Some(permissions) = permissions {
                         println!("  Mod: {permissions:#o}");
                     }
@@ -70,7 +73,7 @@ pub fn print_path_changes(changes: &Changeset) {
                         println!("  Group: {group}");
                     }
                 }
-                crate::changeset::FileOperation::Delete => continue,
+                crate::changeset::FileOperation::Delete { .. } => continue,
             },
             PathOperation::Directory(op) => match op {
                 crate::changeset::DirectoryOperation::Create {

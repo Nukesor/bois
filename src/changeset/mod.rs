@@ -70,7 +70,9 @@ pub enum FileOperation {
         owner: Option<String>,
         group: Option<String>,
     },
-    Delete,
+    Delete {
+        path: PathBuf,
+    },
 }
 
 /// This enum represents all possible operations for directories.

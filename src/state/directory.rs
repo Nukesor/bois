@@ -105,7 +105,7 @@ pub fn read_directory(
 /// default values.
 impl DirectoryConfig {
     pub fn permissions(&self) -> u32 {
-        self.permissions.unwrap_or(0o750)
+        self.permissions.unwrap_or(0o755)
     }
 
     pub fn owner(&self) -> String {

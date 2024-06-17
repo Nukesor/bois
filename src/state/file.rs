@@ -98,7 +98,7 @@ pub fn read_entry(
 /// default values.
 impl FileConfig {
     pub fn permissions(&self) -> u32 {
-        self.permissions.unwrap_or(0o640)
+        self.permissions.unwrap_or(0o644)
     }
 
     pub fn owner(&self) -> String {

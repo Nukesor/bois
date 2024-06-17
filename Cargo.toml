@@ -14,6 +14,7 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "cargo"] }
 dirs = "4"
 dotenv = "0.15"
+file-owner = "0.1"
 lazy_static = "1"
 log = "0.4"
 pest = "2"
