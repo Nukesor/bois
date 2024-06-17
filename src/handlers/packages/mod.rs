@@ -13,7 +13,7 @@ pub mod paru;
     Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Display, Deserialize, Serialize,
 )]
 #[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
+#[strum(serialize_all = "PascalCase")]
 pub enum PackageManager {
     Pacman,
     Paru,

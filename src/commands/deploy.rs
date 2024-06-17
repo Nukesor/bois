@@ -81,7 +81,6 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
 
         // Print all package related changes .
         if !package_changes.is_empty() {
-            println!("The following packages are going to be installed:\n");
             print_package_additions(&package_changes);
 
             println!();
@@ -93,7 +92,6 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
             .partition(|change| matches!(change, Change::PathChange(_)));
 
         if !path_changes.is_empty() {
-            println!("The following file changes are going to be deployed:\n");
             print_path_changes(&path_changes)?;
             println!();
         }

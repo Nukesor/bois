@@ -1,8 +1,10 @@
 use std::{collections::BTreeMap, fs::read_to_string, path::Path};
 
 use anyhow::Result;
-use comfy_table::{presets, Attribute as ComfyAttribute, Cell, Column, Table};
-use crossterm::style::{Attribute, Color, Stylize};
+use comfy_table::{
+    presets, Attribute as ComfyAttribute, Cell, CellAlignment, Column, ContentArrangement, Table,
+};
+use crossterm::style::{Color, Stylize};
 use similar::{ChangeTag, TextDiff};
 
 use crate::{
@@ -14,6 +16,7 @@ use crate::{
 
 pub fn print_package_additions(changes: &Changeset) {
     let mut sorted_changes: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
+    print_header("Package changes");
 
     for change in changes.iter() {
         if let Change::PackageChange(PackageOperation::Add { manager, name }) = change {
@@ -23,15 +26,18 @@ pub fn print_package_additions(changes: &Changeset) {
     }
 
     for (manager, packages) in sorted_changes {
-        println!("{manager}");
+        println!("{}:", manager.to_string().bold());
         for package in packages {
-            println!("  - {package}");
+            println!("  {} {package}", "+".green());
         }
     }
 }
 
 pub fn print_path_changes(changes: &Changeset) -> Result<()> {
-    for change in changes {
+    let mut change_iter = changes.iter().peekable();
+    print_header("File changes");
+
+    while let Some(change) = change_iter.next() {
         let op = match change {
             Change::PackageChange(_) => continue,
             Change::PathChange(change) => change,
@@ -178,9 +184,25 @@ pub fn print_path_changes(changes: &Changeset) -> Result<()> {
                 crate::changeset::DirectoryOperation::Delete { .. } => continue,
             },
         }
-        println!("{}", "              ".underlined());
+
+        // Print a delimiter between change entries
+        if change_iter.peek().is_some() {
+            println!("{}", "              ".underlined());
+        }
     }
     Ok(())
+}
+
+fn print_header(header: &str) {
+    let mut table = Table::new();
+    table.set_content_arrangement(ContentArrangement::DynamicFullWidth);
+    table.add_row(vec![header]);
+    table
+        .column_mut(0)
+        .unwrap()
+        .set_cell_alignment(CellAlignment::Center);
+    table.load_preset(presets::UTF8_FULL);
+    println!("{table}\n");
 }
 
 fn style_path(path: &Path) -> String {
