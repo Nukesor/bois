@@ -89,6 +89,13 @@ pub fn read_directory(
         let entry =
             entry.map_err(|err| Error::IoPath(directory_path.clone(), "reading entry", err))?;
 
+        // Don't include our own configuration files.
+        // Those are already handled in the `read_directory` function.
+        let file_name = entry.file_name();
+        if file_name == "bois.yml" {
+            continue;
+        }
+
         read_entry(
             root,
             relative_path,

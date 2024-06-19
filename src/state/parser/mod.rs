@@ -88,10 +88,19 @@ pub fn read_file(
     // If there's no config, there's nothing to do and we can just return the file with the default
     // FileConfig straight away.
     if !contains_config {
+        let mut config = FileConfig::default();
+        // Check if there's an active path override from a parent directory.
+        // If the file doesn't have its own override, use the one from the parent.
+        if let Some(path_override) = path_override {
+            if config.path.is_none() {
+                config.path = Some(path_override);
+            }
+        }
+
         return Ok(File {
             relative_path: relative_path.to_path_buf(),
             content: full_file_content,
-            config: FileConfig::default(),
+            config,
         });
     }
 
@@ -149,7 +158,7 @@ pub fn read_file(
     // If the file doesn't have its own override, use the one from the parent.
     if let Some(path_override) = path_override {
         if config.path.is_none() {
-            config.path = Some(path_override)
+            config.path = Some(path_override);
         }
     }
 

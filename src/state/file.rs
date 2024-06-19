@@ -67,17 +67,12 @@ pub fn read_entry(
 ) -> Result<()> {
     let file_name = entry.file_name();
 
-    // Don't include our own configuration files.
-    // Those are already handled in the `read_directory` function.
-    if file_name == "bois.yml" {
-        return Ok(());
-    }
-
     let relative_path = relative_path.join(&file_name);
 
     // If there's an active override, adjust the override for the next level.
     if let Some(path) = path_override {
         path_override = Some(path.join(&file_name));
+        println!("Path override set in read_entry: {path_override:?}");
     }
 
     // Recursively discover new directories
