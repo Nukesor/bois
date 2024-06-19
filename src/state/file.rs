@@ -72,7 +72,6 @@ pub fn read_entry(
     // If there's an active override, adjust the override for the next level.
     if let Some(path) = path_override {
         path_override = Some(path.join(&file_name));
-        println!("Path override set in read_entry: {path_override:?}");
     }
 
     // Recursively discover new directories

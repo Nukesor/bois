@@ -7,7 +7,7 @@ use crate::{
     handlers::handle_changeset,
     state::State,
     system_state::SystemState,
-    ui::{print_package_additions, print_path_changes},
+    ui::{print_package_additions, print_package_removals, print_path_changes},
 };
 
 pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
@@ -64,11 +64,20 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // ---------- Step 5: Execute cleanup tasks ----------
     if let Some(changes) = cleanup_changes {
         println!("Cleanup changes to be executed:");
-        for change in changes.iter() {
-            println!("  {change:?}");
+        // Filter all package related changes.
+        let (package_changes, _rest): (Vec<_>, Vec<_>) = changes
+            .into_iter()
+            .partition(|change| matches!(change, Change::PackageChange(_)));
+
+        // Print all package related changes .
+        if !package_changes.is_empty() {
+            print_package_removals(&package_changes);
+
+            println!();
         }
+
         if !dry_run {
-            handle_changeset(&mut system_state, &changes)?;
+            handle_changeset(&mut system_state, &package_changes)?;
         }
     }
 

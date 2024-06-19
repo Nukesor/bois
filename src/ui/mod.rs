@@ -1,11 +1,14 @@
-use std::{collections::BTreeMap, fs::read_to_string, path::Path};
-
-use anyhow::Result;
-use comfy_table::{
-    presets, Attribute as ComfyAttribute, Cell, CellAlignment, Column, ContentArrangement, Table,
+use std::{
+    collections::BTreeMap,
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+    process::Command,
 };
-use crossterm::style::{Color, Stylize};
-use similar::{ChangeTag, TextDiff};
+
+use anyhow::{bail, Result};
+use comfy_table::{presets, Attribute, Cell, CellAlignment, Column, ContentArrangement, Table};
+use crossterm::style::Stylize;
 
 use crate::{
     changeset::{Change, Changeset, PackageOperation, PathOperation},
@@ -14,9 +17,28 @@ use crate::{
     handlers::packages::PackageManager,
 };
 
+pub fn print_package_removals(changes: &Changeset) {
+    let mut sorted_changes: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
+    print_header("Package removals");
+
+    for change in changes.iter() {
+        if let Change::PackageChange(PackageOperation::Remove { manager, name }) = change {
+            let list = sorted_changes.entry(*manager).or_default();
+            list.push(name.clone());
+        }
+    }
+
+    for (manager, packages) in sorted_changes {
+        println!("{}:", manager.to_string().bold());
+        for package in packages {
+            println!("  {} {package}", "-".red());
+        }
+    }
+}
+
 pub fn print_package_additions(changes: &Changeset) {
     let mut sorted_changes: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
-    print_header("Package changes");
+    print_header("Package additions");
 
     for change in changes.iter() {
         if let Change::PackageChange(PackageOperation::Add { manager, name }) = change {
@@ -102,26 +124,35 @@ pub fn print_path_changes(changes: &Changeset) -> Result<()> {
                     }
 
                     if let Some(new_content) = content {
-                        println!("{}", "Content changed".bold());
-                        let original_content = read_to_string(path).map_err(|err| {
-                            Error::IoPath(path.clone(), "reading file content", err)
-                        })?;
+                        let temp_path = PathBuf::from("/var/lib/bois/").join("bois_new_file");
 
-                        let new_content = String::from_utf8_lossy(new_content).to_string();
-                        let diff = TextDiff::from_lines(&original_content, &new_content);
-
-                        for change in diff.iter_all_changes() {
-                            let (sign, color) = match change.tag() {
-                                ChangeTag::Delete => ("-", Color::Red),
-                                ChangeTag::Insert => ("+", Color::Green),
-                                ChangeTag::Equal => (" ", Color::White),
+                        // Write file to a temporary file in the user's runtime directory.
+                        // That way, we can diff the file with external tools.
+                        {
+                            if temp_path.exists() {
+                                std::fs::remove_file(&temp_path).map_err(|err| {
+                                    Error::IoPath(temp_path.clone(), "removing old temp file.", err)
+                                })?;
                             };
-                            print!(
-                                "{}{}",
-                                sign.with(color).bold(),
-                                change.to_string().with(color)
-                            );
+
+                            let mut temporary_file = File::create(&temp_path).map_err(|err| {
+                                Error::IoPath(
+                                    temp_path.clone(),
+                                    "opening temporary diff file.",
+                                    err,
+                                )
+                            })?;
+
+                            temporary_file.write_all(new_content).map_err(|err| {
+                                Error::IoPath(
+                                    temp_path.clone(),
+                                    "writing to temporary diff file.",
+                                    err,
+                                )
+                            })?;
                         }
+
+                        print_file_diff(path, &temp_path)?;
                     }
                 }
                 crate::changeset::FileOperation::Delete { .. } => continue,
@@ -217,7 +248,7 @@ fn style_path(path: &Path) -> String {
 
 fn add_table_row(table: &mut Table, name: &str, value: &str) {
     table.add_row(vec![
-        Cell::new(name).add_attribute(ComfyAttribute::Bold),
+        Cell::new(name).add_attribute(Attribute::Bold),
         Cell::new(value),
     ]);
 }
@@ -230,4 +261,31 @@ fn print_table(mut table: Table) {
     }
 
     println!("{table}");
+}
+
+/// Run an external diff tool on two paths.
+fn print_file_diff(original: &Path, new: &Path) -> Result<()> {
+    let output = Command::new("delta")
+        .args(vec![
+            original.to_string_lossy().to_string(),
+            new.to_string_lossy().to_string(),
+        ])
+        .output()
+        .map_err(|err| Error::Process("running", err))?;
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    let code = output.status.code();
+    if code.is_none() {
+        bail!("Failed to run diff command: \nstdout:\n{stdout}\nstderr:\n{stderr}");
+    } else if let Some(code) = code {
+        if code != 1 {
+            bail!("Failed to run diff command: \nstdout:\n{stdout}\nstderr:\n{stderr}");
+        }
+    }
+
+    println!("{stdout}");
+
+    Ok(())
 }
