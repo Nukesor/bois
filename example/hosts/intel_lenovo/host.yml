@@ -1,0 +1,9 @@
+groups:
+  - intel
+  - base
+  - pc
+
+packages:
+  pacman:
+    - tlp
+    - throttled

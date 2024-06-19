@@ -1,0 +1,33 @@
+packages:
+  pacman:
+    - alacritty
+    - arandr
+    - atuin
+    - bandwhich
+    - base
+    - base-devel
+    - iw
+    - iwd
+    - jdk-openjdk
+    - just
+    - keychain
+    - kmon
+    - linux
+    - linux-firmware
+    - linux-headers
+    - lshw
+    - lsof
+    - man-db
+    - man-pages
+    - mkcert
+    - mosh
+    - mtr
+    - neovim
+    - net-tools
+    - strace
+    - sudo
+    - systemd-resolvconf
+  paru:
+    - paru-bin
+    - proximity-sort
+    - neovim-symlinks

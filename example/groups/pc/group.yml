@@ -1,0 +1,28 @@
+packages:
+  pacman:
+    # Packages
+    - firefox
+    - rofi
+    - steam
+    - syncthing
+    - telegram-desktop
+    - thunderbird
+    # Font used by i3status-rust
+    - ttf-font-awesome
+    # Fonts used by alacritty, i3, i3status-rust
+    - ttf-input
+    - ttf-nerd-fonts-symbols
+    - vlc
+    - wireless_tools
+    - wmfocus
+    - xclip
+    - xf86-input-synaptics
+    - xorg-server
+    - xorg-xinit
+    - xterm
+  paru:
+    - google-chrome
+    - spotify
+    - xone-dkms-git
+    - xone-dongle-firmware
+    - headsetcontrol

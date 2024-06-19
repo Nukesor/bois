@@ -1,0 +1,10 @@
+packages:
+  pacman:
+    - lib32-mesa
+    - libva-intel-driver
+    - mesa
+    - intel-ucode
+    - intel-media-driver
+    - intel-gpu-tools
+    - vulkan-intel
+    - lib32-vulkan-intel
