@@ -40,9 +40,21 @@ pub fn modify_file(
     owner: &Option<String>,
     group: &Option<String>,
 ) -> Result<()> {
-    let mut file =
-        File::open(path).map_err(|err| Error::IoPath(path.to_path_buf(), "creating file.", err))?;
+    // Get options to read/write the file.
+    let mut file_options = File::options();
+    file_options.read(true).write(true);
 
+    // If we plan to overwrite the file's contents, also truncate it.
+    if content.is_some() {
+        file_options.truncate(true);
+    }
+
+    // Now we open the file.
+    let mut file = file_options
+        .open(path)
+        .map_err(|err| Error::IoPath(path.to_path_buf(), "opening file.", err))?;
+
+    // Immediately write all contents to the file.
     if let Some(content) = content {
         file.write_all(content)
             .map_err(|err| Error::IoPath(path.to_path_buf(), "writing to file.", err))?;
