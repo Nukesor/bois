@@ -31,13 +31,15 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // ---------- Step 1: Detect system changes ----------
     // Create the changeset between the current system and the last deployment.
     // This will allows us to detect any changes that were done to the system,
-    // The changes done to the system will basically be the reverted actions of the changeset.
+    //
+    // The user might have forgotten to integrate those changes into the bois config, so we
+    // want to inform them about it.
     let system_changes = match &previous_state {
         Some(state) => host_to_state::create_changeset(&mut system_state, state, &desired_state)?,
         None => None,
     };
 
-    // ---------- Step 2: Detect changes that need cleanup ----------
+    // ---------- Step 2: Detect old changes that need to be cleaned up ----------
     // Determine any cleanup that needs to be done due to changes in configuration since the
     // last deployment.
     let cleanup_changes = match &previous_state {
@@ -45,8 +47,8 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
         None => None,
     };
 
-    // ---------- Step 3: Detect changes that need cleanup ----------
-    // Create and execute the changeset to reach the actual desired state.
+    // ---------- Step 3: Compute changes that will be deployed ----------
+    // Create and execute the changeset to reach the desired state.
     let new_changes = state_to_host::create_changeset(&config, &desired_state, &mut system_state)?;
 
     // ------------------- Execution phase -------------------
