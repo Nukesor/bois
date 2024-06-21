@@ -3,66 +3,66 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use log::debug;
-use pest::Parser;
-use pest_derive::Parser;
 
 use super::file::{File, FileConfig};
 use crate::error::Error;
 
-#[derive(Parser)]
-#[grammar = "state/parser/syntax.pest"]
-pub struct ConfigParser;
-
-// TODO: Try using the ConfigParser again.
-pub fn read_file_with_parser(path: PathBuf) -> Result<File> {
-    let mut file_content =
-        read_to_string(&path).map_err(|err| Error::IoPath(path.clone(), "reading file at", err))?;
-
-    let mut file_config = FileConfig::default();
-
-    // Check if there's the key word for a in-file configuration block.
-    // If so, try to parse the file as such.
-    if file_content
-        .lines()
-        .next()
-        .map(|line| line.contains("bois_config"))
-        .unwrap_or(false)
-    {
-        // Parse the bois configuration block
-        let mut parsed = ConfigParser::parse(Rule::full_config, &file_content)
-            .context(format!("Failed to parse config block in file at {path:?}"))?;
-
-        // The first parsed block is the bois configuration.
-        let config_text = parsed
-            .next()
-            .context(format!(
-                "Failed to read inline bois configuration from file {path:?}"
-            ))?
-            .to_string();
-        // The second parsed block is the actual content of the file, without the bois config.
-        file_content = parsed
-            .next()
-            .context(format!(
-                "Failed to get parsed normal content for file {path:?}"
-            ))?
-            .to_string();
-        debug!("Found config block in file {path:?}:\n{config_text}");
-
-        // Try to deserialize the bois configuration content into the correct struct.
-        file_config = serde_yaml::from_str(&config_text).context(format!(
-            "Failed to deserialize bois config inside of file {path:?}"
-        ))?;
-    }
-
-    // Create a new representation of a file with all necessary information.
-    Ok(File {
-        relative_path: path,
-        config: file_config,
-        content: file_content,
-    })
-}
+//use pest::Parser;
+//use pest_derive::Parser;
+//#[derive(Parser)]
+//#[grammar = "state/parser/syntax.pest"]
+//pub struct ConfigParser;
+//
+//// TODO: Try using the ConfigParser again.
+//pub fn read_file_with_parser(path: PathBuf) -> Result<File> {
+//    let mut file_content =
+//        read_to_string(&path).map_err(|err| Error::IoPath(path.clone(), "reading file at", err))?;
+//
+//    let mut file_config = FileConfig::default();
+//
+//    // Check if there's the key word for a in-file configuration block.
+//    // If so, try to parse the file as such.
+//    if file_content
+//        .lines()
+//        .next()
+//        .map(|line| line.contains("bois_config"))
+//        .unwrap_or(false)
+//    {
+//        // Parse the bois configuration block
+//        let mut parsed = ConfigParser::parse(Rule::full_config, &file_content)
+//            .context(format!("Failed to parse config block in file at {path:?}"))?;
+//
+//        // The first parsed block is the bois configuration.
+//        let config_text = parsed
+//            .next()
+//            .context(format!(
+//                "Failed to read inline bois configuration from file {path:?}"
+//            ))?
+//            .to_string();
+//        // The second parsed block is the actual content of the file, without the bois config.
+//        file_content = parsed
+//            .next()
+//            .context(format!(
+//                "Failed to get parsed normal content for file {path:?}"
+//            ))?
+//            .to_string();
+//        debug!("Found config block in file {path:?}:\n{config_text}");
+//
+//        // Try to deserialize the bois configuration content into the correct struct.
+//        file_config = serde_yaml::from_str(&config_text).context(format!(
+//            "Failed to deserialize bois config inside of file {path:?}"
+//        ))?;
+//    }
+//
+//    // Create a new representation of a file with all necessary information.
+//    Ok(File {
+//        relative_path: path,
+//        config: file_config,
+//        content: file_content,
+//    })
+//}
 
 /// Read and, if applicable, parse a single configuration file.
 pub fn read_file(
