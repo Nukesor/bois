@@ -5,7 +5,6 @@ packages:
     - rofi
     - steam
     - syncthing
-    - telegram-desktop
     - thunderbird
     # Font used by i3status-rust
     - ttf-font-awesome
