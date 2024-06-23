@@ -35,7 +35,9 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // The user might have forgotten to integrate those changes into the bois config, so we
     // want to inform them about it.
     let system_changes = match &previous_state {
-        Some(state) => host_to_state::create_changeset(&mut system_state, state, &desired_state)?,
+        Some(state) => {
+            host_to_state::create_changeset(&config, &mut system_state, state, &desired_state)?
+        }
         None => None,
     };
 

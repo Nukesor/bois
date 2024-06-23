@@ -2,9 +2,13 @@
 
 ## What is Bois
 
-Bois is an opinionated system provisioning tool for your **personal** machines, (which I myself lovingly call `bois`).
+Bois is an opinionated system provisioning tool for your **personal** machines, (which I lovingly call `my bois`).
 
-It aims to strike a balance between Chezmoi and Ansible/Saltstack, but on-host and for systems configuration.
+It allows you to manage your system configuration files (mostly everything in `/etc`), so it lives in a git repository and can easily be re-used by your other devices.
+This means re-usability of your system configuration via templating and optional deployment on a per-host basis.
+On top of this, it also manages your installed packages and enabled services.
+
+You could say that it aims to strike a balance between Chezmoi and Ansible/Saltstack, but on-host and for system configuration.
 
 - [Features](https://github.com/Nukesor/bois#features)
 - [Installation](https://github.com/Nukesor/bois#installation)
