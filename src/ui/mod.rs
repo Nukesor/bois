@@ -227,11 +227,12 @@ pub fn print_path_changes(changes: &Changeset) -> Result<()> {
 fn print_header(header: &str) {
     let mut table = Table::new();
     table.set_content_arrangement(ContentArrangement::DynamicFullWidth);
-    table.add_row(vec![header]);
-    table
-        .column_mut(0)
-        .unwrap()
-        .set_cell_alignment(CellAlignment::Center);
+    table.add_row(vec![Cell::new(header).add_attribute(Attribute::Bold)]);
+
+    // Center the header
+    let column = table.column_mut(0).unwrap();
+    column.set_cell_alignment(CellAlignment::Center);
+
     table.load_preset(presets::UTF8_FULL);
     println!("{table}\n");
 }
