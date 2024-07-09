@@ -3,8 +3,6 @@ use std::{collections::HashSet, process::Command};
 use anyhow::{bail, Context, Result};
 
 /// Install a package via paru.
-/// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
-/// Otherwise they wouldn't be detected by us if they were installed as a dependency.
 pub fn install_package(name: &str) -> Result<()> {
     println!("Installing package {name} via paru");
     // TODO: Check if there's a more elegant way of doing this.

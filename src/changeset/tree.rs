@@ -3,7 +3,7 @@ use std::{
     path::Path,
 };
 
-use crate::state::{directory::Directory, State};
+use crate::state::{directory::Directory, file::Entry, State};
 
 /// This struct solely exists to handle state-to-state comparisons of deployed files.
 ///
@@ -31,7 +31,7 @@ impl Tree {
             root: Node::Directory(HashMap::new()),
         };
 
-        tree.add_directory(&state.host.files);
+        tree.add_directory(&state.host.directory);
 
         for group in state.host.groups.iter() {
             tree.add_directory(&group.directory);
@@ -41,7 +41,14 @@ impl Tree {
     }
 
     /// Take a [Directory] from our [State] and completely add it into this tree.
-    fn add_directory(&mut self, dir: &Directory) {}
+    fn add_directory(&mut self, directory: &Directory) {
+        for entry in directory.entries.iter() {
+            match entry {
+                Entry::File(_) => todo!(),
+                Entry::Directory(_) => todo!(),
+            }
+        }
+    }
 
     /// Get a node at the given path of this tree. None if the path doesn't exist.
     fn get_node_mut(&mut self, path: &Path) -> Option<&mut Node> {
@@ -67,12 +74,7 @@ impl Tree {
             return None;
         };
 
-        // Check if the next path exists, if not return early.
-        let Some(node) = map.get_mut(&part) else {
-            return None;
-        };
-
-        Self::get_node_mut_inner(node, parts)
+        Self::get_node_mut_inner(map.get_mut(&part)?, parts)
     }
 
     /// Create all nodes that are needed to represent a path in a tree.
