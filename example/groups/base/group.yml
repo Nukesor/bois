@@ -6,6 +6,7 @@ packages:
     - bandwhich
     - base
     - base-devel
+    - delta
     - iw
     - iwd
     - jdk-openjdk

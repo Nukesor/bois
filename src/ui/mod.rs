@@ -272,7 +272,7 @@ fn print_file_diff(original: &Path, new: &Path) -> Result<()> {
             new.to_string_lossy().to_string(),
         ])
         .output()
-        .map_err(|err| Error::Process("running", err))?;
+        .map_err(|err| Error::Process("delta", err))?;
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     let stdout = String::from_utf8_lossy(&output.stdout);
