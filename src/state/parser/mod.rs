@@ -15,7 +15,7 @@ use crate::error::Error;
 //#[grammar = "state/parser/syntax.pest"]
 //pub struct ConfigParser;
 //
-//// TODO: Try using the ConfigParser again.
+// // TODO: Try using the ConfigParser again.
 //pub fn read_file_with_parser(path: PathBuf) -> Result<File> {
 //    let mut file_content =
 //        read_to_string(&path).map_err(|err| Error::IoPath(path.clone(), "reading file at", err))?;

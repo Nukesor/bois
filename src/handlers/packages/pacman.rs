@@ -8,16 +8,21 @@ use crate::{handlers::packages::PackageManager, system_state::SystemState};
 /// Install a package via pacman.
 /// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
 /// Otherwise they wouldn't be detected by us if they already were installed as a dependency.
-pub(super) fn install_package(name: &str) -> Result<()> {
-    println!("Installing package {name} via pacman");
+pub(super) fn install_packages(packages: Vec<String>) -> Result<()> {
+    println!("Installing packages via pacman:");
+    for name in &packages {
+        println!("    - {name}");
+    }
+
     let output = Command::new("pacman")
-        .args(["--sync", "--refresh", "--noconfirm", name])
+        .args(["--sync", "--refresh", "--noconfirm"])
+        .args(packages)
         .output()
         .context("Failed to install pacman package {}")?;
 
     if !output.status.success() {
         bail!(
-            "Failed to install pacman package:\n{name}:\nStdout: {}\nStderr: {}",
+            "Failed to install pacman packages:\nStdout: {}\nStderr: {}",
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr),
         );
@@ -30,16 +35,40 @@ pub(super) fn install_package(name: &str) -> Result<()> {
 /// Don't instruct pacman to create backup files, as all configuration is handled by bois.
 /// Also recursively remove dependencies, we don't want to clutter the system with unneeded
 /// dependencies. Any dependencies that're still needed should be explicitly required.
-pub(super) fn uninstall_package(system_state: &mut SystemState, name: &str) -> Result<()> {
-    println!("Uninstalling package {name} via pacman");
-    let installed_packages = system_state.explicit_packages(PackageManager::Pacman)?;
-    if !installed_packages.contains(name) {
-        info!("Package {name} is already uninstalled.");
+pub(super) fn uninstall_packages(
+    system_state: &mut SystemState,
+    mut names: Vec<String>,
+) -> Result<()> {
+    let explicit_packages = system_state.explicit_packages(PackageManager::Pacman)?;
+
+    // Filter all packages that aren't explicitly installed.
+    // TODO: This is not enough.
+    //       In theory, we need to go through the whole dependency tree of each package that is
+    //       to be removed and check if there are any dependents somewhere up the tree that're:
+    //       - Explicitly installed
+    //       - Not removed in **this** batch of packages.
+    //
+    //       As long as we don't do this, there's always a chance that a package cannot be
+    //       uninstalled since a other package still depends on it.
+    //
+    //       In the future, once we have this functionality, those packages can be marked as
+    //       non-explicits (dependencies). They'll then no longer be tracked by bois and will be
+    //       cleaned up whenever their dependencies are uninstalled.
+    names.retain(|name| explicit_packages.contains(name));
+
+    if names.is_empty() {
+        info!("No packages to uninstall");
         return Ok(());
     }
 
+    println!("Uninstalling packages via pacman:");
+    for name in &names {
+        println!("    - {name}");
+    }
+
     let output = Command::new("pacman")
-        .args(["--remove", "--nosave", "--noconfirm", name])
+        .args(["--remove", "--nosave", "--noconfirm"])
+        .args(names)
         .output()
         .context("Failed to install pacman package {}")?;
 
@@ -48,7 +77,7 @@ pub(super) fn uninstall_package(system_state: &mut SystemState, name: &str) -> R
     // package as a dependency instead.
     if !output.status.success() {
         bail!(
-            "Failed to uninstall pacman package:\n{name}:\nStdout: {}\nStderr: {}",
+            "Failed to uninstall pacman packages:\nStdout: {}\nStderr: {}",
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr),
         );
@@ -89,7 +118,7 @@ pub fn packages() -> Result<HashSet<String>> {
     Ok(packages)
 }
 
-/// Receive a list of **exlicitly** installed packages on the system.
+/// Receive a list of **exlicitly** installed **native** (non-AUR) packages on the system.
 /// Ignore packages that are installed as a dependency, as they might be removed at any point in
 /// time when another package is uninstalled as a side-effect.
 pub fn explicit_packages() -> Result<HashSet<String>> {

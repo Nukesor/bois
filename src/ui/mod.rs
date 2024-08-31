@@ -11,21 +11,19 @@ use comfy_table::{presets, Attribute, Cell, CellAlignment, Column, ContentArrang
 use crossterm::style::Stylize;
 
 use crate::{
-    changeset::{Change, Changeset, PackageOperation, PathOperation},
+    changeset::{PackageInstall, PackageUninstall, PathOperation},
     constants::{CURRENT_GROUP, CURRENT_USER},
     error::Error,
     handlers::packages::PackageManager,
 };
 
-pub fn print_package_removals(changes: &Changeset) {
+pub fn print_package_uninstalls(packages: &[PackageUninstall]) {
     let mut sorted_changes: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
     print_header("Package removals");
 
-    for change in changes.iter() {
-        if let Change::PackageChange(PackageOperation::Remove { manager, name }) = change {
-            let list = sorted_changes.entry(*manager).or_default();
-            list.push(name.clone());
-        }
+    for pkg in packages.iter() {
+        let list = sorted_changes.entry(pkg.manager).or_default();
+        list.push(pkg.name.clone());
     }
 
     for (manager, packages) in sorted_changes {
@@ -36,15 +34,13 @@ pub fn print_package_removals(changes: &Changeset) {
     }
 }
 
-pub fn print_package_additions(changes: &Changeset) {
+pub fn print_package_installs(packages: &[PackageInstall]) {
     let mut sorted_changes: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
     print_header("Package additions");
 
-    for change in changes.iter() {
-        if let Change::PackageChange(PackageOperation::Add { manager, name }) = change {
-            let list = sorted_changes.entry(*manager).or_default();
-            list.push(name.clone());
-        }
+    for pkg in packages.iter() {
+        let list = sorted_changes.entry(pkg.manager).or_default();
+        list.push(pkg.name.clone());
     }
 
     for (manager, packages) in sorted_changes {
@@ -55,16 +51,11 @@ pub fn print_package_additions(changes: &Changeset) {
     }
 }
 
-pub fn print_path_changes(changes: &Changeset) -> Result<()> {
+pub fn print_path_changes(changes: &[PathOperation]) -> Result<()> {
     let mut change_iter = changes.iter().peekable();
     print_header("File changes");
 
-    while let Some(change) = change_iter.next() {
-        let op = match change {
-            Change::PackageChange(_) => continue,
-            Change::PathChange(change) => change,
-        };
-
+    while let Some(op) = change_iter.next() {
         match op {
             PathOperation::File(op) => match op {
                 crate::changeset::FileOperation::Create {

@@ -20,7 +20,7 @@ use crate::{
 
 use super::{
     helper::{equal_permissions, remove_filetype},
-    Change, Changeset, DirectoryOperation, FileOperation, PackageOperation, PathOperation,
+    Changeset, DirectoryOperation, FileOperation, PackageUninstall, PathOperation,
 };
 
 pub fn create_changeset(
@@ -28,28 +28,26 @@ pub fn create_changeset(
     system_state: &mut SystemState,
     old_state: &State,
     new_state: &State,
-) -> Result<Option<Changeset>> {
-    let mut changeset = Vec::new();
+) -> Result<Changeset> {
+    // Create changeset for packages that should be cleaned up.
+    let package_uninstalls = handle_packages(system_state, old_state, new_state)?;
 
-    // Create changeset for missing packages.
-    let package_changeset = handle_packages(system_state, old_state, new_state)?;
-    changeset.extend(package_changeset);
-
+    let mut path_operations = Vec::new();
     // Create changeset for files and system services on host config.
     let host_changeset = handle_host(config, &old_state.host, system_state)?;
-    changeset.extend(host_changeset);
+    path_operations.extend(host_changeset);
 
     // Create changeset for files and system services on group configs.
     for group in old_state.host.groups.iter() {
         let group_changset = handle_group(config, group, system_state)?;
-        changeset.extend(group_changset);
+        path_operations.extend(group_changset);
     }
 
-    if changeset.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(changeset))
-    }
+    Ok(Changeset {
+        package_uninstalls,
+        path_operations,
+        ..Default::default()
+    })
 }
 
 /// Check for any packages that were previously on the system but have been removed.
@@ -61,7 +59,7 @@ fn handle_packages(
     system_state: &mut SystemState,
     old_state: &State,
     new_state: &State,
-) -> Result<Changeset> {
+) -> Result<Vec<PackageUninstall>> {
     let mut changeset = Vec::new();
 
     // Compare all desired packages in the old config with the currently installed ones.
@@ -81,10 +79,10 @@ fn handle_packages(
                 }
 
                 // The package has actually been removed, but is actually still desired.
-                changeset.push(Change::PackageChange(PackageOperation::Remove {
+                changeset.push(PackageUninstall {
                     manager: *manager,
                     name: old_package.clone(),
-                }))
+                })
             }
         }
     }
@@ -100,8 +98,8 @@ fn handle_host(
     config: &Configuration,
     host: &Host,
     _system_state: &mut SystemState,
-) -> Result<Changeset> {
-    let mut changeset = Changeset::new();
+) -> Result<Vec<PathOperation>> {
+    let mut changeset = Vec::new();
 
     for entry in host.directory.entries.iter() {
         handle_entry(config.target_dir(), entry, &mut changeset)?;
@@ -120,8 +118,8 @@ fn handle_group(
     config: &Configuration,
     group: &Group,
     _system_state: &mut SystemState,
-) -> Result<Changeset> {
-    let mut changeset = Changeset::new();
+) -> Result<Vec<PathOperation>> {
+    let mut changeset = Vec::new();
 
     for entry in group.directory.entries.iter() {
         handle_entry(config.target_dir(), entry, &mut changeset)?;
@@ -134,7 +132,7 @@ fn handle_group(
     Ok(changeset)
 }
 
-fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Result<()> {
+fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation>) -> Result<()> {
     match entry {
         Entry::File(file) => {
             // By default, we the destination path is the same as in the host configuration
@@ -157,7 +155,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
             // If it doesn't, it has been deleted in the meantime.
             if !path.exists() {
                 let change = FileOperation::Delete { path };
-                changeset.push(Change::PathChange(PathOperation::File(change)));
+                changeset.push(PathOperation::File(change));
 
                 return Ok(());
             }
@@ -217,7 +215,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
                     owner: modified_owner,
                     group: modified_group,
                 };
-                changeset.push(Change::PathChange(PathOperation::File(change)));
+                changeset.push(PathOperation::File(change));
             }
         }
         Entry::Directory(dir) => {
@@ -242,7 +240,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
             if !path.exists() {
                 let change = DirectoryOperation::Delete { path };
 
-                changeset.push(Change::PathChange(PathOperation::Directory(change)));
+                changeset.push(PathOperation::Directory(change));
 
                 for entry in dir.entries.iter() {
                     handle_entry(root.clone(), entry, changeset)?;
@@ -295,7 +293,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
                     owner: modified_owner,
                     group: modified_group,
                 };
-                changeset.push(Change::PathChange(PathOperation::Directory(change)));
+                changeset.push(PathOperation::Directory(change));
             }
 
             for entry in dir.entries.iter() {

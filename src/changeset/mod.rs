@@ -13,25 +13,44 @@ pub mod tree;
 /// executed by bois to reach the desired system state.
 ///
 /// This includes all possible operations for all stages.
-pub type Changeset = Vec<Change>;
+#[derive(Debug, Default)]
+pub struct Changeset {
+    pub package_installs: Vec<PackageInstall>,
+    pub package_uninstalls: Vec<PackageUninstall>,
+    pub path_operations: Vec<PathOperation>,
+}
 
-#[derive(Debug)]
-pub enum Change {
-    PathChange(PathOperation),
-    PackageChange(PackageOperation),
-    //    ServiceChange(ServiceOperation),
+impl Changeset {
+    pub fn new() -> Changeset {
+        Changeset::default()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.package_installs.is_empty()
+            && self.package_uninstalls.is_empty()
+            && self.path_operations.is_empty()
+    }
+
+    /// Merge changes of the given changeset into self.
+    /// Changes are appended at the end, which guarantees the correct
+    /// execution order.
+    pub fn merge(&mut self, other: Changeset) {
+        self.package_installs.extend(other.package_installs);
+        self.package_uninstalls.extend(other.package_uninstalls);
+        self.path_operations.extend(other.path_operations);
+    }
 }
 
 #[derive(Debug)]
-pub enum PackageOperation {
-    Remove {
-        manager: PackageManager,
-        name: String,
-    },
-    Add {
-        manager: PackageManager,
-        name: String,
-    },
+pub struct PackageUninstall {
+    pub manager: PackageManager,
+    pub name: String,
+}
+
+#[derive(Debug)]
+pub struct PackageInstall {
+    pub manager: PackageManager,
+    pub name: String,
 }
 
 //#[derive(Debug)]

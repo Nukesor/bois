@@ -15,41 +15,39 @@ use crate::{
 };
 
 use super::{
-    helper::equal_permissions, Change, Changeset, DirectoryOperation, FileOperation,
-    PackageOperation, PathOperation,
+    helper::equal_permissions, Changeset, DirectoryOperation, FileOperation, PackageInstall,
+    PathOperation,
 };
 
 pub fn create_changeset(
     config: &Configuration,
     state: &State,
     system_state: &mut SystemState,
-) -> Result<Option<Changeset>> {
-    let mut changeset = Vec::new();
-
+) -> Result<Changeset> {
     // Create changeset for missing packages.
-    let package_changeset = handle_packages(state, system_state)?;
-    changeset.extend(package_changeset);
+    let package_installs = handle_packages(state, system_state)?;
 
+    let mut path_operations = Vec::new();
     // Create changeset for files and system services on host config.
     let host_changeset = handle_host(config, &state.host, system_state)?;
-    changeset.extend(host_changeset);
+    path_operations.extend(host_changeset);
 
     // Create changeset for files and system services on group configs.
     for group in state.host.groups.iter() {
         let group_changset = handle_group(config, group, system_state)?;
-        changeset.extend(group_changset);
+        path_operations.extend(group_changset);
     }
 
-    if changeset.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(changeset))
-    }
+    Ok(Changeset {
+        package_installs,
+        path_operations,
+        ..Default::default()
+    })
 }
 
 /// Detect any packages that're missing on the current config and queue them for installation.
-fn handle_packages(state: &State, system_state: &mut SystemState) -> Result<Changeset> {
-    let mut changeset = Changeset::new();
+fn handle_packages(state: &State, system_state: &mut SystemState) -> Result<Vec<PackageInstall>> {
+    let mut installs = Vec::new();
 
     // Compare all desired packages in the top-level config with the currently installed one's.
     for (manager, packages) in state.packages.iter() {
@@ -60,15 +58,15 @@ fn handle_packages(state: &State, system_state: &mut SystemState) -> Result<Chan
         for package in packages {
             // If a package is not found, schedule it to be installed.
             if !installed_packages.contains(package) {
-                changeset.push(Change::PackageChange(PackageOperation::Add {
+                installs.push(PackageInstall {
                     manager: *manager,
                     name: package.clone(),
-                }))
+                })
             }
         }
     }
 
-    Ok(changeset)
+    Ok(installs)
 }
 
 /// Create the changeset that's needed to reach the desired state of the [HostConfig] from the
@@ -77,8 +75,8 @@ fn handle_host(
     config: &Configuration,
     host: &Host,
     _system_state: &mut SystemState,
-) -> Result<Changeset> {
-    let mut changeset = Changeset::new();
+) -> Result<Vec<PathOperation>> {
+    let mut changeset = Vec::new();
 
     for entry in host.directory.entries.iter() {
         handle_entry(config.target_dir(), entry, &mut changeset)?;
@@ -93,8 +91,8 @@ fn handle_group(
     config: &Configuration,
     group: &Group,
     _system_state: &mut SystemState,
-) -> Result<Changeset> {
-    let mut changeset = Changeset::new();
+) -> Result<Vec<PathOperation>> {
+    let mut changeset = Vec::new();
 
     for entry in group.directory.entries.iter() {
         handle_entry(config.target_dir(), entry, &mut changeset)?;
@@ -103,7 +101,7 @@ fn handle_group(
     Ok(changeset)
 }
 
-fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Result<()> {
+fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation>) -> Result<()> {
     match entry {
         Entry::File(file) => {
             // By default, we the destination path is the same as in the host configuration
@@ -133,7 +131,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
                     group: file.config.group(),
                 };
 
-                changeset.push(Change::PathChange(PathOperation::File(change)));
+                changeset.push(PathOperation::File(change));
 
                 return Ok(());
             }
@@ -190,7 +188,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
                     owner: modified_owner,
                     group: modified_group,
                 };
-                changeset.push(Change::PathChange(PathOperation::File(change)));
+                changeset.push(PathOperation::File(change));
             }
         }
         Entry::Directory(dir) => {
@@ -220,7 +218,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
                     group: dir.config.group(),
                 };
 
-                changeset.push(Change::PathChange(PathOperation::Directory(change)));
+                changeset.push(PathOperation::Directory(change));
 
                 for entry in dir.entries.iter() {
                     handle_entry(root.clone(), entry, changeset)?;
@@ -270,7 +268,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Changeset) -> Resu
                     owner: modified_owner,
                     group: modified_group,
                 };
-                changeset.push(Change::PathChange(PathOperation::Directory(change)));
+                changeset.push(PathOperation::Directory(change));
             }
 
             for entry in dir.entries.iter() {

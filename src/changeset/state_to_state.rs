@@ -8,7 +8,7 @@ use log::info;
 
 use crate::{state::State, system_state::SystemState};
 
-use super::{compiled_state::CompiledState, Changeset};
+use super::{compiled_state::CompiledState, Changeset, PackageUninstall};
 
 /// Compare a new desired State with a previously deployed state.
 /// This is used to determine any necessary **cleanup** operations, in case the previous deployment
@@ -22,24 +22,17 @@ pub fn create_changeset(
     system_state: &mut SystemState,
     old_state: &State,
     new_state: &State,
-) -> Result<Option<Changeset>> {
-    let mut changeset = Changeset::new();
-
+) -> Result<Changeset> {
     let old_compiled_state = CompiledState::from_state(old_state);
     let new_compiled_state = CompiledState::from_state(new_state);
 
-    handle_packages(
-        system_state,
-        &mut changeset,
-        &old_compiled_state,
-        &new_compiled_state,
-    )?;
+    let package_uninstalls =
+        handle_packages(system_state, &old_compiled_state, &new_compiled_state)?;
 
-    if changeset.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(changeset))
-    }
+    Ok(Changeset {
+        package_uninstalls,
+        ..Default::default()
+    })
 }
 
 /// Check all package managers on the old system and their respective packages.
@@ -47,21 +40,20 @@ pub fn create_changeset(
 /// If not, queue a change to remove it.
 pub fn handle_packages(
     system_state: &mut SystemState,
-    changeset: &mut Changeset,
     old_state: &CompiledState,
     new_state: &CompiledState,
-) -> Result<()> {
+) -> Result<Vec<PackageUninstall>> {
+    let mut uninstalls = Vec::new();
+
     for (manager, old_packages) in old_state.deployed_packages.iter() {
         // First up, check if there're any packages for this package manager at all.
         // If we cannot find a package manager, remove all packages that were deployed for it.
         let Some(new_packages) = new_state.deployed_packages.get(manager) else {
             for package in old_packages {
-                changeset.push(super::Change::PackageChange(
-                    super::PackageOperation::Remove {
-                        manager: *manager,
-                        name: package.clone(),
-                    },
-                ))
+                uninstalls.push(PackageUninstall {
+                    manager: *manager,
+                    name: package.clone(),
+                })
             }
             continue;
         };
@@ -81,14 +73,12 @@ pub fn handle_packages(
             }
 
             // Package wasn't found in new state, queue for removal.
-            changeset.push(super::Change::PackageChange(
-                super::PackageOperation::Remove {
-                    manager: *manager,
-                    name: old_package.clone(),
-                },
-            ))
+            uninstalls.push(PackageUninstall {
+                manager: *manager,
+                name: old_package.clone(),
+            });
         }
     }
 
-    Ok(())
+    Ok(uninstalls)
 }
