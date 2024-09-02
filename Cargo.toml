@@ -11,12 +11,13 @@ rust-version = "1.79"
 anyhow = "1"
 better-panic = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive", "cargo"] }
 comfy-table = "7"
 crossterm = "0.27"
-clap = { version = "4", features = ["derive", "cargo"] }
 dirs = "5"
 dotenv = "0.15"
 file-owner = "0.1"
+hostname = "0.4"
 lazy_static = "1"
 log = "0.4"
 pest = "2"
@@ -28,10 +29,9 @@ serde_yaml = "0.9"
 shellexpand = "3.1"
 strum = "0.26"
 strum_macros = "0.26"
-tera = "1"
 thiserror = "1"
+upon = "0.8"
 users = "0.11"
-hostname = "0.4"
 
 [dev-dependencies]
 pretty_assertions = "1"

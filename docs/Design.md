@@ -20,7 +20,7 @@ Bois is **not** intended to be used as a provisioning service for remote machine
 - Can be tracked via Git
 - Multiple system configs in a single repository
 - Shared/Base rules (will be applied to all/some systems?)
-- Simple Templating (Tera?)
+- Simple Templating with [upon](https://docs.rs/upon/latest/upon/)
 - Unix only
 
 ## Configuration
@@ -119,7 +119,7 @@ The deployment process is rather simple and can be devided into clear-cut steps.
    Based on this, a deterministic sequential changeset is created that consists of concrete executable steps to reach the desired system state.
 1. Execute all steps of the changeset to the system.
    TODO: How do we handle error cases? What should be done during an error?
-         How do we recover from this?
+   How do we recover from this?
 1. Save the serialized state to disk, so we can compare the current state during the next deployment.
 
 ### Order
@@ -156,11 +156,10 @@ For this to work, Bois follows the following ordering :
 
 ```yaml
 pre_hooks:
-    - update_packages
+  - update_packages
 post_hooks:
-    - 'systemctl enable --now some.service'
-variables:
-    some_variable_1
+  - "systemctl enable --now some.service"
+variables: some_variable_1
 ```
 
 ### TODOS
@@ -168,12 +167,18 @@ variables:
 #### Error handling
 
 Introduce good error handling.
-  The idea would be to have two different error handling types.
-  1. Errors that happen during the preparation phase. This would include things like:
+The idea would be to have two different error handling types.
+
+1. Errors that happen during the preparation phase. This would include things like:
+
+
     - Conflicts
     - Changes that have been detected on the system and aren't yet incorporated.
     - Config errors (wrong enum variants), etc.
-  2. Errors that happen during execution. These errors should result in the program exiting.
+
+2. Errors that happen during execution. These errors should result in the program exiting.
+
+
     - These errors need to be very descriptive.
     - They must clearly state at which operation the problem occured.
 
@@ -185,18 +190,21 @@ E.g. pacman that has a network error.
 The order in which things are executed should be clearly defined.
 
 Global execution order:
+
 - At first, all removals should be executed.
   Removals should be executed in the order of dependencies, with the host group being the first one.
 - Changes and additions are executed afterwards
   They should also be executed in the order of dependencies, with the host group being the first one.
 
 Execution order of removals **inside** of groups/directories with the **same priority**.
+
 - Files/directories are executed in alphabetic order.
   - Disable/stop services.
   - Remove configuration files
   - Uninstall packages
 
 Execution order **inside** of groups/directories with the **same priority**.
+
 - Files/directories are executed in alphabetic order.
   - Install packages
   - Add configuration files
@@ -204,7 +212,6 @@ Execution order **inside** of groups/directories with the **same priority**.
 
 Keeping this order is important, as configuration files may depend on directories being created during package installation.
 Services may depend on configuration files.
-
 
 ### Diffing during deployment
 
@@ -233,9 +240,8 @@ It now starts to become a bit more tricky, as we also need to do **cleanup** and
    - Files, directories that need removal
    - Services that need to be stopped
    - Packages to be uninstalled.
-   This will result in a "cleanup" changeset that will be executed before the new deployment runs.
+     This will result in a "cleanup" changeset that will be executed before the new deployment runs.
 1. At this point, we're done with the complex logic and we continue as if we do a first-time deployment.
 1. The "should-be" state is compared with the current state of the system.
 1. A changeset is created that transforms the current state into the desired state.
 1. Save the current "should-be" state in serialized form to disk.
-

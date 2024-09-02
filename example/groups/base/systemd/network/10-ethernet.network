@@ -1,5 +1,8 @@
+# bois_config
+# template: true
+# bois_config
 [Match]
-Name=e*
+Name={{ ethernet_link }}
 
 [Network]
 DHCP=yes

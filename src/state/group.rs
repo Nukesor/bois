@@ -3,7 +3,7 @@ use std::{
     path::Path,
 };
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use serde_derive::{Deserialize, Serialize};
 
 use crate::{error::Error, handlers::packages::PackageManager, helper::read_yaml};
@@ -26,9 +26,6 @@ pub struct GroupConfig {
     /// The content of this group's directory.
     #[serde(default)]
     pub defaults: GroupDefaults,
-    /// All variables that're available during templating for this group.
-    #[serde(default)]
-    pub variables: HashMap<String, String>,
     /// Packages that should always be installed for this group.
     #[serde(default)]
     pub packages: HashMap<PackageManager, HashSet<String>>,
@@ -40,8 +37,17 @@ pub struct GroupDefaults {
     pub group: Option<String>,
 }
 
-pub fn read_group(root: &Path, name: &str) -> Result<Group> {
+pub fn read_group(
+    root: &Path,
+    name: &str,
+    template_vars: &Option<serde_yaml::Value>,
+) -> Result<Group> {
     let group_dir = root.join("groups").join(name);
+
+    if !group_dir.exists() {
+        eprintln!("Couldn't find config directory for gruop {group_dir:?}. Aborting.");
+        bail!("Couldn't find group config directory.");
+    }
 
     // Read the `group.yml` from the group directory.
     let config = read_yaml::<GroupConfig>(&group_dir, "group")?;
@@ -60,7 +66,14 @@ pub fn read_group(root: &Path, name: &str) -> Result<Group> {
             continue;
         }
 
-        read_entry(&group_dir, Path::new(""), entry, &mut directory, None)?;
+        read_entry(
+            &group_dir,
+            Path::new(""),
+            entry,
+            &mut directory,
+            None,
+            template_vars,
+        )?;
     }
 
     Ok(Group {

@@ -15,6 +15,9 @@ use super::{directory::*, file::read_entry, group::Group};
 pub struct Host {
     /// The top-level configuration file for this host.
     pub config: HostConfig,
+    /// All variables that're available for templating to the host files and all groups.
+    #[serde(default)]
+    pub variables: Option<serde_yaml::Value>,
     /// The content of this group's directory.
     pub directory: Directory,
     /// Will contain all groups that have been specified as dependencies.
@@ -27,12 +30,6 @@ pub struct HostConfig {
     /// Default that should be applied to all files.
     #[serde(default)]
     pub file_defaults: HostDefaults,
-    /// All variables that're available for templating to the host files and all groups.
-    #[serde(default)]
-    pub global_variables: HashMap<String, String>,
-    /// All variables that're only available for templating files in this directory.
-    #[serde(default)]
-    pub local_variables: HashMap<String, String>,
     /// Groups that're required by this host.
     #[serde(default)]
     pub groups: Vec<String>,
@@ -60,6 +57,13 @@ pub fn read_host(root: &Path, name: &str) -> Result<Host> {
     // Read the `host.yml` from the host directory.
     let config = read_yaml::<HostConfig>(&host_dir, "host")?;
 
+    // Read the `vars.yml` from the host directory if it exists.
+    let variables = if host_dir.join("vars.yaml").exists() {
+        Some(read_yaml::<serde_yaml::Value>(&host_dir, "vars")?)
+    } else {
+        None
+    };
+
     // Now we recursively read all files in the host directory
     // First, read the directory entries.
     let mut files = Directory::new(&host_dir);
@@ -70,16 +74,26 @@ pub fn read_host(root: &Path, name: &str) -> Result<Host> {
         let entry =
             entry.map_err(|err| Error::IoPath(host_dir.clone(), "reading host dir entry", err))?;
 
-        // Don't include the host configuration file. It's already handled above
-        if entry.file_name() == "host.yml" {
+        // Don't include the host or variable configuration file. It's already handled above
+        if ["host.yml", "host.yaml", "vars.yml", "vars.yaml"]
+            .contains(&entry.file_name().to_str().unwrap())
+        {
             continue;
         }
 
-        read_entry(&host_dir, Path::new(""), entry, &mut files, None)?;
+        read_entry(
+            &host_dir,
+            Path::new(""),
+            entry,
+            &mut files,
+            None,
+            &variables,
+        )?;
     }
 
     Ok(Host {
         config,
+        variables,
         directory: files,
         groups: Vec::new(),
     })

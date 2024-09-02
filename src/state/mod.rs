@@ -39,7 +39,7 @@ pub struct State {
     /// The diffent groups that're managed by bois.
     pub host: Host,
     /// All variables that're available to all groups during templating.
-    pub global_variables: HashMap<String, String>,
+    pub variables: HashMap<String, String>,
     /// The current configuration
     /// We have to save this as well, as we would otherwise loose information about
     /// previous runs, if the config changed in the meantime such as, for instance, a different
@@ -67,13 +67,13 @@ impl State {
 
         // Go through all dependencies and load them as well.
         for group_name in &host.config.groups {
-            let group = read_group(&configuration.bois_dir(), group_name)?;
+            let group = read_group(&configuration.bois_dir(), group_name, &host.variables)?;
             host.groups.push(group);
         }
 
         let mut state = State {
             host,
-            global_variables: HashMap::new(),
+            variables: HashMap::new(),
             configuration: configuration.clone(),
             packages: HashMap::new(),
         };

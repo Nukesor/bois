@@ -64,6 +64,7 @@ pub fn read_entry(
     entry: DirEntry,
     directory: &mut Directory,
     mut path_override: Option<PathBuf>,
+    template_vars: &Option<serde_yaml::Value>,
 ) -> Result<()> {
     let file_name = entry.file_name();
 
@@ -77,11 +78,11 @@ pub fn read_entry(
     // Recursively discover new directories
     let path = entry.path();
     if path.is_dir() {
-        let sub_directory = read_directory(root, &relative_path, path_override)?;
+        let sub_directory = read_directory(root, &relative_path, path_override, template_vars)?;
         directory.entries.push(Entry::Directory(sub_directory));
     } else if path.is_file() {
         trace!("Reading file {path:?}");
-        let file = read_file(root, &relative_path, path_override)?;
+        let file = read_file(root, &relative_path, path_override, template_vars)?;
         directory.entries.push(Entry::File(file));
     }
 

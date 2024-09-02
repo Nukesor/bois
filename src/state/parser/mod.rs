@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use log::debug;
 
 use super::file::{File, FileConfig};
@@ -69,6 +69,7 @@ pub fn read_file(
     root: &Path,
     relative_path: &Path,
     path_override: Option<PathBuf>,
+    template_vars: &Option<serde_yaml::Value>,
 ) -> Result<File> {
     let path = root.join(relative_path);
 
@@ -163,7 +164,21 @@ pub fn read_file(
     }
 
     // Now, read the rest of the actual
-    let content = lines_iter.collect::<Vec<&str>>().join("\n");
+    let mut content = lines_iter.collect::<Vec<&str>>().join("\n");
+
+    // Perform templating, if enabled
+    if config.template {
+        let mut engine = upon::Engine::new();
+        engine
+            .add_template("file", &content)
+            .context("Failed to compile template for {path:?}")?;
+
+        content = engine
+            .template("file")
+            .render(template_vars)
+            .to_string()
+            .context("Failed to render template at {path:?}")?;
+    }
 
     Ok(File {
         relative_path: relative_path.to_path_buf(),
