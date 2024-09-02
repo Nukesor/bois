@@ -13,7 +13,7 @@ better-panic = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "cargo"] }
 comfy-table = "7"
-crossterm = "0.27"
+crossterm = "0.28"
 dirs = "5"
 dotenv = "0.15"
 file-owner = "0.1"
@@ -35,5 +35,5 @@ users = "0.11"
 
 [dev-dependencies]
 pretty_assertions = "1"
-rstest = "0.21"
+rstest = "0.22"
 rstest_reuse = "0.7"
