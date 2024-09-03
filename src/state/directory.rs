@@ -56,7 +56,7 @@ pub fn read_directory(
     root: &Path,
     relative_path: &Path,
     mut path_override: Option<PathBuf>,
-    template_vars: &Option<serde_yaml::Value>,
+    template_vars: &serde_yaml::Value,
 ) -> Result<Directory> {
     let directory_path = root.join(relative_path);
     trace!("Entered directory {directory_path:?}");

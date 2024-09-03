@@ -37,11 +37,7 @@ pub struct GroupDefaults {
     pub group: Option<String>,
 }
 
-pub fn read_group(
-    root: &Path,
-    name: &str,
-    template_vars: &Option<serde_yaml::Value>,
-) -> Result<Group> {
+pub fn read_group(root: &Path, name: &str, template_vars: &serde_yaml::Value) -> Result<Group> {
     let group_dir = root.join("groups").join(name);
 
     if !group_dir.exists() {

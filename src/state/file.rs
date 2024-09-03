@@ -64,7 +64,7 @@ pub fn read_entry(
     entry: DirEntry,
     directory: &mut Directory,
     mut path_override: Option<PathBuf>,
-    template_vars: &Option<serde_yaml::Value>,
+    template_vars: &serde_yaml::Value,
 ) -> Result<()> {
     let file_name = entry.file_name();
 

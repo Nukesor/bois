@@ -69,7 +69,7 @@ pub fn read_file(
     root: &Path,
     relative_path: &Path,
     path_override: Option<PathBuf>,
-    template_vars: &Option<serde_yaml::Value>,
+    template_vars: &serde_yaml::Value,
 ) -> Result<File> {
     let path = root.join(relative_path);
 
@@ -171,13 +171,14 @@ pub fn read_file(
         let mut engine = upon::Engine::new();
         engine
             .add_template("file", &content)
-            .context("Failed to compile template for {path:?}")?;
+            .context(format!("Failed to compile template for {path:?}"))?;
+        engine.add_filter("eq", str::eq);
 
         content = engine
             .template("file")
             .render(template_vars)
             .to_string()
-            .context("Failed to render template at {path:?}")?;
+            .context(format!("Failed to render template at {path:?}"))?;
     }
 
     Ok(File {

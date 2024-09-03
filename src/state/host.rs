@@ -5,6 +5,7 @@ use std::{
 
 use anyhow::{bail, Result};
 use serde_derive::{Deserialize, Serialize};
+use serde_yaml::{Mapping, Value};
 
 use crate::{error::Error, handlers::packages::PackageManager, helper::read_yaml};
 
@@ -16,8 +17,7 @@ pub struct Host {
     /// The top-level configuration file for this host.
     pub config: HostConfig,
     /// All variables that're available for templating to the host files and all groups.
-    #[serde(default)]
-    pub variables: Option<serde_yaml::Value>,
+    pub variables: Value,
     /// The content of this group's directory.
     pub directory: Directory,
     /// Will contain all groups that have been specified as dependencies.
@@ -46,8 +46,8 @@ pub struct HostDefaults {
     pub directory_permissions: Option<u32>,
 }
 
-pub fn read_host(root: &Path, name: &str) -> Result<Host> {
-    let host_dir = root.join("hosts").join(name);
+pub fn read_host(root: &Path, hostname: &str) -> Result<Host> {
+    let host_dir = root.join("hosts").join(hostname);
 
     if !host_dir.exists() {
         eprintln!("Couldn't find config directory for this machine at {host_dir:?}. Aborting.");
@@ -58,11 +58,22 @@ pub fn read_host(root: &Path, name: &str) -> Result<Host> {
     let config = read_yaml::<HostConfig>(&host_dir, "host")?;
 
     // Read the `vars.yml` from the host directory if it exists.
-    let variables = if host_dir.join("vars.yaml").exists() {
-        Some(read_yaml::<serde_yaml::Value>(&host_dir, "vars")?)
+    let mut variables = if host_dir.join("vars.yaml").exists() {
+        let value = read_yaml::<Value>(&host_dir, "vars")?;
+        match value {
+            Value::Mapping(map) => map,
+            _ => bail!("Expected map for variables. Got {value:#?}"),
+        }
     } else {
-        None
+        Mapping::new()
     };
+
+    // Insert default variables
+    variables.insert(
+        serde_yaml::to_value("hostname").unwrap(),
+        serde_yaml::to_value(hostname).unwrap(),
+    );
+    let variables = Value::Mapping(variables);
 
     // Now we recursively read all files in the host directory
     // First, read the directory entries.
