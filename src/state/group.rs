@@ -46,7 +46,14 @@ pub fn read_group(root: &Path, name: &str, template_vars: &serde_yaml::Value) ->
     }
 
     // Read the `group.yml` from the group directory.
-    let config = read_yaml::<GroupConfig>(&group_dir, "group")?;
+    // Return a default config if the group config doesn't exist.
+    let config = match read_yaml::<GroupConfig>(&group_dir, "group") {
+        Ok(config) => config,
+        Err(error) => match error {
+            Error::FileNotFound(_, _) => GroupConfig::default(),
+            _ => bail!(error),
+        },
+    };
 
     // Recursively read all files in directory
     let mut directory = Directory::new(&group_dir);
