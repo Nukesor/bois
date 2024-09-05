@@ -1,4 +1,9 @@
-use std::{fs::File, io::Write, os::unix::fs::PermissionsExt, path::Path};
+use std::{
+    fs::{set_permissions, File, Permissions},
+    io::Write,
+    os::unix::fs::PermissionsExt,
+    path::Path,
+};
 
 use anyhow::Result;
 use crossterm::style::Stylize;
@@ -20,11 +25,7 @@ pub fn create_file(
     file.write_all(content)
         .map_err(|err| Error::IoPath(path.to_path_buf(), "writing to file.", err))?;
 
-    let metadata = file.metadata().map_err(|err| {
-        Error::IoPath(path.to_path_buf(), "reading metadata of created file.", err)
-    })?;
-
-    metadata.permissions().set_mode(*permissions);
+    set_permissions(path, Permissions::from_mode(*permissions))?;
 
     path.set_owner(owner)
         .map_err(|err| Error::FileOwnership(path.to_path_buf(), "setting owner", err))?;
@@ -63,11 +64,8 @@ pub fn modify_file(
             .map_err(|err| Error::IoPath(path.to_path_buf(), "writing to file.", err))?;
     }
 
-    if let Some(permissions) = permissions {
-        let metadata = file.metadata().map_err(|err| {
-            Error::IoPath(path.to_path_buf(), "reading metadata of created file.", err)
-        })?;
-        metadata.permissions().set_mode(*permissions);
+    if let Some(mode) = permissions {
+        set_permissions(path, Permissions::from_mode(*mode))?;
     }
 
     if let Some(owner) = owner {

@@ -1,4 +1,8 @@
-use std::{os::unix::fs::PermissionsExt, path::Path};
+use std::{
+    fs::{set_permissions, Permissions},
+    os::unix::fs::PermissionsExt,
+    path::Path,
+};
 
 use anyhow::Result;
 use file_owner::PathExt;
@@ -13,9 +17,7 @@ pub fn create_directory(path: &Path, permissions: &u32, owner: &str, group: &str
             .map_err(|err| Error::IoPath(path.to_path_buf(), "creating directory.", err))?;
     }
 
-    let metadata = std::fs::metadata(path)
-        .map_err(|err| Error::IoPath(path.to_path_buf(), "reading metadata", err))?;
-    metadata.permissions().set_mode(*permissions);
+    set_permissions(path, Permissions::from_mode(*permissions))?;
 
     path.set_owner(owner)
         .map_err(|err| Error::FileOwnership(path.to_path_buf(), "setting owner", err))?;
@@ -33,10 +35,7 @@ pub fn modify_directory(
     group: &Option<String>,
 ) -> Result<()> {
     if let Some(permissions) = permissions {
-        let metadata = std::fs::metadata(path)
-            .map_err(|err| Error::IoPath(path.to_path_buf(), "reading metadata", err))?;
-
-        metadata.permissions().set_mode(*permissions);
+        set_permissions(path, Permissions::from_mode(*permissions))?;
     }
 
     if let Some(owner) = owner {
