@@ -70,9 +70,9 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // TODO: Logic to absorb system state
     if !system_changes.is_empty() {
         println!("Some untracked changes were detected on the system since last deployment.");
-        //for change in changes {
-        //    println!("  {change:?}");
-        //}
+        if !system_changes.path_operations.is_empty() {
+            print_path_changes(&system_changes.path_operations)?;
+        }
     }
 
     // ---------- Step 5: Uninstall unwanted packages ----------
