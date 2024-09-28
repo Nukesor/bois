@@ -158,6 +158,7 @@ dependencies = [
  "hostname",
  "lazy_static",
  "log",
+ "minijinja",
  "pest",
  "pest_derive",
  "pretty_assertions",
@@ -171,7 +172,6 @@ dependencies = [
  "strum",
  "strum_macros",
  "thiserror",
- "upon",
  "users",
 ]
 
@@ -726,6 +726,15 @@ name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
+
+[[package]]
+name = "minijinja"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1028b628753a7e1a88fc59c9ba4b02ecc3bc0bd3c7af23df667bc28df9b3310e"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "miniz_oxide"
@@ -1320,17 +1329,6 @@ name = "unsafe-libyaml"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
-
-[[package]]
-name = "upon"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fe29601d1624f104fa9a35ea71a5f523dd8bd1cfc8c31f8124ad2b829f013c0"
-dependencies = [
- "serde",
- "unicode-ident",
- "unicode-width",
-]
 
 [[package]]
 name = "users"

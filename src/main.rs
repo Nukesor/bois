@@ -15,6 +15,7 @@ mod constants;
 mod error;
 mod handlers;
 mod helper;
+mod password_managers;
 mod state;
 mod system_state;
 mod ui;

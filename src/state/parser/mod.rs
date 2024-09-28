@@ -7,7 +7,7 @@ use anyhow::{bail, Context, Result};
 use log::debug;
 
 use super::file::{File, FileConfig};
-use crate::error::Error;
+use crate::{error::Error, password_managers::add_password_manager_functions};
 
 //use pest::Parser;
 //use pest_derive::Parser;
@@ -168,16 +168,14 @@ pub fn read_file(
 
     // Perform templating, if enabled
     if config.template {
-        let mut engine = upon::Engine::new();
-        engine
-            .add_template("file", &content)
+        let mut env = minijinja::Environment::new();
+        env.add_template("file", &content)
             .context(format!("Failed to compile template for {path:?}"))?;
-        engine.add_filter("eq", str::eq);
+        add_password_manager_functions(&mut env);
 
-        content = engine
-            .template("file")
+        let template = env.get_template("file").unwrap();
+        content = template
             .render(template_vars)
-            .to_string()
             .context(format!("Failed to render template at {path:?}"))?;
     }
 
