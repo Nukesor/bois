@@ -37,5 +37,9 @@ pub fn render_template(content: &str, vars: &Value) -> Result<String> {
     add_password_manager_functions(&mut env);
 
     let template = env.get_template("file").unwrap();
-    template.render(vars).context("Failed to render template")
+    let mut rendered = template.render(vars).context("Failed to render template")?;
+    // minijinja doesn't have a trailing newline, which is a bit annoying as many editors add one.
+    rendered.push('\n');
+
+    Ok(rendered)
 }
