@@ -8,7 +8,9 @@ use crate::{helper::read_yaml, password_managers::add_password_manager_functions
 
 pub fn load_templating_vars(host_dir: &Path, hostname: &str) -> Result<Value> {
     // Read the `vars.yml` from the host directory if it exists.
-    let mut variables = if host_dir.join("vars.yaml").exists() {
+    let vars_file_exists =
+        host_dir.join("vars.yaml").exists() || host_dir.join("vars.yml").exists();
+    let mut variables = if vars_file_exists {
         let value = read_yaml::<Value>(host_dir, "vars")?;
         match value {
             Value::Mapping(map) => map,
