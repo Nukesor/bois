@@ -5,9 +5,12 @@ use std::{
 
 use anyhow::{bail, Result};
 use serde_derive::{Deserialize, Serialize};
-use serde_yaml::{Mapping, Value};
+use serde_yaml::Value;
 
-use crate::{error::Error, handlers::packages::PackageManager, helper::read_yaml};
+use crate::{
+    error::Error, handlers::packages::PackageManager, helper::read_yaml,
+    templating::load_templating_vars,
+};
 
 use super::{directory::*, file::read_entry, group::Group};
 
@@ -57,23 +60,8 @@ pub fn read_host(root: &Path, hostname: &str) -> Result<Host> {
     // Read the `host.yml` from the host directory.
     let config = read_yaml::<HostConfig>(&host_dir, "host")?;
 
-    // Read the `vars.yml` from the host directory if it exists.
-    let mut variables = if host_dir.join("vars.yaml").exists() {
-        let value = read_yaml::<Value>(&host_dir, "vars")?;
-        match value {
-            Value::Mapping(map) => map,
-            _ => bail!("Expected map for variables. Got {value:#?}"),
-        }
-    } else {
-        Mapping::new()
-    };
-
-    // Insert default variables
-    variables.insert(
-        serde_yaml::to_value("hostname").unwrap(),
-        serde_yaml::to_value(hostname).unwrap(),
-    );
-    let variables = Value::Mapping(variables);
+    // Load a template file if it exists and pre-seed some default templating values.
+    let templating_vars = load_templating_vars(&host_dir, hostname)?;
 
     // Now we recursively read all files in the host directory
     // First, read the directory entries.
@@ -98,13 +86,13 @@ pub fn read_host(root: &Path, hostname: &str) -> Result<Host> {
             entry,
             &mut files,
             None,
-            &variables,
+            &templating_vars,
         )?;
     }
 
     Ok(Host {
         config,
-        variables,
+        variables: templating_vars,
         directory: files,
         groups: Vec::new(),
     })

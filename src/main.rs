@@ -2,7 +2,9 @@
 #![allow(clippy::assigning_clones)]
 // Allow dead code while prototyping.
 #![allow(dead_code)]
-use anyhow::{bail, Result};
+use std::sync::OnceLock;
+
+use anyhow::Result;
 use clap::Parser;
 use log::LevelFilter;
 use pretty_env_logger::env_logger::Builder;
@@ -18,11 +20,21 @@ mod helper;
 mod password_managers;
 mod state;
 mod system_state;
+mod templating;
 mod ui;
 
 use args::Arguments;
 use commands::run_subcommand;
 use config::Configuration;
+
+/// Expose the config as a global.
+/// This is somewhat of an antipatter, but is needed to access the configuration inside of
+/// minijinja custom filters/functions. We have no way to pass additional arguments to those, as
+/// they're called by minijinja. (We could maybe use closures when registering the minijinja
+/// functions, but that feels also somewhat ugly.)
+///
+/// Avoid to use this anywhere outside of minijinja's filters/functions.
+static CONFIG: OnceLock<Configuration> = OnceLock::new();
 
 fn main() -> Result<()> {
     // Read any .env files
@@ -40,22 +52,8 @@ fn main() -> Result<()> {
         config.save(&args.config)?;
     }
 
-    // Do some basic sanity checks
-    if !config.target_dir().exists() {
-        log::error!(
-            "Bois target directory doesn't exist: {:?}",
-            config.target_dir()
-        );
-        bail!("Target directory not found");
-    }
-
-    if !config.bois_dir().exists() {
-        log::error!(
-            "Bois config directory doesn't exist: {:?}",
-            config.bois_dir()
-        );
-        bail!("Config directory not found");
-    }
+    // Set the config globally.
+    CONFIG.set(config.clone()).unwrap();
 
     run_subcommand(config, &args.subcommand)?;
 

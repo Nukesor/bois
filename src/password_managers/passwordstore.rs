@@ -1,6 +1,8 @@
-use std::process::{Command, Stdio};
+use std::process::Command;
 
 use minijinja::{Error, ErrorKind, Value};
+
+use crate::CONFIG;
 
 /// Integration for the `pass` password manager
 /// https://www.passwordstore.org/
@@ -29,15 +31,12 @@ use minijinja::{Error, ErrorKind, Value};
 /// Check if there's a smarter way to handle the case where the gpg key hasn't been added to the
 /// gpg-agent yet.
 pub fn pass(key: &str, parse_mode: Option<String>) -> Result<Value, Error> {
-    // Run the command as if we know that the gpg key is already unlocked
-    // If it isn't, we must handle this in a follow-up command we attach to our pipes.
+    // Run the command as if we expect the gpg key to be unlocked or not password protected.
+    // Also inject any user-provided environment variables to potentially configure pass.
     let result = Command::new("pass")
         .arg("show")
         .arg(key)
-        .env(
-            "PASSWORD_STORE_DIR",
-            "/home/nuke/.local/share/password-store",
-        )
+        .envs(&CONFIG.get().unwrap().envs)
         .output();
 
     // If the command fails this early, something went fundamentally wrong.
@@ -54,15 +53,13 @@ pub fn pass(key: &str, parse_mode: Option<String>) -> Result<Value, Error> {
     // If the first command failed, we just assume that the gpg key hasn't been unlocked
     // and added to gpg-agent yet. We need to give the user a chance to do this.
     if !output.status.success() {
+        println!("Failure the first");
         // Call pass again with the I/O attached to the current process
         // This will result in password prompt to be shown.
         let spawn_result = Command::new("pass")
             .arg("show")
             .arg(key)
-            .env(
-                "PASSWORD_STORE_DIR",
-                "/home/nuke/.local/share/password-store",
-            )
+            .envs(&CONFIG.get().unwrap().envs)
             .spawn();
 
         // Handle the case where the command spawn.
@@ -99,10 +96,7 @@ pub fn pass(key: &str, parse_mode: Option<String>) -> Result<Value, Error> {
         let result = Command::new("pass")
             .arg("show")
             .arg(key)
-            .env(
-                "PASSWORD_STORE_DIR",
-                "/home/nuke/.local/share/password-store",
-            )
+            .envs(&CONFIG.get().unwrap().envs)
             .output();
 
         // If it fails again, we finally fail for good.
@@ -126,29 +120,28 @@ pub fn pass(key: &str, parse_mode: Option<String>) -> Result<Value, Error> {
 
     // The user requested yaml mode, so we treat the content of this pass document at least
     // partially as yaml.
-    if parse_mode == "yaml" {
-        // Check if there's multile lines.
-        // If so, treat the content after the first line as yaml.
-        // Otherwise treat the whole file as yaml.
-        let yaml = content
-            .split_once("\n")
-            .map(|(_, other_lines)| other_lines.to_string())
-            .unwrap_or(content.to_string());
+    match parse_mode.as_str() {
+        "yaml" | "yml" => {
+            // Check if there's multile lines.
+            // If so, treat the content after the first line as yaml.
+            // Otherwise treat the whole file as yaml.
+            let yaml = content
+                .split_once("\n")
+                .map(|(_, other_lines)| other_lines.to_string())
+                .unwrap_or(content.to_string());
 
-        // Try to parse the yaml.
-        match serde_yaml::from_str(&yaml) {
-            Ok(value) => return Ok(value),
-            Err(err) => {
-                return Err(Error::new(
+            // Try to parse the yaml.
+            match serde_yaml::from_str(&yaml) {
+                Ok(value) => Ok(value),
+                Err(err) => Err(Error::new(
                     ErrorKind::UndefinedError,
                     format!("Failed to parse yaml from `pass show {key}`: {err:?}"),
-                ))
+                )),
             }
         }
+        _ => Err(Error::new(
+            ErrorKind::UndefinedError,
+            format!("Found unexpected parse_mode '{parse_mode}' in 'pass' function"),
+        )),
     }
-
-    Err(Error::new(
-        ErrorKind::UndefinedError,
-        format!("Found unexpected parse_mode '{parse_mode}' in 'pass' function"),
-    ))
 }

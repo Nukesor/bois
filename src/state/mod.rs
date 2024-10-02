@@ -63,7 +63,7 @@ impl State {
 
         // Read the initial group for this host.
         // This specifieds all other dependencies.
-        let mut host = read_host(&configuration.bois_dir(), &configuration.name()?)?;
+        let mut host = read_host(&configuration.bois_dir(), &configuration.name)?;
 
         // Go through all dependencies and load them as well.
         for group_name in &host.config.groups {

@@ -1,11 +1,12 @@
 //! The main configuration file, that's used to configure this program.
 use std::{
+    collections::HashMap,
     fs::{create_dir_all, File},
     io::{BufReader, Write},
     path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use log::info;
 use serde_derive::{Deserialize, Serialize};
 use shellexpand::tilde;
@@ -24,8 +25,8 @@ pub enum Mode {
 pub struct Configuration {
     /// The name of the machine.
     /// If this is set to None, the hostname will be used
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
+    #[serde(default = "default_hostname")]
+    pub name: String,
 
     /// The bois directory, which contains all bois templates and alike.
     /// This must be a path to an existing directory.
@@ -34,14 +35,35 @@ pub struct Configuration {
     /// The target directory to which the files should be deployed.
     /// This must be a path to an existing directory.
     target_dir: PathBuf,
+
+    /// This allows you to set additional environment variables.
+    /// This is mostly necessary for password manager integration, which need special
+    /// configuration or get their sessions via environment variables.
+    #[serde(default)]
+    pub envs: HashMap<String, String>,
+}
+
+fn default_hostname() -> String {
+    let result = hostname::get();
+
+    let hostname = match result {
+        Ok(hostname) => hostname,
+        Err(err) => panic!(
+            "Failed to determine hostname for machine: {err}
+If this doesn't work, set the machine's name manually in the global bois.yml."
+        ),
+    };
+
+    hostname.to_string_lossy().to_string()
 }
 
 impl Default for Configuration {
     fn default() -> Self {
         Configuration {
-            name: None,
+            name: default_hostname(),
             bois_dir: PathBuf::from("/etc/bois/"),
             target_dir: PathBuf::from("/"),
+            envs: HashMap::new(),
         }
     }
 }
@@ -52,25 +74,6 @@ pub fn expand_home(old_path: &Path) -> PathBuf {
 }
 
 impl Configuration {
-    /// The name that should be used on this machine.
-    pub fn name(&self) -> Result<String> {
-        // Use the provided name, otherwise fallback to the hostname.
-        // Fail hard if neither works.
-        if let Some(name) = &self.name {
-            Ok(name.clone())
-        } else {
-            let hostname = hostname::get()
-                .context(
-                    "Couldn't determine the machine's name. \
-                     Alternatively set the name in the config file.",
-                )?
-                .to_string_lossy()
-                .to_string();
-
-            Ok(hostname)
-        }
-    }
-
     /// The config directory which contains all bois templates and alike.
     pub fn bois_dir(&self) -> PathBuf {
         expand_home(&self.bois_dir)
@@ -123,10 +126,27 @@ impl Configuration {
         let reader = BufReader::new(file);
 
         // Read and deserialize the config file.
-        let settings = serde_yaml::from_reader(reader)
+        let config: Configuration = serde_yaml::from_reader(reader)
             .map_err(|err| Error::ConfigDeserialization(err.to_string()))?;
 
-        Ok((settings, true))
+        // Do some basic sanity checks
+        if !config.target_dir().exists() {
+            log::error!(
+                "Bois target directory doesn't exist: {:?}",
+                config.target_dir()
+            );
+            bail!("Target directory not found");
+        }
+
+        if !config.bois_dir().exists() {
+            log::error!(
+                "Bois config directory doesn't exist: {:?}",
+                config.bois_dir()
+            );
+            bail!("Config directory not found");
+        }
+
+        Ok((config, true))
     }
 
     /// Save the current configuration as a file to the given path. \
