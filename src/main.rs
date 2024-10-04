@@ -6,7 +6,7 @@ use std::sync::OnceLock;
 
 use anyhow::Result;
 use clap::Parser;
-use log::LevelFilter;
+use log::{debug, LevelFilter};
 use pretty_env_logger::env_logger::Builder;
 
 mod args;
@@ -25,7 +25,7 @@ mod ui;
 
 use args::Arguments;
 use commands::run_subcommand;
-use config::Configuration;
+use config::{build_configuration, Configuration, RawConfiguration};
 
 /// Expose the config as a global.
 /// This is somewhat of an antipatter, but is needed to access the configuration inside of
@@ -45,12 +45,18 @@ fn main() -> Result<()> {
     // Initalize everything
     init_app(args.verbose)?;
 
-    let (config, found_config) = Configuration::read(&args.config)?;
+    let (raw_config, found_config) = RawConfiguration::read(&args.config)?;
     // In case we didn't find a configuration file, write a default configuration file
     // to given path or to the default configuration path.
     if !found_config {
-        config.save(&args.config)?;
+        raw_config.save(&args.config)?;
     }
+
+    // Build the final configuration base on the values from config file.
+    // All other values are populated with default values.
+    let config = build_configuration(raw_config)?;
+
+    debug!("Running with the following config:\n{config:#?}");
 
     // Set the config globally.
     CONFIG.set(config.clone()).unwrap();

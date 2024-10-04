@@ -3,95 +3,211 @@ use std::{
     collections::HashMap,
     fs::{create_dir_all, File},
     io::{BufReader, Write},
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use anyhow::{bail, Result};
 use log::info;
 use serde_derive::{Deserialize, Serialize};
-use shellexpand::tilde;
 
-use crate::error::Error;
+use crate::{
+    error::Error,
+    helper::{expand_home, find_directory},
+};
 
 /// The current mode we're running in.
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Mode {
     User,
     System,
 }
 
-/// All settings which are used by the daemon
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub struct Configuration {
+/// This
+#[derive(PartialEq, Eq, Clone, Default, Debug, Deserialize, Serialize)]
+pub struct RawConfiguration {
     /// The name of the machine.
     /// If this is set to None, the hostname will be used
-    #[serde(default = "default_hostname")]
-    pub name: String,
+    pub name: Option<String>,
 
     /// The bois directory, which contains all bois templates and alike.
     /// This must be a path to an existing directory.
-    bois_dir: PathBuf,
+    pub bois_dir: Option<PathBuf>,
 
     /// The target directory to which the files should be deployed.
     /// This must be a path to an existing directory.
-    target_dir: PathBuf,
+    pub target_dir: Option<PathBuf>,
+
+    /// Cache dir
+    pub cache_dir: Option<PathBuf>,
+
+    /// Runtime dir
+    pub runtime_dir: Option<PathBuf>,
 
     /// This allows you to set additional environment variables.
     /// This is mostly necessary for password manager integration, which need special
     /// configuration or get their sessions via environment variables.
     #[serde(default)]
     pub envs: HashMap<String, String>,
+
+    /// Determine whether
+    pub mode: Option<Mode>,
 }
 
-fn default_hostname() -> String {
-    let result = hostname::get();
+/// All settings which are used by the daemon
+/// TODO: Create two different configuration structs.
+///     One for parsing the file and one that's populated with the default values afterwards.
+///     This will enable us to have a clean fully-populated Configuration struct for our
+///     application logic and a lazy incomplete struct for parsing.
+#[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
+pub struct Configuration {
+    /// The name of the machine.
+    /// If this is set to None, the hostname will be used
+    pub name: String,
 
-    let hostname = match result {
-        Ok(hostname) => hostname,
-        Err(err) => panic!(
-            "Failed to determine hostname for machine: {err}
+    /// The bois directory, which contains all bois templates and alike.
+    /// This must be a path to an existing directory.
+    pub bois_dir: PathBuf,
+
+    /// The target directory to which the files should be deployed.
+    /// This must be a path to an existing directory.
+    pub target_dir: PathBuf,
+
+    /// Cache dir
+    pub cache_dir: PathBuf,
+
+    /// Runtime dir
+    pub runtime_dir: PathBuf,
+
+    /// This allows you to set additional environment variables.
+    /// This is mostly necessary for password manager integration, which need special
+    /// configuration or get their sessions via environment variables.
+    pub envs: HashMap<String, String>,
+
+    /// Determine whether bois is running in system configuration mode or in
+    /// user configuration mode.
+    pub mode: Mode,
+}
+
+impl RawConfiguration {
+    /// The mode in which bois operates (root vs. user).
+    /// Fallback to `Mode::System` for now, will be changed later.
+    /// This determines a few things, such as:
+    /// - Whether `systemctl` should be called with the `--user` flag
+    /// - What the default target directory is `~/.config` vs `/etc`
+    pub fn mode(&self) -> Mode {
+        self.mode.unwrap_or(Mode::System)
+    }
+}
+
+/// This function takes a [RawConfiguration] from a deserialized config file and populates all values
+/// that haven't explicitly set.
+/// The resulting [Configuration] no longer has any `Option`als, which makes it convenient to pass
+/// around the program during runtime.
+pub fn build_configuration(raw_config: RawConfiguration) -> Result<Configuration> {
+    // Determine the hostname of the machine, if it isn't explicitly set.
+    let name = match raw_config.name {
+        Some(name) => name,
+        None => match hostname::get() {
+            Ok(hostname) => hostname.to_string_lossy().to_string(),
+            Err(err) => bail!(
+                "Failed to determine hostname for machine: {err}
 If this doesn't work, set the machine's name manually in the global bois.yml."
-        ),
+            ),
+        },
     };
 
-    hostname.to_string_lossy().to_string()
-}
-
-impl Default for Configuration {
-    fn default() -> Self {
-        Configuration {
-            name: default_hostname(),
-            bois_dir: PathBuf::from("/etc/bois/"),
-            target_dir: PathBuf::from("/"),
-            envs: HashMap::new(),
+    // Determine the mode bois should run in.
+    // This determines what kind of default directories should be used, which is why we do it very
+    // early on.
+    let mode = match raw_config.mode {
+        Some(mode) => mode,
+        None => {
+            if whoami::username() == "root" {
+                Mode::System
+            } else {
+                Mode::User
+            }
         }
-    }
+    };
+
+    // Determine the directory where we should look for the config files.
+    let bois_dir = match raw_config.bois_dir {
+        Some(dir) => expand_home(&dir),
+        None => match mode {
+            Mode::User => find_directory(
+                vec![
+                    dirs::config_dir().map(|path| path.join("bois")),
+                    dirs::home_dir().map(|path| path.join(".dotfiles")),
+                    dirs::home_dir().map(|path| path.join(".dots")),
+                    dirs::home_dir().map(|path| path.join(".bois")),
+                ],
+                "bois config",
+                false,
+            )?,
+            Mode::System => PathBuf::from("/etc/bois"),
+        },
+    };
+
+    // Determine the directory where we should look for the config files.
+    let target_dir = match raw_config.target_dir {
+        Some(dir) => expand_home(&dir),
+        None => match mode {
+            Mode::User => find_directory(
+                vec![
+                    dirs::config_dir(),
+                    dirs::home_dir().map(|path| path.join(".config")),
+                ],
+                "target",
+                true,
+            )?,
+            Mode::System => PathBuf::from("/etc/bois"),
+        },
+    };
+
+    // Determine the directory where we store cached files, such as the previous deployed state.
+    let cache_dir = match raw_config.cache_dir {
+        Some(dir) => expand_home(&dir),
+        None => match mode {
+            Mode::User => find_directory(
+                vec![dirs::cache_dir().map(|path| path.join("bois"))],
+                "bois cache",
+                true,
+            )?,
+            Mode::System => PathBuf::from("/var/lib/bois"),
+        },
+    };
+
+    // Determine the directory where we store cached files, such as the previous deployed state.
+    let runtime_dir = match raw_config.runtime_dir {
+        Some(dir) => expand_home(&dir),
+        None => match mode {
+            Mode::User => find_directory(
+                vec![dirs::runtime_dir().map(|path| path.join("bois"))],
+                "bois runtime",
+                true,
+            )?,
+            Mode::System => PathBuf::from("/var/lib/bois"),
+        },
+    };
+
+    Ok(Configuration {
+        name,
+        bois_dir,
+        target_dir,
+        cache_dir,
+        runtime_dir,
+        envs: raw_config.envs,
+        mode,
+    })
 }
 
-/// Little helper which expands a given path's `~` characters to a fully qualified path.
-pub fn expand_home(old_path: &Path) -> PathBuf {
-    PathBuf::from(tilde(&old_path.to_string_lossy()).into_owned())
-}
-
-impl Configuration {
-    /// The config directory which contains all bois templates and alike.
-    pub fn bois_dir(&self) -> PathBuf {
-        expand_home(&self.bois_dir)
-    }
-
-    /// The target directory to which the configuration should be deployed.
-    pub fn target_dir(&self) -> PathBuf {
-        expand_home(&self.target_dir)
-    }
-}
-
-impl Configuration {
+impl RawConfiguration {
     /// Try to read existing config files, while using default values for non-existing fields.
     /// If successful, this will return a full config as well as a boolean on whether we found an
     /// existing configuration file or not.
     ///
     /// The default local config locations depends on the current target.
-    pub fn read(from_file: &Option<PathBuf>) -> Result<(Configuration, bool)> {
+    pub fn read(from_file: &Option<PathBuf>) -> Result<(RawConfiguration, bool)> {
         info!("Parsing config files");
 
         // Load the config from a very specific file path
@@ -112,7 +228,7 @@ impl Configuration {
             if !path.exists() || !path.is_file() {
                 info!("No config file found. Use default config.");
                 // Return a default configuration if we couldn't find a file.
-                return Ok((Configuration::default(), false));
+                return Ok((RawConfiguration::default(), false));
             };
 
             path
@@ -121,30 +237,13 @@ impl Configuration {
         info!("Found config file at: {path:?}");
 
         // Open the file in read-only mode with buffer.
-        let file =
-            File::open(&path).map_err(|err| Error::IoPath(path, "opening config file.", err))?;
+        let file = File::open(&path)
+            .map_err(|err| Error::IoPath(path.clone(), "opening config file.", err))?;
         let reader = BufReader::new(file);
 
         // Read and deserialize the config file.
-        let config: Configuration = serde_yaml::from_reader(reader)
-            .map_err(|err| Error::ConfigDeserialization(err.to_string()))?;
-
-        // Do some basic sanity checks
-        if !config.target_dir().exists() {
-            log::error!(
-                "Bois target directory doesn't exist: {:?}",
-                config.target_dir()
-            );
-            bail!("Target directory not found");
-        }
-
-        if !config.bois_dir().exists() {
-            log::error!(
-                "Bois config directory doesn't exist: {:?}",
-                config.bois_dir()
-            );
-            bail!("Config directory not found");
-        }
+        let config: RawConfiguration =
+            serde_yaml::from_reader(reader).map_err(|err| Error::Deserialization(path, err))?;
 
         Ok((config, true))
     }

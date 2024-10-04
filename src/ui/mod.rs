@@ -1,10 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    fs::File,
-    io::Write,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{collections::BTreeMap, fs::File, io::Write, path::Path, process::Command};
 
 use anyhow::{bail, Result};
 use comfy_table::{presets, Attribute, Cell, CellAlignment, Column, ContentArrangement, Table};
@@ -12,6 +6,7 @@ use crossterm::style::Stylize;
 
 use crate::{
     changeset::{PackageInstall, PackageUninstall, PathOperation},
+    config::Configuration,
     constants::{CURRENT_GROUP, CURRENT_USER},
     error::Error,
     handlers::packages::PackageManager,
@@ -51,7 +46,7 @@ pub fn print_package_installs(packages: &[PackageInstall]) {
     }
 }
 
-pub fn print_path_changes(changes: &[PathOperation]) -> Result<()> {
+pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> Result<()> {
     let mut change_iter = changes.iter().peekable();
     print_header("File changes");
 
@@ -115,7 +110,7 @@ pub fn print_path_changes(changes: &[PathOperation]) -> Result<()> {
                     }
 
                     if let Some(new_content) = content {
-                        let temp_path = PathBuf::from("/var/lib/bois/").join("bois_new_file");
+                        let temp_path = config.runtime_dir.join("bois_new_file");
 
                         // Write file to a temporary file in the user's runtime directory.
                         // That way, we can diff the file with external tools.

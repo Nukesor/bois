@@ -4,9 +4,6 @@ use file_owner::FileOwnerError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Error while reading configuration:\n{}", .0)]
-    ConfigDeserialization(String),
-
     #[error("Some error occurred. {}", .0)]
     Generic(String),
 
@@ -21,6 +18,10 @@ pub enum Error {
 
     #[error("I/O error at path {:?} while {}:\n{}", .0, .1, .2)]
     IoPath(PathBuf, &'static str, std::io::Error),
+
+    // Same as the IoPathError, but with a String. Less ergonomic
+    #[error("I/O error at path {:?} while {}:\n{}", .0, .1, .2)]
+    IoPathString(PathBuf, String, std::io::Error),
 
     #[error("I/O error at path {:?} while {}:\n{}", .0, .1, .2)]
     FileOwnership(PathBuf, &'static str, FileOwnerError),

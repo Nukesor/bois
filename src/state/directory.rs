@@ -8,6 +8,7 @@ use serde_derive::{Deserialize, Serialize};
 use super::file::*;
 use crate::constants::CURRENT_GROUP;
 use crate::constants::CURRENT_USER;
+use crate::helper::expand_home;
 use crate::{error::Error, helper::read_yaml};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -33,15 +34,25 @@ impl Directory {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DirectoryConfig {
-    /// If this is set, this path will be used as a destination.
-    /// If it's an relative path, it'll be treated as relative to the default target directory.
-    /// If it's an absolute path, that absolute path will be used.
-    pub path: Option<PathBuf>,
+    /// If this is set, this directory will be used as the default destination to write configs to.
+    /// - If it's an relative path, it'll be treated as relative to the default target directory.
+    /// - If it's an absolute path, that absolute path will be used.
+    target_directory: Option<PathBuf>,
     pub owner: Option<String>,
     pub group: Option<String>,
     /// This is represented as a octal `Oo755` in yaml.
     /// It's automatically parsed to a u32, which can then be used by the std lib.
     pub permissions: Option<u32>,
+}
+
+impl DirectoryConfig {
+    pub fn target_directory(&self) -> Option<PathBuf> {
+        self.target_directory.as_ref().map(|path| expand_home(path))
+    }
+
+    pub fn override_target_directory(&mut self, path: PathBuf) {
+        self.target_directory = Some(path)
+    }
 }
 
 /// Recursively discover all bois and non-bois configuration files in a group directory.
@@ -69,10 +80,10 @@ pub fn read_directory(
 
     // Check if there's a new path override in this config.
     // If it is, we set the override, which will be passed to all child entries.
-    if let Some(path) = &directory_config.path {
+    if let Some(path) = &directory_config.target_directory {
         path_override = Some(path.clone());
     } else if let Some(path) = &path_override {
-        directory_config.path = Some(path.clone());
+        directory_config.target_directory = Some(path.clone());
     }
 
     let entries = std::fs::read_dir(&directory_path)

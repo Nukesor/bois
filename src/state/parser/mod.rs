@@ -93,8 +93,8 @@ pub fn read_file(
         // Check if there's an active path override from a parent directory.
         // If the file doesn't have its own override, use the one from the parent.
         if let Some(path_override) = path_override {
-            if config.path.is_none() {
-                config.path = Some(path_override);
+            if config.path().is_none() {
+                config.override_path(path_override);
             }
         }
 
@@ -158,8 +158,8 @@ pub fn read_file(
     // Check if there's an active path override from a parent directory.
     // If the file doesn't have its own override, use the one from the parent.
     if let Some(path_override) = path_override {
-        if config.path.is_none() {
-            config.path = Some(path_override);
+        if config.path().is_none() {
+            config.override_path(path_override);
         }
     }
 

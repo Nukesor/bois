@@ -28,7 +28,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // This state will be used to determine:
     // - Any changes on the system's files since the last deployment
     // - Cleanup work that might need to be done for the new desired state.
-    let previous_state = State::read_previous()?;
+    let previous_state = State::read_previous(&config)?;
     trace!("Previous state: {previous_state:#?}");
 
     // Create a new empty changeset.
@@ -71,7 +71,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     if !system_changes.is_empty() {
         println!("Some untracked changes were detected on the system since last deployment.");
         if !system_changes.path_operations.is_empty() {
-            print_path_changes(&system_changes.path_operations)?;
+            print_path_changes(&system_changes.path_operations, &config)?;
         }
     }
 
@@ -105,7 +105,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
 
     // ---------- Step 7: Execute all path operations ----------
     if !changeset.path_operations.is_empty() {
-        print_path_changes(&changeset.path_operations)?;
+        print_path_changes(&changeset.path_operations, &config)?;
         println!();
 
         // Execute all path related changes.

@@ -7,6 +7,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use super::directory::*;
 use crate::constants::{CURRENT_GROUP, CURRENT_USER};
+use crate::helper::expand_home;
 use crate::state::parser::read_file;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -35,7 +36,8 @@ pub struct FileConfig {
     /// If this is set, this path will be used as a destination.
     /// If it's an relative path, it'll be treated as relative to the default target directory.
     /// If it's an absolute path, that absolute path will be used.
-    pub path: Option<PathBuf>,
+    path: Option<PathBuf>,
+    pub rename: Option<String>,
     pub owner: Option<String>,
     pub group: Option<String>,
     /// This is represented as a octal `Oo640` in yaml.
@@ -45,6 +47,16 @@ pub struct FileConfig {
     /// Defaults to `false` to prevent unwanted behavior.
     #[serde(default)]
     pub template: bool,
+}
+
+impl FileConfig {
+    pub fn path(&self) -> Option<PathBuf> {
+        self.path.as_ref().map(|path| expand_home(path))
+    }
+
+    pub fn override_path(&mut self, path: PathBuf) {
+        self.path = Some(path)
+    }
 }
 
 /// Process a directory entry.

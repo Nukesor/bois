@@ -79,7 +79,7 @@ fn handle_host(
     let mut changeset = Vec::new();
 
     for entry in host.directory.entries.iter() {
-        handle_entry(config.target_dir(), entry, &mut changeset)?;
+        handle_entry(&config.target_dir, entry, &mut changeset)?;
     }
 
     Ok(changeset)
@@ -95,13 +95,13 @@ fn handle_group(
     let mut changeset = Vec::new();
 
     for entry in group.directory.entries.iter() {
-        handle_entry(config.target_dir(), entry, &mut changeset)?;
+        handle_entry(&config.target_dir, entry, &mut changeset)?;
     }
 
     Ok(changeset)
 }
 
-fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation>) -> Result<()> {
+fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation>) -> Result<()> {
     match entry {
         Entry::File(file) => {
             // By default, we the destination path is the same as in the host configuration
@@ -110,7 +110,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation>
             // - If it's an absoulte path, we just use that path.
             //   This can be used to deploy files **outside** the default target dir.
             // - If it's a relative path, we just append it to the target_dir.
-            let path = if let Some(path) = &file.config.path {
+            let path = if let Some(path) = &file.config.path() {
                 if path.is_absolute() {
                     path.clone()
                 } else {
@@ -198,7 +198,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation>
             // - If it's an absoulte path, we just use that path.
             //   This can be used to deploy files **outside** the default target dir.
             // - If it's a relative path, we just append it to the target_dir.
-            let path = if let Some(path) = &dir.config.path {
+            let path = if let Some(path) = &dir.config.target_directory() {
                 if path.is_absolute() {
                     path.clone()
                 } else {
@@ -221,7 +221,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation>
                 changeset.push(PathOperation::Directory(change));
 
                 for entry in dir.entries.iter() {
-                    handle_entry(root.clone(), entry, changeset)?;
+                    handle_entry(root, entry, changeset)?;
                 }
                 return Ok(());
             }
@@ -272,7 +272,7 @@ fn handle_entry(root: PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation>
             }
 
             for entry in dir.entries.iter() {
-                handle_entry(root.clone(), entry, changeset)?;
+                handle_entry(root, entry, changeset)?;
             }
         }
     }

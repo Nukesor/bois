@@ -1,8 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
-    fs::{create_dir_all, File},
+    fs::File,
     io::{BufReader, Write},
-    path::PathBuf,
 };
 
 use anyhow::{bail, Result};
@@ -55,7 +54,7 @@ impl State {
     /// This state only represents the desired state for the **current** machine.
     pub fn new(configuration: &Configuration, system_state: &mut SystemState) -> Result<Self> {
         // Check whether the most important directories are present as expected.
-        let bois_dir = configuration.bois_dir();
+        let bois_dir = configuration.bois_dir.clone();
         if !bois_dir.exists() {
             eprintln!("Couldn't find bois config directory at {bois_dir:?}. Aborting.");
             bail!("Couldn't find config directory.");
@@ -63,11 +62,11 @@ impl State {
 
         // Read the initial group for this host.
         // This specifieds all other dependencies.
-        let mut host = read_host(&configuration.bois_dir(), &configuration.name)?;
+        let mut host = read_host(&configuration.bois_dir, &configuration.name)?;
 
         // Go through all dependencies and load them as well.
         for group_name in &host.config.groups {
-            let group = read_group(&configuration.bois_dir(), group_name, &host.variables)?;
+            let group = read_group(&configuration.bois_dir, group_name, &host.variables)?;
             host.groups.push(group);
         }
 
@@ -145,10 +144,9 @@ impl State {
     /// - Cleanup work that might need to be done for the new desired state.
     ///
     /// Will return a Ok(None), if no previous state could be found.
-    pub fn read_previous() -> Result<Option<Self>> {
+    pub fn read_previous(config: &Configuration) -> Result<Option<Self>> {
         // Get the path for the deployed state.
-        let application_dir = PathBuf::from("/var/lib/bois");
-        let path = application_dir.join("deployed_state.yml");
+        let path = config.cache_dir.join("deployed_state.yml");
         info!("Looking for previous state file at {path:?}");
 
         // Return None if we cannot find any file.
@@ -160,13 +158,13 @@ impl State {
         info!("Found previous deployed state at: {path:?}");
 
         // Open the file in read-only mode with buffer.
-        let file =
-            File::open(&path).map_err(|err| Error::IoPath(path, "opening config file.", err))?;
+        let file = File::open(&path)
+            .map_err(|err| Error::IoPath(path.clone(), "opening config file.", err))?;
         let reader = BufReader::new(file);
 
         // Read and deserialize the config file.
-        let state = serde_yaml::from_reader(reader)
-            .map_err(|err| Error::ConfigDeserialization(err.to_string()))?;
+        let state =
+            serde_yaml::from_reader(reader).map_err(|err| Error::Deserialization(path, err))?;
 
         Ok(state)
     }
@@ -174,15 +172,8 @@ impl State {
     /// Save the current desired state as a file. \
     /// Read the `self.read` docs on why we need this file at all.
     pub fn save(&self) -> Result<(), Error> {
-        let application_dir = PathBuf::from("/var/lib/bois");
-        let path = application_dir.join("deployed_state.yml");
+        let path = self.configuration.cache_dir.join("deployed_state.yml");
         info!("Looking for previous state file at {path:?}");
-
-        // Create the dir, if it doesn't exist yet
-        if !application_dir.exists() {
-            create_dir_all(&application_dir)
-                .map_err(|err| Error::IoPath(application_dir.clone(), "creating state dir", err))?;
-        }
 
         // Serialize the configuration file and write it to disk
         let content = match serde_yaml::to_string(self) {
@@ -195,10 +186,10 @@ impl State {
         };
 
         // Write the serialized content to the file.
-        let mut file = File::create(path)
-            .map_err(|err| Error::IoPath(application_dir.clone(), "creating state file", err))?;
+        let mut file = File::create(&path)
+            .map_err(|err| Error::IoPath(path.clone(), "creating state file", err))?;
         file.write_all(content.as_bytes())
-            .map_err(|err| Error::IoPath(application_dir, "writing state file", err))?;
+            .map_err(|err| Error::IoPath(path, "writing state file", err))?;
 
         Ok(())
     }

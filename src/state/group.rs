@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use anyhow::{bail, Result};
@@ -23,6 +23,10 @@ pub struct Group {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct GroupConfig {
+    /// Used to overwrite the target directory to which files should be deployed for
+    /// this specific group.
+    #[serde(default)]
+    pub target_directory: Option<PathBuf>,
     /// The content of this group's directory.
     #[serde(default)]
     pub defaults: GroupDefaults,
