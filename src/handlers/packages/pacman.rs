@@ -49,11 +49,11 @@ pub(super) fn uninstall_packages(
     //       - Not removed in **this** batch of packages.
     //
     //       As long as we don't do this, there's always a chance that a package cannot be
-    //       uninstalled since a other package still depends on it.
+    //       uninstalled since another package still depends on it.
     //
     //       In the future, once we have this functionality, those packages can be marked as
     //       non-explicits (dependencies). They'll then no longer be tracked by bois and will be
-    //       cleaned up whenever their dependencies are uninstalled.
+    //       cleaned up whenever their dependants are uninstalled.
     names.retain(|name| explicit_packages.contains(name));
 
     if names.is_empty() {
@@ -72,9 +72,6 @@ pub(super) fn uninstall_packages(
         .output()
         .context("Failed to install pacman package {}")?;
 
-    // TODO: Handle the case where a package to be removed is a dependency of another installed
-    // package. In that case, it might be nice to check for that specific error and declare that
-    // package as a dependency instead.
     if !output.status.success() {
         bail!(
             "Failed to uninstall pacman packages:\nStdout: {}\nStderr: {}",
