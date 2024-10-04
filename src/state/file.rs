@@ -31,12 +31,43 @@ pub struct File {
     pub content: String,
 }
 
+impl File {
+    /// By default, the destination path calculates as follows.
+    /// Default target directory (based on host/group/default) + relative path of this file from host/group.
+    ///
+    /// However, if a path override exists, we always use it.
+    /// - If it's an absoulte path, we just use that path.
+    ///   This can be used to deploy files **outside** the default target dir.
+    /// - If it's a relative path, we just append it to the target_dir.
+    pub fn file_path(&self, root: &Path) -> PathBuf {
+        let mut path = if let Some(path) = &self.config.path() {
+            if path.is_absolute() {
+                path.clone()
+            } else {
+                root.join(path)
+            }
+        } else {
+            root.join(&self.relative_path)
+        };
+
+        // If the a rename is requested, set the file name
+        if let Some(file_name) = &self.config.rename {
+            path.set_file_name(file_name);
+        }
+
+        path
+    }
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FileConfig {
     /// If this is set, this path will be used as a destination.
     /// If it's an relative path, it'll be treated as relative to the default target directory.
     /// If it's an absolute path, that absolute path will be used.
     path: Option<PathBuf>,
+    /// Use this option to override the filename.
+    /// Useful to have configs live as normal files in the bois directory, even though they need to
+    /// later become '.' dotfiles.
     pub rename: Option<String>,
     pub owner: Option<String>,
     pub group: Option<String>,

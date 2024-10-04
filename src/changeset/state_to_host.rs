@@ -104,21 +104,7 @@ fn handle_group(
 fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation>) -> Result<()> {
     match entry {
         Entry::File(file) => {
-            // By default, we the destination path is the same as in the host configuration
-            // directory.
-            // However, if a path override exists, we always use it.
-            // - If it's an absoulte path, we just use that path.
-            //   This can be used to deploy files **outside** the default target dir.
-            // - If it's a relative path, we just append it to the target_dir.
-            let path = if let Some(path) = &file.config.path() {
-                if path.is_absolute() {
-                    path.clone()
-                } else {
-                    root.join(path)
-                }
-            } else {
-                root.join(&file.relative_path)
-            };
+            let path = file.file_path(root);
 
             // Check whether the target file exists.
             // If it doesn't, we must push a change to create the file.
@@ -192,21 +178,7 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
             }
         }
         Entry::Directory(dir) => {
-            // By default, we the destination path is the same as in the host configuration
-            // directory.
-            // However, if a path override exists, we always use it.
-            // - If it's an absoulte path, we just use that path.
-            //   This can be used to deploy files **outside** the default target dir.
-            // - If it's a relative path, we just append it to the target_dir.
-            let path = if let Some(path) = &dir.config.target_directory() {
-                if path.is_absolute() {
-                    path.clone()
-                } else {
-                    root.join(path)
-                }
-            } else {
-                root.join(&dir.relative_path)
-            };
+            let path = dir.file_path(root);
 
             // Check whether the target directory exists.
             // If it doesn't, we must push a change to create the directory.

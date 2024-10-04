@@ -29,6 +29,25 @@ impl Directory {
             ..Directory::default()
         }
     }
+
+    /// By default, the destination path calculates as follows.
+    /// Default target directory (based on host/group/default) + relative path of this dir from host/group.
+    ///
+    /// However, if a path override exists, we always use it.
+    /// - If it's an absolute path, we just use that path.
+    ///   This can be used to deploy files **outside** the default target dir.
+    /// - If it's a relative path, we just append it to the target_dir.
+    pub fn file_path(&self, root: &Path) -> PathBuf {
+        if let Some(path) = &self.config.path() {
+            if path.is_absolute() {
+                path.clone()
+            } else {
+                root.join(path)
+            }
+        } else {
+            root.join(&self.relative_path)
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -37,7 +56,7 @@ pub struct DirectoryConfig {
     /// If this is set, this directory will be used as the default destination to write configs to.
     /// - If it's an relative path, it'll be treated as relative to the default target directory.
     /// - If it's an absolute path, that absolute path will be used.
-    target_directory: Option<PathBuf>,
+    path: Option<PathBuf>,
     pub owner: Option<String>,
     pub group: Option<String>,
     /// This is represented as a octal `Oo755` in yaml.
@@ -46,12 +65,12 @@ pub struct DirectoryConfig {
 }
 
 impl DirectoryConfig {
-    pub fn target_directory(&self) -> Option<PathBuf> {
-        self.target_directory.as_ref().map(|path| expand_home(path))
+    pub fn path(&self) -> Option<PathBuf> {
+        self.path.as_ref().map(|path| expand_home(path))
     }
 
-    pub fn override_target_directory(&mut self, path: PathBuf) {
-        self.target_directory = Some(path)
+    pub fn override_path(&mut self, path: PathBuf) {
+        self.path = Some(path)
     }
 }
 
@@ -80,10 +99,10 @@ pub fn read_directory(
 
     // Check if there's a new path override in this config.
     // If it is, we set the override, which will be passed to all child entries.
-    if let Some(path) = &directory_config.target_directory {
+    if let Some(path) = &directory_config.path {
         path_override = Some(path.clone());
     } else if let Some(path) = &path_override {
-        directory_config.target_directory = Some(path.clone());
+        directory_config.path = Some(path.clone());
     }
 
     let entries = std::fs::read_dir(&directory_path)
