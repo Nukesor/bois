@@ -178,7 +178,11 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
         Some(dir) => expand_home(&dir),
         None => match mode {
             Mode::User => find_directory(
-                vec![dirs::runtime_dir().map(|path| path.join("bois"))],
+                vec![
+                    dirs::runtime_dir().map(|path| path.join("bois")),
+                    dirs::cache_dir().map(|path| path.join("bois")),
+                ],
+                // If we cannot detect a runtime dir, fallback to the cache dir.
                 "bois runtime",
                 true,
             )?,
