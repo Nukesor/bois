@@ -45,12 +45,7 @@ fn main() -> Result<()> {
     // Initalize everything
     init_app(args.verbose)?;
 
-    let (raw_config, found_config) = RawConfiguration::read(&args.config)?;
-    // In case we didn't find a configuration file, write a default configuration file
-    // to given path or to the default configuration path.
-    if !found_config {
-        raw_config.save(&args.config)?;
-    }
+    let raw_config = RawConfiguration::read(&args.config)?;
 
     // Build the final configuration base on the values from config file.
     // All other values are populated with default values.

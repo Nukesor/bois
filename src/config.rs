@@ -1,10 +1,5 @@
 //! The main configuration file, that's used to configure this program.
-use std::{
-    collections::HashMap,
-    fs::{create_dir_all, File},
-    io::{BufReader, Write},
-    path::PathBuf,
-};
+use std::{collections::HashMap, fs::File, io::BufReader, path::PathBuf};
 
 use anyhow::{bail, Result};
 use log::info;
@@ -208,7 +203,7 @@ impl RawConfiguration {
     /// existing configuration file or not.
     ///
     /// The default local config locations depends on the current target.
-    pub fn read(from_file: &Option<PathBuf>) -> Result<(RawConfiguration, bool)> {
+    pub fn read(from_file: &Option<PathBuf>) -> Result<RawConfiguration> {
         info!("Parsing config files");
 
         // Load the config from a very specific file path
@@ -245,7 +240,7 @@ impl RawConfiguration {
             if !path.exists() || !path.is_file() {
                 info!("No config file found. Use default config.");
                 // Return a default configuration if we couldn't find a file.
-                return Ok((RawConfiguration::default(), false));
+                return Ok(RawConfiguration::default());
             };
 
             path
@@ -262,43 +257,44 @@ impl RawConfiguration {
         let config: RawConfiguration =
             serde_yaml::from_reader(reader).map_err(|err| Error::Deserialization(path, err))?;
 
-        Ok((config, true))
+        Ok(config)
     }
 
-    /// Save the current configuration as a file to the given path. \
-    /// If no path is given, the default configuration path will be used. \
-    /// The file is then written to the main configuration directory of the respective OS.
-    pub fn save(&self, path: &Option<PathBuf>) -> Result<(), Error> {
-        let config_path = if let Some(path) = path {
-            path.clone()
-        } else {
-            PathBuf::from("/etc/bois/bois.yml")
-        };
+    // TODO: Commented out for now. May delete later.
+    // /// Save the current configuration as a file to the given path. \
+    // /// If no path is given, the default configuration path will be used. \
+    // /// The file is then written to the main configuration directory of the respective OS.
+    //pub fn save(&self, path: &Option<PathBuf>) -> Result<(), Error> {
+    //    let config_path = if let Some(path) = path {
+    //        path.clone()
+    //    } else {
+    //        PathBuf::from("/etc/bois/bois.yml")
+    //    };
 
-        let config_dir = PathBuf::from("/etc/bois");
+    //    let config_dir = PathBuf::from("/etc/bois");
 
-        // Create the config dir, if it doesn't exist yet
-        if !config_dir.exists() {
-            create_dir_all(&config_dir)
-                .map_err(|err| Error::IoPath(config_dir.clone(), "creating config dir", err))?;
-        }
+    //    // Create the config dir, if it doesn't exist yet
+    //    if !config_dir.exists() {
+    //        create_dir_all(&config_dir)
+    //            .map_err(|err| Error::IoPath(config_dir.clone(), "creating config dir", err))?;
+    //    }
 
-        // Serialize the configuration file and write it to disk
-        let content = match serde_yaml::to_string(self) {
-            Ok(content) => content,
-            Err(error) => {
-                return Err(Error::Generic(format!(
-                    "Configuration file serialization failed:\n{error}"
-                )))
-            }
-        };
+    //    // Serialize the configuration file and write it to disk
+    //    let content = match serde_yaml::to_string(self) {
+    //        Ok(content) => content,
+    //        Err(error) => {
+    //            return Err(Error::Generic(format!(
+    //                "Configuration file serialization failed:\n{error}"
+    //            )))
+    //        }
+    //    };
 
-        // Write the serialized content to the file.
-        let mut file = File::create(config_path)
-            .map_err(|err| Error::IoPath(config_dir.clone(), "creating settings file", err))?;
-        file.write_all(content.as_bytes())
-            .map_err(|err| Error::IoPath(config_dir, "writing settings file", err))?;
+    //    // Write the serialized content to the file.
+    //    let mut file = File::create(config_path)
+    //        .map_err(|err| Error::IoPath(config_dir.clone(), "creating settings file", err))?;
+    //    file.write_all(content.as_bytes())
+    //        .map_err(|err| Error::IoPath(config_dir, "writing settings file", err))?;
 
-        Ok(())
-    }
+    //    Ok(())
+    //}
 }
