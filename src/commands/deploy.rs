@@ -41,11 +41,21 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     //
     // The user might have forgotten to integrate those changes into the bois config, so we
     // want to inform them about it.
-    let system_changes = match &previous_state {
-        Some(state) => {
-            host_to_state::create_changeset(&config, &mut system_state, state, &desired_state)?
+    if let Some(previous_state) = &previous_state {
+        let system_changes = host_to_state::create_changeset(
+            &config,
+            &mut system_state,
+            previous_state,
+            &desired_state,
+        )?;
+
+        // TODO: Logic to absorb system state
+        if !system_changes.is_empty() {
+            println!("Some untracked changes were detected on the system since last deployment.");
+            if !system_changes.path_operations.is_empty() {
+                print_path_changes(&system_changes.path_operations, &config)?;
+            }
         }
-        None => Changeset::default(),
     };
 
     // ---------- Step 2: Detect old changes that need to be cleaned up ----------
@@ -66,16 +76,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // ------------------- Execution phase -------------------
     // We now start to actually execute commands.
 
-    // ---------- Step 4: Ask whether system changes should be absorbed. ----------
-    // TODO: Logic to absorb system state
-    if !system_changes.is_empty() {
-        println!("Some untracked changes were detected on the system since last deployment.");
-        if !system_changes.path_operations.is_empty() {
-            print_path_changes(&system_changes.path_operations, &config)?;
-        }
-    }
-
-    // ---------- Step 5: Uninstall unwanted packages ----------
+    // ---------- Step 4: Uninstall unwanted packages ----------
     if !changeset.package_uninstalls.is_empty() {
         println!("Cleanup changes to be executed:");
 
@@ -89,7 +90,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
         }
     }
 
-    // ---------- Step 6: Install new packages ----------
+    // ---------- Step 5: Install new packages ----------
     if !changeset.package_installs.is_empty() {
         // Print all package related changes .
         print_package_installs(&changeset.package_installs);
@@ -103,7 +104,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
         }
     }
 
-    // ---------- Step 7: Execute all path operations ----------
+    // ---------- Step 6: Execute all path operations ----------
     if !changeset.path_operations.is_empty() {
         print_path_changes(&changeset.path_operations, &config)?;
         println!();
