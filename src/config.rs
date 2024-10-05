@@ -136,6 +136,7 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
         None => match mode {
             Mode::User => find_directory(
                 vec![
+                    dirs::config_dir().map(|path| path.join("dotfiles")),
                     dirs::config_dir().map(|path| path.join("bois")),
                     dirs::home_dir().map(|path| path.join(".dotfiles")),
                     dirs::home_dir().map(|path| path.join(".dots")),
@@ -219,8 +220,24 @@ impl RawConfiguration {
 
             path.clone()
         } else {
+            // If bois is running as root, we assume that it's used te
+            let config_dir = if whoami::username() == "root" {
+                PathBuf::from("/etc/bois")
+            } else {
+                find_directory(
+                    vec![
+                        dirs::config_dir().map(|path| path.join("dotfiles")),
+                        dirs::config_dir().map(|path| path.join("bois")),
+                        dirs::home_dir().map(|path| path.join(".dotfiles")),
+                        dirs::home_dir().map(|path| path.join(".dots")),
+                        dirs::home_dir().map(|path| path.join(".bois")),
+                    ],
+                    "bois config",
+                    false,
+                )?
+            };
+
             // Get the default path for the user's configuration directory.
-            let config_dir = PathBuf::from("/etc/bois");
             let path = config_dir.join("bois.yml");
             info!("Looking for config at path: {path:?}");
 
