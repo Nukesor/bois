@@ -154,10 +154,17 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
             let mut modified_group = None;
 
             // Check whether content matches
+            // TODO: This is the wrong way around for now.
+            //   Or rather, we need to write a custom display logic for this case.
+            //   In the normal case, the new file is compared with the old one on disk.
+            //   In this case however, we must compare the old one from the state with the new on
+            //   from the disk.
+            //   Right now, we just set the file content to that of the old state, but this results
+            //   in the diff being generated the wrong way around.
             let content = read_to_string(&path)
                 .map_err(|err| Error::IoPath(path.clone(), "reading file", err))?;
             if content.trim() != file.content.trim() {
-                modified_content = Some(content.clone());
+                modified_content = Some(file.content.clone());
             }
 
             let metadata = path
