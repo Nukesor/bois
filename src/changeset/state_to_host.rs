@@ -148,7 +148,7 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
             // Compare owner
             let uid = metadata.uid();
             let user = get_user_by_uid(uid)
-                .ok_or_else(|| anyhow!("Couldn't get username for uid {uid}"))?;
+                .ok_or_else(|| anyhow!("Couldn't get username for uid {uid} on file {path:?}"))?;
             if user.name().to_string_lossy() != file.config.owner() {
                 modified_owner = Some(file.config.owner())
             }
@@ -216,7 +216,7 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
             // Compare owner
             let uid = metadata.uid();
             let user = get_user_by_uid(uid)
-                .ok_or_else(|| anyhow!("Couldn't get username for uid {uid}"))?;
+                .ok_or_else(|| anyhow!("Couldn't get username for uid {uid} on file {path:?}"))?;
             if user.name().to_string_lossy() != dir.config.owner() {
                 modified_owner = Some(dir.config.owner())
             }
