@@ -1,4 +1,5 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
+use inquire::Confirm;
 use log::trace;
 
 use crate::{
@@ -54,6 +55,18 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
             println!("Some untracked changes were detected on the system since last deployment.");
             if !system_changes.path_operations.is_empty() {
                 print_path_changes(&system_changes.path_operations, &config)?;
+            }
+
+            if !dry_run {
+                let ans = Confirm::new("These changes will be overwritten. Are you sure that's okay?")
+                    .with_default(false)
+                    .with_help_message("The changes above have been made on your system and haven't been merged into your config yet.")
+                    .prompt();
+
+                match ans {
+                    Ok(true) => (),
+                    _ => bail!("Aborting"),
+                }
             }
         }
     };
