@@ -32,6 +32,7 @@ pub fn load_templating_vars(host_dir: &Path, hostname: &str) -> Result<Value> {
 /// Take some template text, some values and render the template with the given values.
 pub fn render_template(content: &str, vars: &Value) -> Result<String> {
     let mut env = Environment::new();
+    env.set_trim_blocks(true);
     env.add_template("file", content)
         .context("Failed to pre-compile template.")?;
     add_password_manager_functions(&mut env);
