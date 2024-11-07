@@ -8,8 +8,7 @@ use serde_derive::{Deserialize, Serialize};
 use serde_yaml::Value;
 
 use crate::{
-    error::Error, handlers::packages::PackageManager, helper::read_yaml,
-    templating::load_templating_vars,
+    error::Error, handlers::packages::PackageManager, helper::read_yaml, templating::get_host_vars,
 };
 
 use super::{directory::*, file::read_entry, group::Group};
@@ -61,7 +60,7 @@ pub fn read_host(root: &Path, hostname: &str) -> Result<Host> {
     let config = read_yaml::<HostConfig>(&host_dir, "host")?;
 
     // Load a template file if it exists and pre-seed some default templating values.
-    let templating_vars = load_templating_vars(&host_dir, hostname)?;
+    let templating_vars = get_host_vars(&host_dir, hostname, &config)?;
 
     // Now we recursively read all files in the host directory
     // First, read the directory entries.
