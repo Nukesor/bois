@@ -21,7 +21,7 @@ hostname = "0.4"
 inquire = "0.7"
 lazy_static = "1"
 log = "0.4"
-minijinja = "2"
+minijinja = { version = "2", features = ["custom_syntax"] }
 pest = "2"
 pest_derive = "2"
 pretty_env_logger = "0.5"

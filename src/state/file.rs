@@ -59,6 +59,30 @@ impl File {
     }
 }
 
+/// Overwrite the templating delimiters used to start jinja blocks.
+/// See: <https://docs.rs/minijinja/latest/minijinja/syntax/struct.SyntaxConfig.html>
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct Delimiters {
+    #[serde(default = "default_block_delimiter")]
+    pub block: (String, String),
+    #[serde(default = "default_variable_delimiter")]
+    pub variable: (String, String),
+    #[serde(default = "default_comment_delimiter")]
+    pub comment: (String, String),
+}
+
+pub fn default_block_delimiter() -> (String, String) {
+    ("{%".to_string(), "%}".to_string())
+}
+
+pub fn default_variable_delimiter() -> (String, String) {
+    ("{{".to_string(), "}}".to_string())
+}
+
+pub fn default_comment_delimiter() -> (String, String) {
+    ("{#".to_string(), "#}".to_string())
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FileConfig {
     /// If this is set, this path will be used as a destination.
@@ -74,6 +98,11 @@ pub struct FileConfig {
     /// This is represented as a octal `Oo640` in yaml.
     /// It's automatically parsed to a u32, which can then be used by the std lib.
     pub permissions: Option<u32>,
+
+    /// Overwrite the templating delimiters used to start jinja blocks.
+    /// See: <https://docs.rs/minijinja/latest/minijinja/syntax/struct.SyntaxConfig.html>
+    pub delimiters: Option<Delimiters>,
+
     /// Whether this file should be treated as a template.
     /// Defaults to `false` to prevent unwanted behavior.
     #[serde(default)]

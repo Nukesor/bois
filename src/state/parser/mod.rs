@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::{bail, Context, Result};
-use log::debug;
+use log::{debug, info};
 
 use super::file::{File, FileConfig};
 use crate::{error::Error, templating::render_template};
@@ -168,7 +168,8 @@ pub fn read_file(
 
     // Perform templating, if enabled
     if config.template {
-        content = render_template(&content, template_vars)
+        info!("Starting templating for file {path:?}");
+        content = render_template(&content, template_vars, &config.delimiters)
             .context(format!("Error for template at {path:?}"))?;
     }
 
