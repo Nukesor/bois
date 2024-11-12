@@ -59,6 +59,7 @@ pub fn pass(key: &str, parse_mode: Option<String>) -> Result<Value, Error> {
         let spawn_result = Command::new("pass")
             .arg("show")
             .arg(key)
+            .stdout(std::process::Stdio::piped())
             .envs(&CONFIG.get().unwrap().envs)
             .spawn();
 
