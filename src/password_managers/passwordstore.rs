@@ -14,8 +14,8 @@ use crate::CONFIG;
 ///
 /// This works in two modes:
 /// 1. Single password mode. The pass file is expected to have a single line with the password.
-/// 2. Yaml mode with two options:
-///    - There's a password + yaml separated by a `===` in the same file
+/// 2. Data format mode with two options:
+///    - There's a password + some data format separated by a `===` in the same file
 ///      ```yaml
 ///      my super secret pass
 ///      ===
@@ -23,6 +23,7 @@ use crate::CONFIG;
 ///      ```
 ///    - Pure yaml
 ///      ```yaml
+///      ===
 ///      user: my@email.de
 ///      pass: my super secret pass
 ///      ```
@@ -123,7 +124,7 @@ pub fn pass(key: &str, parse_mode: Option<String>) -> Result<Value, Error> {
     // partially as yaml.
     match parse_mode.as_str() {
         "yaml" | "yml" => {
-            // Check if there's multile lines.
+            // Check if there's multiple lines.
             // If so, treat the content after the first line as yaml.
             // Otherwise treat the whole file as yaml.
             let yaml = content
