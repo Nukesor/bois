@@ -1,0 +1,64 @@
+name: Packaging
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  publish:
+    name: Publish on ${{ matrix.os }} for ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            compress: true
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            compress: true
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-musleabihf
+            compress: true
+          - os: ubuntu-latest
+            target: arm-unknown-linux-musleabihf
+            compress: true
+          - os: ubuntu-latest
+            target: x86_64-unknown-freebsd
+            compress: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - run: sudo apt install musl-tools
+        if: startsWith(matrix.os, 'ubuntu')
+
+      - name: cargo build
+        uses: houseabsolute/actions-rust-cross@v0
+        with:
+          command: build
+          args: --release --locked
+          target: ${{ matrix.target }}
+
+      - name: Compress binary
+        uses: svenstaro/upx-action@v2
+        with:
+          file: target/${{ matrix.target }}/release/bois
+          args: --best --lzma
+          strip: false
+        if: ${{ matrix.compress }}
+
+      - name: Upload binary to respective Github release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/bois
+          asset_name: bois-${{ matrix.target }}
+          tag: ${{ github.ref }}
+          overwrite: true
