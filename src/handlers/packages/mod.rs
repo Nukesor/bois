@@ -1,8 +1,8 @@
 use std::collections::{BTreeMap, HashSet};
 
 use anyhow::Result;
-use serde_derive::{Deserialize, Serialize};
-use strum_macros::Display;
+use serde::{Deserialize, Serialize};
+use strum::Display;
 
 use crate::{
     changeset::{PackageInstall, PackageUninstall},

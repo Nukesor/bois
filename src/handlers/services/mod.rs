@@ -1,5 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
-use strum_macros::Display;
+use serde::{Deserialize, Serialize};
+use strum::Display;
 
 pub mod systemd;
 

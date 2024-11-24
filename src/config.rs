@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs::File, io::BufReader, path::PathBuf};
 
 use anyhow::{bail, Result};
 use log::info;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     error::Error,

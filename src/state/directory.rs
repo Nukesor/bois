@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use log::trace;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use super::file::*;
 use crate::constants::CURRENT_GROUP;

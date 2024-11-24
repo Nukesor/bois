@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::{bail, Result};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{error::Error, handlers::packages::PackageManager, helper::read_yaml};
 

@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::{bail, Result};
 use log::{info, warn};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     config::Configuration,
