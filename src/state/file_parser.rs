@@ -131,7 +131,7 @@ pub fn read_file(root: &Path, relative_path: &Path) -> Result<File> {
     let parsed_file = match config_file.parse(full_file_content.as_str()) {
         Ok(parsed_file) => parsed_file,
         Err(err) => {
-            println!("{}", err);
+            eprintln!("{}", err);
             bail!("Encountered parsing error in file {path:?}. See log above.");
         }
     };
