@@ -152,6 +152,7 @@ dependencies = [
  "thiserror",
  "users",
  "whoami",
+ "winnow",
 ]
 
 [[package]]

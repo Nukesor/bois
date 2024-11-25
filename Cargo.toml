@@ -29,6 +29,7 @@ strum = { version = "0.26", features = ["derive"] }
 thiserror = "1"
 users = "0.11"
 whoami = "1"
+winnow = { version = "0.6", features = [] }
 
 [dev-dependencies]
 pretty_assertions = "1"

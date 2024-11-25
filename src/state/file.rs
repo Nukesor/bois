@@ -1,14 +1,15 @@
 use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 
-use anyhow::Result;
-use log::trace;
+use anyhow::{Context, Result};
+use log::{info, trace};
 use serde::{Deserialize, Serialize};
 
 use super::directory::*;
 use crate::constants::{CURRENT_GROUP, CURRENT_USER};
 use crate::helper::expand_home;
-use crate::state::parser::read_file;
+use crate::state::file_parser::read_file;
+use crate::templating::render_template;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Entry {
@@ -154,7 +155,24 @@ pub fn read_entry(
         directory.entries.push(Entry::Directory(sub_directory));
     } else if path.is_file() {
         trace!("Reading file {path:?}");
-        let file = read_file(root, &relative_path, path_override, template_vars)?;
+        let mut file = read_file(root, &relative_path)?;
+
+        // Check if there's an active path override from a parent directory.
+        // If the file doesn't have its own override, use the one from the parent.
+        if let Some(path_override) = path_override {
+            if file.config.path().is_none() {
+                file.config.override_path(path_override);
+            }
+        }
+
+        // Perform templating, if enabled
+        // Otherwise return the raw content.
+        if file.config.template {
+            info!("Starting templating for file {path:?}");
+            file.content = render_template(&file.content, template_vars, &file.config.delimiters)
+                .context(format!("Error for template at {path:?}"))?
+        };
+
         directory.entries.push(Entry::File(file));
     }
 

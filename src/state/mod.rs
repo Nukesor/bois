@@ -17,9 +17,9 @@ use crate::{
 
 pub mod directory;
 pub mod file;
+mod file_parser;
 pub mod group;
 pub mod host;
-mod parser;
 
 use self::{
     group::read_group,
