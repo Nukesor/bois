@@ -1,0 +1,7 @@
+---
+source: tests/file_parser/mod.rs
+description: "\nBefore block\n\n# bois_config\n# template: true\n# bois_config\n"
+expression: config
+snapshot_kind: text
+---
+template: true

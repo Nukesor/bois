@@ -52,12 +52,15 @@ fn pre_config_lines(input: &mut &str) -> PResult<()> {
 }
 
 /// Parse content that comes before a config block.
-/// If no config block is found, this will consume all of the file.
+/// It terminates with an optional newline.
+/// So if this parser finishes, we're in two possible states:
+/// - If no config block is found, this will consume all of the file.
+/// - Otherwise, directly at the beginning of the `bois_config` block (no leading newline).
 ///
-/// If a config block directly at the start of the file, this may fail
-/// and backtrack to allow the parsing of the config_block.
+/// If a config block is directly at the start of the file, this may fail and backtrack to
+/// allow the parsing of the [`config_block`].
 fn pre_config_block<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    pre_config_lines.take().parse_next(input)
+    terminated(pre_config_lines.take(), opt(newline)).parse_next(input)
 }
 
 /// Parse a config block, which is everything inside a `bois_config` delimiter line.
@@ -154,13 +157,13 @@ fn config_block<'s>(input: &mut &'s str) -> PResult<String> {
 ///   - Strip any comment symbols
 /// 2. Deserialize the config
 pub fn config_file<'s>(input: &mut &'s str) -> PResult<ParsedFile<'s>> {
-    let (pre_config_block, config_block, post_config_block) =
+    let (pre, config, post) =
         (opt(pre_config_block), opt(config_block), opt(rest)).parse_next(input)?;
 
     Ok(ParsedFile {
-        pre_config_block,
-        config_block,
-        post_config_block,
+        pre_config_block: pre,
+        config_block: config,
+        post_config_block: post.and_then(|block| (!block.is_empty()).then_some(block)),
     })
 }
 

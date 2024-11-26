@@ -7,6 +7,9 @@ repository = "https://github.com/nukesor/pueue"
 edition = "2021"
 rust-version = "1.79"
 
+[features]
+debug = ["winnow/debug"]
+
 [dependencies]
 anyhow = "1"
 better-panic = "0.3"
@@ -29,9 +32,11 @@ strum = { version = "0.26", features = ["derive"] }
 thiserror = "1"
 users = "0.11"
 whoami = "1"
-winnow = { version = "0.6", features = [] }
+winnow = "0.6"
 
 [dev-dependencies]
+insta = "1"
 pretty_assertions = "1"
 rstest = "0.22"
 rstest_reuse = "0.7"
+testresult = "0.4"
