@@ -8,7 +8,7 @@ use crate::CONFIG;
 /// https://www.passwordstore.org/
 ///
 /// Request passwords in templates via
-/// ```
+/// ```txt
 /// {{ pass("social/reddit.com") }}
 /// ```
 ///

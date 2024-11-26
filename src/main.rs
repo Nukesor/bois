@@ -2,39 +2,16 @@
 #![allow(clippy::assigning_clones)]
 // Allow dead code while prototyping.
 #![allow(dead_code)]
-use std::sync::OnceLock;
 
 use anyhow::Result;
 use clap::Parser;
 use log::{debug, LevelFilter};
 use pretty_env_logger::env_logger::Builder;
 
-mod args;
-mod changeset;
-mod commands;
-mod config;
-mod constants;
-mod error;
-mod handlers;
-mod helper;
-mod password_managers;
-mod state;
-mod system_state;
-mod templating;
-mod ui;
-
-use args::Arguments;
-use commands::run_subcommand;
-use config::{build_configuration, Configuration, RawConfiguration};
-
-/// Expose the config as a global.
-/// This is somewhat of an antipatter, but is needed to access the configuration inside of
-/// minijinja custom filters/functions. We have no way to pass additional arguments to those, as
-/// they're called by minijinja. (We could maybe use closures when registering the minijinja
-/// functions, but that feels also somewhat ugly.)
-///
-/// Avoid to use this anywhere outside of minijinja's filters/functions.
-static CONFIG: OnceLock<Configuration> = OnceLock::new();
+use bois::args::Arguments;
+use bois::commands::run_subcommand;
+use bois::config::{build_configuration, RawConfiguration};
+use bois::CONFIG;
 
 fn main() -> Result<()> {
     // Read any .env files

@@ -14,8 +14,8 @@ use super::file::{File, FileConfig};
 use crate::error::Error;
 
 pub struct ParsedFile {
-    config: Option<String>,
-    content: String,
+    pub config: Option<String>,
+    pub content: String,
 }
 
 pub enum Line {
@@ -99,7 +99,7 @@ fn until_eof(input: &mut &str) -> PResult<()> {
 ///   - Strip any comment trailing spaces
 ///   - Strip any comment symbols
 /// 2. Deserialize the config
-fn config_file(input: &mut &str) -> PResult<ParsedFile> {
+pub fn config_file(input: &mut &str) -> PResult<ParsedFile> {
     let (pre_config_block, config_block, post_config_block) = (
         opt(pre_config_block),
         opt(config_block),
