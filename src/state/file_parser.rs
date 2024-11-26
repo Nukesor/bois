@@ -4,18 +4,20 @@ use anyhow::{bail, Result};
 use log::debug;
 use winnow::{
     ascii::{newline, space0, till_line_ending},
-    combinator::{alt, cut_err, delimited, not, opt, preceded, repeat, separated, terminated},
+    combinator::{
+        alt, cut_err, delimited, not, opt, preceded, repeat, rest, separated, terminated,
+    },
     error::{StrContext, StrContextValue},
-    token::any,
     PResult, Parser,
 };
 
 use super::file::{File, FileConfig};
 use crate::error::Error;
 
-pub struct ParsedFile {
-    pub config: Option<String>,
-    pub content: String,
+pub struct ParsedFile<'s> {
+    pub pre_config_block: Option<&'s str>,
+    pub config_block: Option<String>,
+    pub post_config_block: Option<&'s str>,
 }
 
 pub enum Line {
@@ -37,10 +39,12 @@ fn config_delimiter<'s>(input: &mut &'s str) -> PResult<&'s str> {
     .parse_next(input)
 }
 
-/// A line that comes before a bois config block is encountered.
-fn pre_config_line(input: &mut &str) -> PResult<()> {
+/// At least one line that comes before a bois config block is encountered.
+///
+/// The lines are separated by newlines and may not start with a bois config delimiter.
+fn pre_config_lines(input: &mut &str) -> PResult<()> {
     separated(
-        0..,
+        1..,
         preceded(not(config_delimiter), till_line_ending),
         newline,
     )
@@ -53,7 +57,7 @@ fn pre_config_line(input: &mut &str) -> PResult<()> {
 /// If a config block directly at the start of the file, this may fail
 /// and backtrack to allow the parsing of the config_block.
 fn pre_config_block<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    pre_config_line.take().parse_next(input)
+    pre_config_lines.take().parse_next(input)
 }
 
 /// Parse a config block, which is everything inside a `bois_config` delimiter line.
@@ -67,7 +71,7 @@ fn pre_config_block<'s>(input: &mut &'s str) -> PResult<&'s str> {
 /// # bois_config
 fn config_block<'s>(input: &mut &'s str) -> PResult<String> {
     let _ = config_delimiter.parse_next(input)?;
-    let lines: Vec<&'s str> = cut_err(terminated(
+    let mut lines: Vec<&'s str> = cut_err(terminated(
         repeat(
             1..,
             delimited(
@@ -84,12 +88,62 @@ fn config_block<'s>(input: &mut &'s str) -> PResult<String> {
     )))
     .parse_next(input)?;
 
-    Ok(lines.join("\n"))
-}
+    // The whole block might be indented by one or more spaces by the user.
+    // For example:
+    // ```
+    // # template: true
+    // # delimiters:
+    // #   block: ["{{", "}}"]
+    // ```
+    // For yaml parsing to be clean, the lowest indentation level should be zero spaces.
+    //
+    // For this, we first up determine the minimum indentation level.
+    // The max truncated indentation level is 10 spaces
+    let min_indentation: usize = lines.iter().fold(12, |acc, line| {
+        // Ignore empty lines with spaces.
+        if line.trim().is_empty() {
+            return acc;
+        }
 
-/// Parse until the end of the file.
-fn until_eof(input: &mut &str) -> PResult<()> {
-    repeat(0.., any).parse_next(input)
+        let count = line.chars().take_while(|&c| c.is_whitespace()).count();
+        std::cmp::min(acc, count)
+    });
+
+    // If the lines are at least one spaces indented, remove the minimum amount of indentation.
+    let block = if min_indentation > 0 {
+        lines
+            .iter_mut()
+            .map(|line| {
+                // Ignore empty lines with spaces.
+                if line.trim().is_empty() {
+                    return line.to_string();
+                }
+
+                // Remove the first x chars, which are guaranteed to be whitespaces.
+                let mut chars = line.chars();
+                for _ in 0..min_indentation {
+                    chars.next();
+                }
+                chars.as_str().to_string()
+            })
+            .fold(String::new(), |mut block, line| {
+                // Join the block directly from the iterator.
+                // -> Newline in front of all lines, except the first.
+                if block.is_empty() {
+                    block.push_str(&line);
+                    block
+                } else {
+                    block.push('\n');
+                    block.push_str(&line);
+
+                    block
+                }
+            })
+    } else {
+        lines.join("\n")
+    };
+
+    Ok(block)
 }
 
 /// Parse a config file.
@@ -99,25 +153,14 @@ fn until_eof(input: &mut &str) -> PResult<()> {
 ///   - Strip any comment trailing spaces
 ///   - Strip any comment symbols
 /// 2. Deserialize the config
-pub fn config_file(input: &mut &str) -> PResult<ParsedFile> {
-    let (pre_config_block, config_block, post_config_block) = (
-        opt(pre_config_block),
-        opt(config_block),
-        opt(until_eof.take()),
-    )
-        .parse_next(input)?;
-
-    let mut content = String::new();
-    if let Some(pre_config_block) = pre_config_block {
-        content.push_str(pre_config_block);
-    };
-    if let Some(post_config_block) = post_config_block {
-        content.push_str(post_config_block);
-    };
+pub fn config_file<'s>(input: &mut &'s str) -> PResult<ParsedFile<'s>> {
+    let (pre_config_block, config_block, post_config_block) =
+        (opt(pre_config_block), opt(config_block), opt(rest)).parse_next(input)?;
 
     Ok(ParsedFile {
-        config: config_block,
-        content,
+        pre_config_block,
+        config_block,
+        post_config_block,
     })
 }
 
@@ -136,8 +179,14 @@ pub fn read_file(root: &Path, relative_path: &Path) -> Result<File> {
         }
     };
 
+    // Concatenate the content from before and after the file.
+    let mut content = parsed_file.pre_config_block.unwrap_or_default().to_string();
+    if let Some(post_config_block) = parsed_file.post_config_block {
+        content.push_str(post_config_block);
+    }
+
     let mut config = FileConfig::default();
-    if let Some(raw_config) = parsed_file.config {
+    if let Some(raw_config) = parsed_file.config_block {
         debug!("Found config block in file {path:?}:\n{raw_config}");
         config = serde_yaml::from_str(&raw_config)?;
     }
@@ -145,6 +194,6 @@ pub fn read_file(root: &Path, relative_path: &Path) -> Result<File> {
     Ok(File {
         relative_path: relative_path.to_path_buf(),
         config,
-        content: parsed_file.content,
+        content,
     })
 }
