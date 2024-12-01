@@ -78,7 +78,7 @@ pub fn read_group(root: &Path, name: &str, template_vars: &serde_yaml::Value) ->
             Path::new(""),
             entry,
             &mut directory,
-            None,
+            config.target_directory.clone(),
             template_vars,
         )?;
     }

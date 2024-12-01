@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use anyhow::{bail, Result};
@@ -29,6 +29,10 @@ pub struct Host {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct HostConfig {
+    /// Used to overwrite the target directory to which files should be deployed for
+    /// this specific group.
+    #[serde(default)]
+    pub target_directory: Option<PathBuf>,
     /// Default that should be applied to all files.
     #[serde(default)]
     pub file_defaults: HostDefaults,
@@ -84,7 +88,7 @@ pub fn read_host(root: &Path, hostname: &str) -> Result<Host> {
             Path::new(""),
             entry,
             &mut files,
-            None,
+            config.target_directory.clone(),
             &templating_vars,
         )?;
     }
