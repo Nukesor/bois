@@ -1,0 +1,17 @@
+# The default directory to where files will be deployed
+#
+#target_directory: /etc
+
+# The default permissions for all files inside this group.
+# Can be overwritten on a directory or filebases deeper down the file hierarchy.
+#defaults:
+#  owner: root
+#  group: root
+#  file_permissions: 0o644,
+#  directory_permissions: 0o755,
+
+# Which packages should be installed when this groups is active on a host.
+# Check the bois book for supported package managers.
+#packages:
+#  pacman:
+#    - linux-firmware

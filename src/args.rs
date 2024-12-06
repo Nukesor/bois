@@ -31,12 +31,18 @@ pub struct Arguments {
 pub enum Subcommand {
     /// Run a dry-run on the current system and see all changes that would executed.
     Plan,
-    /// Check the system for any changes since the last deployment.
-    /// If any are found, try to integrate them back into the configuration.
-    Absorb,
     /// Actually deploy all changes to the system
     Deploy,
     /// Show the diff between the current system and the target.
     /// This only shows differences in system services and packages.
     Diff,
+    /// Check the system for any changes since the last deployment.
+    /// If any are found, try to integrate them back into the configuration.
+    Absorb,
+    /// Setup a new bois directory.
+    /// If no name is given, it'll create the files inside of the current directory.
+    Init {
+        /// When provided, a new directory with that name will be created and used.
+        directory: Option<PathBuf>,
+    },
 }

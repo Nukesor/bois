@@ -1,0 +1,29 @@
+# This file is auto generated and needs to be copied over to
+# /etc/bois/bois.yml to be automatically discovered.
+
+# The name of the machine.
+# If this is not explicitly given, the hostname will be used.
+name: "{{ hostname }}"
+
+# The bois directory, which contains all bois templates and alike.
+# This must be a path to an existing directory.
+bois_dir: "{{ dir }}"
+
+# The target directory to which the files should be deployed.
+# This must be a path to an existing directory.
+target_dir: "{{ config_dir }}"
+
+# Cache dir
+cache_dir: "{{ cache_dir }}"
+
+# Runtime dir
+runtime_dir: "{{ runtime_dir }}"
+
+# This allows you to set additional environment variables.
+# This is mostly necessary for password manager integration, which need special configuration
+# envs:
+#   YOUR_ENV_VAR: "Some value"
+
+# Determine whether bois is running in system configuration mode or in
+# user configuration mode.
+mode: system
