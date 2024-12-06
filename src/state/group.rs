@@ -39,6 +39,8 @@ pub struct GroupConfig {
 pub struct GroupDefaults {
     pub owner: Option<String>,
     pub group: Option<String>,
+    pub file_permissions: Option<u32>,
+    pub directory_permissions: Option<u32>,
 }
 
 pub fn read_group(root: &Path, name: &str, template_vars: &serde_yaml::Value) -> Result<Group> {

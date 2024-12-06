@@ -10,7 +10,7 @@ use pretty_env_logger::env_logger::Builder;
 
 use bois::args::Arguments;
 use bois::commands::run_subcommand;
-use bois::config::{build_configuration, RawConfiguration};
+use bois::config::RawConfiguration;
 use bois::CONFIG;
 
 fn main() -> Result<()> {
@@ -22,11 +22,10 @@ fn main() -> Result<()> {
     // Initalize everything
     init_app(args.verbose)?;
 
-    let raw_config = RawConfiguration::read(&args.config)?;
-
-    // Build the final configuration base on the values from config file.
+    // Build the final configuration based on the values from the config file.
     // All other values are populated with default values.
-    let config = build_configuration(raw_config)?;
+    let raw_config = RawConfiguration::read(&args.config)?;
+    let config = raw_config.build_configuration()?;
 
     debug!("Running with the following config:\n{config:#?}");
 
