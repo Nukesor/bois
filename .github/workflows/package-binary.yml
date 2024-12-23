@@ -40,7 +40,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
 
       - name: cargo build
-        uses: houseabsolute/actions-rust-cross@v0
+        uses: houseabsolute/actions-rust-cross@v1
         with:
           command: build
           args: --release --locked
