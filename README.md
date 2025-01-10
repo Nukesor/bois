@@ -89,6 +89,10 @@ Additionally, there're a few "buzzwordy" design goals that need to be achieved:
   - System packages (via package managers)
   - System services
 
+Like all of my projects, this one is also designed to cover the 90-95% use-case.
+It doesn't aim to be a jack of all trades solution and more complex use-cases might be dropped to keep the project usable **and** maintainable.
+The idea is to reach a state where most people are happy with it and then enter some form of soft "feature freeze".
+
 ## Similar Projects
 
 #### Personal Computer Provisioning
