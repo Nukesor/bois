@@ -1,5 +1,8 @@
-[package]
-name = "bois"
+[workspace]
+members = ["bois_dotfiles", "bois_lib", "bois_system"]
+resolver = "2"
+
+[workspace.package]
 authors = ["Arne Beer <contact@arne.beer>"]
 edition = "2024"
 homepage = "https://github.com/nukesor/bois"
@@ -7,16 +10,13 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/nukesor/bois"
 rust-version = "1.85"
 
-[features]
-debug = ["winnow/debug"]
-
-[dependencies]
+[workspace.dependencies]
 anyhow = "1"
 better-panic = "0.3"
 clap = { version = "4", features = ["cargo", "derive"] }
 comfy-table = "7"
 crossterm = "0.28"
-dirs = "5"
+dirs = "6"
 dotenv = "0.15"
 file-owner = "0.1"
 hostname = "0.4"
@@ -28,15 +28,8 @@ pretty_env_logger = "0.5"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 shellexpand = "3.1"
-strum = { version = "0.26", features = ["derive"] }
-thiserror = "1"
+strum = { version = "0.27", features = ["derive"] }
+thiserror = "2"
 users = "0.11"
 whoami = "1"
-winnow = "0.6"
-
-[dev-dependencies]
-insta = "1"
-pretty_assertions = "1"
-rstest = "0.22"
-rstest_reuse = "0.7"
-testresult = "0.4"
+winnow = "0.7"

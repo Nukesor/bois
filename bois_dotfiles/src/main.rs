@@ -8,10 +8,10 @@ use clap::Parser;
 use log::{LevelFilter, debug};
 use pretty_env_logger::env_logger::Builder;
 
-use bois::CONFIG;
-use bois::args::Arguments;
-use bois::commands::run_subcommand;
-use bois::config::RawConfiguration;
+use bois_lib::CONFIG;
+use bois_lib::args::Arguments;
+use bois_lib::commands::run_subcommand;
+use bois_lib::config::RawConfiguration;
 
 fn main() -> Result<()> {
     // Read any .env files

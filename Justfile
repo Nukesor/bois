@@ -1,3 +1,6 @@
+build:
+    cargo build
+
 # Bump all deps, including incompatible version upgrades
 bump:
     just ensure-cargo-installed upgrade

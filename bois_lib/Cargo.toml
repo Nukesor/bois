@@ -1,0 +1,45 @@
+[package]
+name = "bois_lib"
+version = "0.1.0"
+description = "The opinionated configuration manager for your bois."
+readme = "../README.md"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[features]
+debug = ["winnow/debug"]
+
+[dependencies]
+anyhow.workspace = true
+better-panic.workspace = true
+clap.workspace = true
+comfy-table.workspace = true
+crossterm.workspace = true
+dirs.workspace = true
+dotenv.workspace = true
+file-owner.workspace = true
+hostname.workspace = true
+inquire.workspace = true
+lazy_static.workspace = true
+log.workspace = true
+minijinja.workspace = true
+pretty_env_logger.workspace = true
+serde.workspace = true
+serde_yaml.workspace = true
+shellexpand.workspace = true
+strum.workspace = true
+thiserror.workspace = true
+users.workspace = true
+whoami.workspace = true
+winnow.workspace = true
+
+[dev-dependencies]
+insta = "1"
+pretty_assertions = "1"
+rstest = "0.25"
+rstest_reuse = "0.7"
+testresult = "0.4"

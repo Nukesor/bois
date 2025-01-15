@@ -1,8 +1,0 @@
----
-source: tests/file_parser/mod.rs
-description: "Before block\nWithout a config block\n"
-expression: pre_config_block
-snapshot_kind: text
----
-Before block
-Without a config block

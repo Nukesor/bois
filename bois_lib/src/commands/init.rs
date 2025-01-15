@@ -5,15 +5,15 @@ use anyhow::{Context, Result};
 use crate::config::{Configuration, Mode};
 
 pub mod user {
-    pub const BOIS: &str = include_str!("../../templates/dotfiles/bois.yml");
-    pub const HOST: &str = include_str!("../../templates/dotfiles/host.yml");
-    pub const GROUP: &str = include_str!("../../templates/dotfiles/group.yml");
+    pub const BOIS: &str = include_str!("../../../templates/dotfiles/bois.yml");
+    pub const HOST: &str = include_str!("../../../templates/dotfiles/host.yml");
+    pub const GROUP: &str = include_str!("../../../templates/dotfiles/group.yml");
 }
 
 pub mod system {
-    pub const BOIS: &str = include_str!("../../templates/system/bois.yml");
-    pub const HOST: &str = include_str!("../../templates/system/host.yml");
-    pub const GROUP: &str = include_str!("../../templates/system/group.yml");
+    pub const BOIS: &str = include_str!("../../../templates/system/bois.yml");
+    pub const HOST: &str = include_str!("../../../templates/system/host.yml");
+    pub const GROUP: &str = include_str!("../../../templates/system/group.yml");
 }
 
 pub fn run_init(config: Configuration, directory: &Option<PathBuf>) -> Result<()> {

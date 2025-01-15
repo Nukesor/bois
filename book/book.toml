@@ -1,26 +1,26 @@
 [book]
-title = "Bois Documentation"
-description = "Manage the System or Dotfile Configuration of the bois."
 authors = ["Arne Beer"]
+description = "Manage the System or Dotfile Configuration of the bois."
 language = "en"
+title = "Bois Documentation"
 
 [rust]
 edition = "2021"
 
 [output.html]
-smart-punctuation = true
-site-url = "/"
-git-repository-url = "https://github.com/Nukesor/bois/tree/master/book"
 edit-url-template = "https://github.com/Nukesor/bois/tree/master/book/{path}"
+git-repository-url = "https://github.com/Nukesor/bois/tree/master/book"
+site-url = "/"
+smart-punctuation = true
 
 [output.html.playground]
 runnable = false
 
 [output.html.search]
-limit-results = 20
-use-boolean-and = true
-boost-title = 2
 boost-hierarchy = 2
 boost-paragraph = 1
+boost-title = 2
 expand = true
 heading-split-level = 2
+limit-results = 20
+use-boolean-and = true

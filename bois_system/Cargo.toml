@@ -1,0 +1,24 @@
+[package]
+name = "bois_system"
+version = "0.1.0"
+description = "The opinionated system configuration manager for your bois."
+readme = "../README.md"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "s_bois"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+better-panic.workspace = true
+bois_lib = { path = "../bois_lib" }
+clap.workspace = true
+dotenv.workspace = true
+log.workspace = true
+pretty_env_logger.workspace = true
