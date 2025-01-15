@@ -8,16 +8,16 @@ bump:
 # If you change anything in here, make sure to also adjust the lint CI job!
 # Lint all parts of the code
 lint:
-    just ensure-cargo-installed sort
+    just ensure-command taplo
     cargo fmt --all -- --check
-    cargo sort --workspace --check
+    taplo format --check
     cargo clippy --tests --workspace -- -D warnings
 
 # Format all parts of the code
 format:
-    just ensure-cargo-installed sort
+    just ensure-command taplo
     cargo fmt
-    cargo sort --workspace
+    taplo format
 
 # Serve the book locally
 book:
