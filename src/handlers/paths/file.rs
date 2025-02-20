@@ -1,5 +1,5 @@
 use std::{
-    fs::{set_permissions, File, Permissions},
+    fs::{File, Permissions, set_permissions},
     io::Write,
     os::unix::fs::PermissionsExt,
     path::Path,

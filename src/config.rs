@@ -1,7 +1,7 @@
 //! The main configuration file, that's used to configure this program.
 use std::{collections::HashMap, fs::File, io::BufReader, path::PathBuf};
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 

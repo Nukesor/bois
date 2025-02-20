@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use log::info;
-use minijinja::{syntax::SyntaxConfig, Environment};
+use minijinja::{Environment, syntax::SyntaxConfig};
 use serde_yaml::{Mapping, Value};
 
 use crate::{

@@ -5,13 +5,13 @@
 
 use anyhow::Result;
 use clap::Parser;
-use log::{debug, LevelFilter};
+use log::{LevelFilter, debug};
 use pretty_env_logger::env_logger::Builder;
 
+use bois::CONFIG;
 use bois::args::Arguments;
 use bois::commands::run_subcommand;
 use bois::config::RawConfiguration;
-use bois::CONFIG;
 
 fn main() -> Result<()> {
     // Read any .env files

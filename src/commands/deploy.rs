@@ -1,9 +1,9 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use inquire::Confirm;
 use log::trace;
 
 use crate::{
-    changeset::{host_to_state, state_to_host, state_to_state, Changeset},
+    changeset::{Changeset, host_to_state, state_to_host, state_to_state},
     config::Configuration,
     handlers::{
         packages::{install_packages, uninstall_packages},

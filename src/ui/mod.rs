@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, fs::File, io::Write, path::Path, process::Command};
 
-use anyhow::{bail, Result};
-use comfy_table::{presets, Attribute, Cell, CellAlignment, Column, ContentArrangement, Table};
+use anyhow::{Result, bail};
+use comfy_table::{Attribute, Cell, CellAlignment, Column, ContentArrangement, Table, presets};
 use crossterm::style::Stylize;
 
 use crate::{

@@ -3,7 +3,7 @@ use std::{
     path::Path,
 };
 
-use crate::state::{directory::Directory, file::Entry, State};
+use crate::state::{State, directory::Directory, file::Entry};
 
 /// This struct solely exists to handle state-to-state comparisons of deployed files.
 ///

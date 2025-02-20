@@ -4,14 +4,14 @@ use std::{
     io::{BufReader, Write},
 };
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     config::Configuration,
     error::Error,
-    handlers::packages::{pacman::get_packages_for_group, PackageManager},
+    handlers::packages::{PackageManager, pacman::get_packages_for_group},
     system_state::SystemState,
 };
 
@@ -23,7 +23,7 @@ pub mod host;
 
 use self::{
     group::read_group,
-    host::{read_host, Host},
+    host::{Host, read_host},
 };
 
 /// This struct all configuration that's applicable for this machine.
@@ -181,7 +181,7 @@ impl State {
             Err(error) => {
                 return Err(Error::Generic(format!(
                     "Configuration file serialization failed:\n{error}"
-                )))
+                )));
             }
         };
 

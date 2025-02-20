@@ -8,7 +8,7 @@ use log::info;
 
 use crate::{state::State, system_state::SystemState};
 
-use super::{compiled_state::CompiledState, Changeset, PackageUninstall};
+use super::{Changeset, PackageUninstall, compiled_state::CompiledState};
 
 /// Compare a new desired State with a previously deployed state.
 /// This is used to determine any necessary **cleanup** operations, in case the previous deployment

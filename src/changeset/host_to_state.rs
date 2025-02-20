@@ -8,19 +8,19 @@ use std::{
     path::PathBuf,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use users::{get_group_by_gid, get_user_by_uid};
 
 use crate::{
     config::Configuration,
     error::Error,
-    state::{file::Entry, group::Group, host::Host, State},
+    state::{State, file::Entry, group::Group, host::Host},
     system_state::SystemState,
 };
 
 use super::{
-    helper::{equal_permissions, remove_filetype},
     Changeset, DirectoryOperation, FileOperation, PackageUninstall, PathOperation,
+    helper::{equal_permissions, remove_filetype},
 };
 
 pub fn create_changeset(

@@ -1,12 +1,11 @@
 [package]
 name = "bois"
-version = "0.1.0"
 authors = ["Arne Beer <contact@arne.beer>"]
+edition = "2024"
 homepage = "https://github.com/nukesor/bois"
-repository = "https://github.com/nukesor/bois"
 license = "MIT OR Apache-2.0"
-edition = "2021"
-rust-version = "1.79"
+repository = "https://github.com/nukesor/bois"
+rust-version = "1.85"
 
 [features]
 debug = ["winnow/debug"]
@@ -14,7 +13,7 @@ debug = ["winnow/debug"]
 [dependencies]
 anyhow = "1"
 better-panic = "0.3"
-clap = { version = "4", features = ["derive", "cargo"] }
+clap = { version = "4", features = ["cargo", "derive"] }
 comfy-table = "7"
 crossterm = "0.28"
 dirs = "5"

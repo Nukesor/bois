@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::handlers::packages::{get_detected_groups, pacman, paru, PackageManager};
+use crate::handlers::packages::{PackageManager, get_detected_groups, pacman, paru};
 
 /// This state holds all important information about the system we're running on.
 ///

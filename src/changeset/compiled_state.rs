@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     handlers::{packages::PackageManager, services::ServiceManager},
-    state::{group::Group, host::Host, State},
+    state::{State, group::Group, host::Host},
 };
 
 /// This struct represents a rough compiled overview of all

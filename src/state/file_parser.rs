@@ -1,14 +1,14 @@
 use std::{fs::read_to_string, path::Path};
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use log::debug;
 use winnow::{
+    PResult, Parser,
     ascii::{newline, space0, till_line_ending},
     combinator::{
         alt, cut_err, delimited, not, opt, preceded, repeat, rest, separated, terminated,
     },
     error::{StrContext, StrContextValue},
-    PResult, Parser,
 };
 
 use super::file::{File, FileConfig};
