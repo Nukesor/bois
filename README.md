@@ -143,6 +143,13 @@ To name just a few examples I personally worked with:
 - [Saltstack](https://saltproject.io/) is uses a custom protocol and usually deploys a master server that's pinged by the server fleet.
 - [Chef](https://www.chef.io/) uses a master server to distribute provisioning scripts to the fleet. Configuration happens via code, which can be both a boon and a curse.
 
+## Project History
+
+- ~2020: Project ideation
+- 2020-2022: On-off designing, technology choice and prototyping until .
+- November 2022: First actual commit in repository.
+- December 2024: Project is in a raw functional state that's actually in use by a few friends.
+
 ## Contributing
 
 Feature requests and pull requests are very much appreciated and welcome!
