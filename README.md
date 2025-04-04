@@ -1,5 +1,9 @@
 # Bois
 
+**DON'T USE THIS YET.**
+The project is highly experimental and very much work in progress. \
+It's only public so I don't have to hassle around with deployment keys and such.
+
 ## What is Bois
 
 Bois is an opinionated system provisioning tool for your **personal** machines, (which I lovingly call `my bois`).
