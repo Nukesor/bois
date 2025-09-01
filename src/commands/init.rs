@@ -34,20 +34,20 @@ pub fn run_init(config: Configuration, directory: &Option<PathBuf>) -> Result<()
     }
 
     // Read template files based on config mode.
-    let (bois, host, group) = match config.mode {
+    let (_bois, _host, _group) = match config.mode {
         Mode::User => (user::BOIS, user::HOST, user::GROUP),
         Mode::System => (system::BOIS, system::HOST, system::GROUP),
     };
 
-    let config_path = root_dir.join("bois.yml");
+    let _config_path = root_dir.join("bois.yml");
 
     let hosts_dir = root_dir.join("hosts").join(&config.name);
     create_dir_all(&hosts_dir).context("Failed to create hosts directory")?;
-    let host_file_path = hosts_dir.join("hosts.yml");
+    let _host_file_path = hosts_dir.join("hosts.yml");
 
     let groups_dir = root_dir.join("groups").join("base");
     create_dir_all(&groups_dir).context("Failed to create groups directory")?;
-    let group_file_path = groups_dir.join("hosts.yml");
+    let _group_file_path = groups_dir.join("hosts.yml");
 
     Ok(())
 }

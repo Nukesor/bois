@@ -15,8 +15,8 @@ anyhow = "1"
 better-panic = "0.3"
 clap = { version = "4", features = ["cargo", "derive"] }
 comfy-table = "7"
-crossterm = "0.28"
-dirs = "5"
+crossterm = "0.29"
+dirs = "6"
 dotenv = "0.15"
 file-owner = "0.1"
 hostname = "0.4"
@@ -28,15 +28,15 @@ pretty_env_logger = "0.5"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 shellexpand = "3.1"
-strum = { version = "0.26", features = ["derive"] }
-thiserror = "1"
+strum = { version = "0.27", features = ["derive"] }
+thiserror = "2"
 users = "0.11"
 whoami = "1"
-winnow = "0.6"
+winnow = "0.7"
 
 [dev-dependencies]
 insta = "1"
 pretty_assertions = "1"
-rstest = "0.22"
+rstest = "0.26"
 rstest_reuse = "0.7"
 testresult = "0.4"

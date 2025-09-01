@@ -3,12 +3,11 @@ use std::{fs::read_to_string, path::Path};
 use anyhow::{Result, bail};
 use log::debug;
 use winnow::{
-    PResult, Parser,
+    ModalResult, Parser,
     ascii::{newline, space0, till_line_ending},
-    combinator::{
-        alt, cut_err, delimited, not, opt, preceded, repeat, rest, separated, terminated,
-    },
+    combinator::{alt, cut_err, delimited, not, opt, preceded, repeat, separated, terminated},
     error::{StrContext, StrContextValue},
+    token::rest,
 };
 
 use super::file::{File, FileConfig};
@@ -30,7 +29,7 @@ pub enum Line {
 static COMMENT_PREFIXES: (&str, &str, &str, &str, &str, &str, &str, &str) =
     ("//", "--", "*/", "/*", "**", "*", "#", "%");
 
-fn config_delimiter<'s>(input: &mut &'s str) -> PResult<&'s str> {
+fn config_delimiter<'s>(input: &mut &'s str) -> ModalResult<&'s str> {
     delimited(
         alt(COMMENT_PREFIXES),
         delimited(space0, "bois_config", space0),
@@ -42,7 +41,7 @@ fn config_delimiter<'s>(input: &mut &'s str) -> PResult<&'s str> {
 /// At least one line that comes before a bois config block is encountered.
 ///
 /// The lines are separated by newlines and may not start with a bois config delimiter.
-fn pre_config_lines(input: &mut &str) -> PResult<()> {
+fn pre_config_lines(input: &mut &str) -> ModalResult<()> {
     separated(
         1..,
         preceded(not(config_delimiter), till_line_ending),
@@ -59,7 +58,7 @@ fn pre_config_lines(input: &mut &str) -> PResult<()> {
 ///
 /// If a config block is directly at the start of the file, this may fail and backtrack to
 /// allow the parsing of the [`config_block`].
-fn pre_config_block<'s>(input: &mut &'s str) -> PResult<&'s str> {
+fn pre_config_block<'s>(input: &mut &'s str) -> ModalResult<&'s str> {
     terminated(pre_config_lines.take(), opt(newline)).parse_next(input)
 }
 
@@ -72,7 +71,7 @@ fn pre_config_block<'s>(input: &mut &'s str) -> PResult<&'s str> {
 /// #
 /// # path: ~/somewhere/else <--- Ends after this line
 /// # bois_config
-fn config_block<'s>(input: &mut &'s str) -> PResult<String> {
+fn config_block<'s>(input: &mut &'s str) -> ModalResult<String> {
     let _ = config_delimiter.parse_next(input)?;
     let mut lines: Vec<&'s str> = cut_err(terminated(
         repeat(
@@ -156,7 +155,7 @@ fn config_block<'s>(input: &mut &'s str) -> PResult<String> {
 ///   - Strip any comment trailing spaces
 ///   - Strip any comment symbols
 /// 2. Deserialize the config
-pub fn config_file<'s>(input: &mut &'s str) -> PResult<ParsedFile<'s>> {
+pub fn config_file<'s>(input: &mut &'s str) -> ModalResult<ParsedFile<'s>> {
     let (pre, config, post) =
         (opt(pre_config_block), opt(config_block), opt(rest)).parse_next(input)?;
 
@@ -177,7 +176,7 @@ pub fn read_file(root: &Path, relative_path: &Path) -> Result<File> {
     let parsed_file = match config_file.parse(full_file_content.as_str()) {
         Ok(parsed_file) => parsed_file,
         Err(err) => {
-            eprintln!("{}", err);
+            eprintln!("{err}");
             bail!("Encountered parsing error in file {path:?}. See log above.");
         }
     };
