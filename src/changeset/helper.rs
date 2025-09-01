@@ -1,5 +1,5 @@
-/// Check whether two unix mode permissions are identical.
-pub fn equal_permissions(one: u32, two: u32) -> bool {
+/// Check whether two unix modes are identical.
+pub fn equal_mode(one: u32, two: u32) -> bool {
     // Remove the filetype mode bits, as we're not interested in them
     remove_filetype(one) == remove_filetype(two)
 }

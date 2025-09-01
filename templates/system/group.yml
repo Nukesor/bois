@@ -7,8 +7,8 @@
 #defaults:
 #  owner: root
 #  group: root
-#  file_permissions: 0o644,
-#  directory_permissions: 0o755,
+#  file_mode: 0o644,
+#  directory_mode: 0o755,
 
 # Which packages should be installed when this groups is active on a host.
 # Check the bois book for supported package managers.

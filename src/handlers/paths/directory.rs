@@ -30,12 +30,12 @@ pub fn create_directory(path: &Path, permissions: &u32, owner: &str, group: &str
 
 pub fn modify_directory(
     path: &Path,
-    permissions: &Option<u32>,
+    mode: &Option<u32>,
     owner: &Option<String>,
     group: &Option<String>,
 ) -> Result<()> {
-    if let Some(permissions) = permissions {
-        set_permissions(path, Permissions::from_mode(*permissions))?;
+    if let Some(mode) = mode {
+        set_permissions(path, Permissions::from_mode(*mode))?;
     }
 
     if let Some(owner) = owner {

@@ -48,8 +48,8 @@ pub struct HostConfig {
 pub struct HostDefaults {
     pub owner: Option<String>,
     pub group: Option<String>,
-    pub file_permissions: Option<u32>,
-    pub directory_permissions: Option<u32>,
+    pub file_mode: Option<u32>,
+    pub directory_mode: Option<u32>,
 }
 
 pub fn read_host(root: &Path, hostname: &str) -> Result<Host> {

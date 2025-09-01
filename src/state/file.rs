@@ -12,6 +12,7 @@ use crate::state::file_parser::read_file;
 use crate::templating::render_template;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[allow(clippy::large_enum_variant)]
 pub enum Entry {
     File(File),
     Directory(Directory),
@@ -30,6 +31,10 @@ pub struct File {
 
     /// The actual configuration file's content, without the bois configuration block.
     pub content: String,
+
+    /// The metadata of the source file.
+    /// Used to determine the mode in case it isn't overwritten.
+    pub mode: u32,
 }
 
 impl File {
@@ -57,6 +62,14 @@ impl File {
         }
 
         path
+    }
+
+    /// Return the mode of the file.
+    ///
+    /// If an override via `self.config.mode` exists, that mode is used.
+    /// Otherwise, we use the mode of the original file.
+    pub fn mode(&self) -> u32 {
+        self.config.mode.unwrap_or(self.mode)
     }
 }
 
@@ -160,7 +173,7 @@ pub struct FileConfig {
     pub group: Option<String>,
     /// This is represented as a octal `Oo640` in yaml.
     /// It's automatically parsed to a u32, which can then be used by the std lib.
-    pub permissions: Option<u32>,
+    pub mode: Option<u32>,
 
     /// Overwrite the templating delimiters used to start jinja blocks.
     /// See: <https://docs.rs/minijinja/latest/minijinja/syntax/struct.SyntaxConfig.html>
@@ -244,10 +257,6 @@ pub fn read_entry(
 /// This impl block contains convenience getters for file metadata, which fall back to
 /// default values.
 impl FileConfig {
-    pub fn permissions(&self) -> u32 {
-        self.permissions.unwrap_or(0o644)
-    }
-
     pub fn owner(&self) -> String {
         self.owner.clone().unwrap_or(CURRENT_USER.clone())
     }

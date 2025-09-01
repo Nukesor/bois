@@ -14,7 +14,7 @@ use crate::error::Error;
 pub fn create_file(
     path: &Path,
     content: &[u8],
-    permissions: &u32,
+    mode: &u32,
     owner: &str,
     group: &str,
 ) -> Result<()> {
@@ -25,7 +25,7 @@ pub fn create_file(
     file.write_all(content)
         .map_err(|err| Error::IoPath(path.to_path_buf(), "writing to file.", err))?;
 
-    set_permissions(path, Permissions::from_mode(*permissions))?;
+    set_permissions(path, Permissions::from_mode(*mode))?;
 
     path.set_owner(owner)
         .map_err(|err| Error::FileOwnership(path.to_path_buf(), "setting owner", err))?;
@@ -39,7 +39,7 @@ pub fn create_file(
 pub fn modify_file(
     path: &Path,
     content: &Option<Vec<u8>>,
-    permissions: &Option<u32>,
+    mode: &Option<u32>,
     owner: &Option<String>,
     group: &Option<String>,
 ) -> Result<()> {
@@ -64,7 +64,7 @@ pub fn modify_file(
             .map_err(|err| Error::IoPath(path.to_path_buf(), "writing to file.", err))?;
     }
 
-    if let Some(mode) = permissions {
+    if let Some(mode) = mode {
         set_permissions(path, Permissions::from_mode(*mode))?;
     }
 

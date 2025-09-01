@@ -55,7 +55,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
             PathOperation::File(op) => match op {
                 crate::changeset::FileOperation::Create {
                     path,
-                    permissions,
+                    mode,
                     owner,
                     group,
                     ..
@@ -68,7 +68,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                     );
 
                     let mut table = Table::new();
-                    add_table_row(&mut table, "Mod", &format!("{permissions:#o}"));
+                    add_table_row(&mut table, "Mod", &format!("{mode:#o}"));
 
                     // Don't show user/group when it's the default user/group.
                     if *owner != *CURRENT_USER {
@@ -82,7 +82,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 crate::changeset::FileOperation::Modify {
                     path,
                     content,
-                    permissions,
+                    mode,
                     owner,
                     group,
                 } => {
@@ -95,8 +95,8 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
 
                     let mut table = Table::new();
 
-                    if let Some(permissions) = permissions {
-                        add_table_row(&mut table, "Mod", &format!("{permissions:#o}"));
+                    if let Some(mode) = mode {
+                        add_table_row(&mut table, "Mod", &format!("{mode:#o}"));
                     }
 
                     if let Some(owner) = owner {
@@ -146,7 +146,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
             PathOperation::Directory(op) => match op {
                 crate::changeset::DirectoryOperation::Create {
                     path,
-                    permissions,
+                    mode,
                     owner,
                     group,
                 } => {
@@ -158,7 +158,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                     );
 
                     let mut table = Table::new();
-                    add_table_row(&mut table, "Mod", &format!("{permissions:#o}"));
+                    add_table_row(&mut table, "Mod", &format!("{mode:#o}"));
 
                     // Don't show user/group when it's the default user/group.
                     if *owner != *CURRENT_USER {
@@ -171,7 +171,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 }
                 crate::changeset::DirectoryOperation::Modify {
                     path,
-                    permissions,
+                    mode,
                     owner,
                     group,
                 } => {
@@ -184,8 +184,8 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
 
                     let mut table = Table::new();
 
-                    if let Some(permissions) = permissions {
-                        add_table_row(&mut table, "Mod", &format!("{permissions:#o}"));
+                    if let Some(mode) = mode {
+                        add_table_row(&mut table, "Mod", &format!("{mode:#o}"));
                     }
 
                     if let Some(owner) = owner {

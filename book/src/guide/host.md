@@ -63,8 +63,8 @@ packages:
 file_defaults:
   owner: root
   group: root
-  file_permissions: 0o644
-  directory_permissions: 0o755
+  file_mode: 0o644
+  directory_mode: 0o755
 ```
 
 - `groups`: `List<String>` The list of groups that're enabled for this host.
@@ -74,5 +74,5 @@ file_defaults:
 - `file_defaults` Set defaults file permissions for all configuration files that're inside this host directory.
   - `owner`: `String` - The file's owner
   - `group`: `String` - The file's assigned group
-  - `file_permissions`: `OctalInt` - The default permissions that'll be set for all files.
-  - `directory_permissions`: `OctalInt` - The default permissions that'll be set for all directories.
+  - `file_mode`: `OctalInt` - The default permissions that'll be set for all files.
+  - `directory_mode`: `OctalInt` - The default permissions that'll be set for all directories.

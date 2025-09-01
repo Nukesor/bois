@@ -77,7 +77,7 @@ pub enum FileOperation {
     Create {
         path: PathBuf,
         content: Vec<u8>,
-        permissions: u32,
+        mode: u32,
         owner: String,
         group: String,
     },
@@ -86,7 +86,7 @@ pub enum FileOperation {
     Modify {
         path: PathBuf,
         content: Option<Vec<u8>>,
-        permissions: Option<u32>,
+        mode: Option<u32>,
         owner: Option<String>,
         group: Option<String>,
     },
@@ -100,7 +100,7 @@ pub enum FileOperation {
 pub enum DirectoryOperation {
     Create {
         path: PathBuf,
-        permissions: u32,
+        mode: u32,
         owner: String,
         group: String,
     },
@@ -108,7 +108,7 @@ pub enum DirectoryOperation {
     /// to be modified.
     Modify {
         path: PathBuf,
-        permissions: Option<u32>,
+        mode: Option<u32>,
         owner: Option<String>,
         group: Option<String>,
     },

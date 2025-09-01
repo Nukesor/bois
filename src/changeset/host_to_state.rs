@@ -20,7 +20,7 @@ use crate::{
 
 use super::{
     Changeset, DirectoryOperation, FileOperation, PackageUninstall, PathOperation,
-    helper::{equal_permissions, remove_filetype},
+    helper::{equal_mode, remove_filetype},
 };
 
 pub fn create_changeset(
@@ -149,7 +149,7 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
             // At this point we know that the file already exists.
             // We now have to check for any changes and whether we have to modify the file.
             let mut modified_content = None;
-            let mut modified_permissions = None;
+            let mut modified_mode = None;
             let mut modified_owner = None;
             let mut modified_group = None;
 
@@ -173,8 +173,8 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
 
             // Check whether permissions patch
             let file_mode = metadata.permissions().mode();
-            if !equal_permissions(file_mode, file.config.permissions()) {
-                modified_permissions = Some(remove_filetype(file_mode));
+            if !equal_mode(file_mode, file.mode()) {
+                modified_mode = Some(remove_filetype(file_mode));
             }
 
             // Compare owner
@@ -199,12 +199,12 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
             if modified_content.is_some()
                 || modified_owner.is_some()
                 || modified_group.is_some()
-                || modified_permissions.is_some()
+                || modified_mode.is_some()
             {
                 let change = FileOperation::Modify {
                     path,
                     content: modified_content.map(|str| str.into_bytes()),
-                    permissions: modified_permissions,
+                    mode: modified_mode,
                     owner: modified_owner,
                     group: modified_group,
                 };
@@ -229,7 +229,7 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
 
             // At this point we know that the directory already exists.
             // We now have to check for any changes and whether we have to modify the directory.
-            let mut modified_permissions = None;
+            let mut modified_mode = None;
             let mut modified_owner = None;
             let mut modified_group = None;
 
@@ -237,10 +237,10 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
                 .metadata()
                 .map_err(|err| Error::IoPath(path.clone(), "reading metadata", err))?;
 
-            // Check whether permissions patch
+            // Check whether mode matches
             let file_mode = metadata.permissions().mode();
-            if !equal_permissions(metadata.permissions().mode(), dir.config.permissions()) {
-                modified_permissions = Some(remove_filetype(file_mode));
+            if !equal_mode(metadata.permissions().mode(), dir.config.mode()) {
+                modified_mode = Some(remove_filetype(file_mode));
             }
 
             // Compare owner
@@ -262,13 +262,10 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
             }
 
             // If anything has been modified, push a change.
-            if modified_owner.is_some()
-                || modified_group.is_some()
-                || modified_permissions.is_some()
-            {
+            if modified_owner.is_some() || modified_group.is_some() || modified_mode.is_some() {
                 let change = DirectoryOperation::Modify {
                     path,
-                    permissions: modified_permissions,
+                    mode: modified_mode,
                     owner: modified_owner,
                     group: modified_group,
                 };

@@ -1,4 +1,8 @@
-use std::{fs::read_to_string, path::Path};
+use std::{
+    fs::{self, read_to_string},
+    os::unix::fs::MetadataExt,
+    path::Path,
+};
 
 use anyhow::{Result, bail};
 use log::debug;
@@ -169,9 +173,16 @@ pub fn config_file<'s>(input: &mut &'s str) -> ModalResult<ParsedFile<'s>> {
 /// Read and, if applicable, parse a single configuration file.
 pub fn read_file(root: &Path, relative_path: &Path) -> Result<File> {
     let path = root.join(relative_path);
+    let file =
+        fs::File::open(&path).map_err(|err| Error::IoPath(path.clone(), "opening file", err))?;
+
+    let mode = file
+        .metadata()
+        .map_err(|err| Error::IoPath(path.clone(), "reading file", err))?
+        .mode();
 
     let full_file_content =
-        read_to_string(&path).map_err(|err| Error::IoPath(path.clone(), "reading file at", err))?;
+        read_to_string(&path).map_err(|err| Error::IoPath(path.clone(), "reading file", err))?;
 
     let parsed_file = match config_file.parse(full_file_content.as_str()) {
         Ok(parsed_file) => parsed_file,
@@ -195,6 +206,7 @@ pub fn read_file(root: &Path, relative_path: &Path) -> Result<File> {
 
     Ok(File {
         relative_path: relative_path.to_path_buf(),
+        mode,
         config,
         content,
     })

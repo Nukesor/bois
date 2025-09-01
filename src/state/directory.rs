@@ -61,7 +61,7 @@ pub struct DirectoryConfig {
     pub group: Option<String>,
     /// This is represented as a octal `Oo755` in yaml.
     /// It's automatically parsed to a u32, which can then be used by the std lib.
-    pub permissions: Option<u32>,
+    pub mode: Option<u32>,
 }
 
 impl DirectoryConfig {
@@ -143,8 +143,8 @@ pub fn read_directory(
 /// This impl block contains convenience getters for directory metadata, which fall back to
 /// default values.
 impl DirectoryConfig {
-    pub fn permissions(&self) -> u32 {
-        self.permissions.unwrap_or(0o755)
+    pub fn mode(&self) -> u32 {
+        self.mode.unwrap_or(0o755)
     }
 
     pub fn owner(&self) -> String {

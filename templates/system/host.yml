@@ -11,8 +11,8 @@ groups:
 #defaults:
 #  owner: root
 #  group: root
-#  file_permissions: 0o644,
-#  directory_permissions: 0o755,
+#  file_mode: 0o644,
+#  directory_mode: 0o755,
 
 # Which packages should always be installed on this specific host.
 # Check the bois book for supported package managers.
