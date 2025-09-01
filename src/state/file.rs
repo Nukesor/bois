@@ -64,24 +64,86 @@ impl File {
 /// See: <https://docs.rs/minijinja/latest/minijinja/syntax/struct.SyntaxConfig.html>
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Delimiters {
-    #[serde(default = "default_block_delimiter")]
+    /// Use this to prefix the start element of each delimiter type with this tring.
+    ///
+    /// This is useful to prevent clashes with in-file syntax.
+    /// E.g. the `#` prefix will make the templating appear as a comment for
+    /// all languages that interpret `#` as a comment.
+    ///
+    /// That way, formatter, language servers and such won't produce errors.
+    ///
+    /// Example:
+    /// ```j2
+    /// #{% if host == "my_machine" }%
+    /// ...
+    /// other stuff here
+    /// ...
+    /// #{% endif %}
+    /// ```
+    #[serde(default)]
+    pub prefix: Option<String>,
+    /// The delimiters used to define a logical block.
+    /// E.g. `("{%", "%}")`
+    #[serde(default = "Delimiters::default_block_delimiter")]
     pub block: (String, String),
-    #[serde(default = "default_variable_delimiter")]
+    /// The delimiters used to define a variable block.
+    /// E.g. `("{{", "}}")`
+    #[serde(default = "Delimiters::default_variable_delimiter")]
     pub variable: (String, String),
-    #[serde(default = "default_comment_delimiter")]
+    /// The delimiters used to define a comment block.
+    /// E.g. `("{#", "#}")`
+    #[serde(default = "Delimiters::default_comment_delimiter")]
     pub comment: (String, String),
 }
 
-pub fn default_block_delimiter() -> (String, String) {
-    ("{%".to_string(), "%}".to_string())
-}
+impl Delimiters {
+    fn default_block_delimiter() -> (String, String) {
+        ("{%".to_string(), "%}".to_string())
+    }
 
-pub fn default_variable_delimiter() -> (String, String) {
-    ("{{".to_string(), "}}".to_string())
-}
+    fn default_variable_delimiter() -> (String, String) {
+        ("{{".to_string(), "}}".to_string())
+    }
 
-pub fn default_comment_delimiter() -> (String, String) {
-    ("{#".to_string(), "#}".to_string())
+    fn default_comment_delimiter() -> (String, String) {
+        ("{#".to_string(), "#}".to_string())
+    }
+
+    /// Get the jinja `block` syntax to use.
+    ///
+    /// If a prefix is set, apply it to the start element.
+    pub fn block(&self) -> (String, String) {
+        if let Some(mut prefix) = self.prefix.clone() {
+            prefix.push_str(&self.block.0);
+            return (prefix, self.block.1.clone());
+        }
+
+        self.block.clone()
+    }
+
+    /// Get the jinja `variable` syntax to use.
+    ///
+    /// If a prefix is set, apply it to the start element.
+    pub fn variable(&self) -> (String, String) {
+        if let Some(mut prefix) = self.prefix.clone() {
+            prefix.push_str(&self.variable.0);
+            return (prefix, self.variable.1.clone());
+        }
+
+        self.variable.clone()
+    }
+
+    /// Get the jinja `comment` syntax to use.
+    ///
+    /// If a prefix is set, apply it to the start element.
+    pub fn comment(&self) -> (String, String) {
+        if let Some(mut prefix) = self.prefix.clone() {
+            prefix.push_str(&self.comment.0);
+            return (prefix, self.comment.1.clone());
+        }
+
+        self.comment.clone()
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]

@@ -61,11 +61,14 @@ pub fn render_template(content: &str, vars: &Value, syntax: &Option<Delimiters>)
         info!("Found custom syntax for template file");
         let syntax = syntax.to_owned();
         let syntax_error = format!("Encountered invalid custom templating syntax {syntax:#?}");
+        let block = syntax.block();
+        let variable = syntax.variable();
+        let comment = syntax.comment();
         env.set_syntax(
             SyntaxConfig::builder()
-                .block_delimiters(syntax.block.0, syntax.block.1)
-                .variable_delimiters(syntax.variable.0, syntax.variable.1)
-                .comment_delimiters(syntax.comment.0, syntax.comment.1)
+                .block_delimiters(block.0, block.1)
+                .variable_delimiters(variable.0, variable.1)
+                .comment_delimiters(comment.0, comment.1)
                 .build()
                 .context(syntax_error)?,
         );
