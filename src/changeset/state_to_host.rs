@@ -4,8 +4,8 @@ use std::{
     path::PathBuf,
 };
 
-use anyhow::{Result, anyhow};
-use users::{get_group_by_gid, get_user_by_uid};
+use anyhow::{Context, Result};
+use nix::unistd::{Gid, Group as NixGroup, Uid, User as NixUser};
 
 use crate::{
     config::Configuration,
@@ -146,17 +146,18 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
 
             // Compare owner
             let uid = metadata.uid();
-            let user = get_user_by_uid(uid)
-                .ok_or_else(|| anyhow!("Couldn't get username for uid {uid} on file {path:?}"))?;
-            if user.name().to_string_lossy() != file.config.owner() {
+            let user = NixUser::from_uid(Uid::from_raw(uid))?.context(format!(
+                "Couldn't get username for uid {uid} on file {path:?}"
+            ))?;
+            if user.name != file.config.owner() {
                 modified_owner = Some(file.config.owner())
             }
 
             // Compare group
             let gid = metadata.gid();
-            let group = get_group_by_gid(gid)
-                .ok_or_else(|| anyhow!("Couldn't get groupname for gid {gid}"))?;
-            if group.name().to_string_lossy() != file.config.group() {
+            let group = NixGroup::from_gid(Gid::from_raw(gid))?
+                .context(format!("Couldn't get groupname for gid {gid}"))?;
+            if group.name != file.config.group() {
                 modified_group = Some(file.config.group())
             }
 
@@ -214,17 +215,18 @@ fn handle_entry(root: &PathBuf, entry: &Entry, changeset: &mut Vec<PathOperation
 
             // Compare owner
             let uid = metadata.uid();
-            let user = get_user_by_uid(uid)
-                .ok_or_else(|| anyhow!("Couldn't get username for uid {uid} on file {path:?}"))?;
-            if user.name().to_string_lossy() != dir.config.owner() {
+            let user = NixUser::from_uid(Uid::from_raw(uid))?.context(format!(
+                "Couldn't get username for uid {uid} on file {path:?}"
+            ))?;
+            if user.name != dir.config.owner() {
                 modified_owner = Some(dir.config.owner())
             }
 
             // Compare group
             let gid = metadata.gid();
-            let group = get_group_by_gid(gid)
-                .ok_or_else(|| anyhow!("Couldn't get groupname for gid {gid}"))?;
-            if group.name().to_string_lossy() != dir.config.group() {
+            let group = NixGroup::from_gid(Gid::from_raw(gid))?
+                .context(format!("Couldn't get groupname for gid {gid}"))?;
+            if group.name != dir.config.group() {
                 modified_group = Some(dir.config.group())
             }
 
