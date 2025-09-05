@@ -3,6 +3,7 @@ use std::path::Path;
 use anyhow::{Context, Result, bail};
 use log::info;
 use minijinja::{Environment, syntax::SyntaxConfig};
+use nix::unistd::{Gid, Uid};
 use serde_yaml::{Mapping, Value};
 
 use crate::{
@@ -46,6 +47,16 @@ pub fn get_host_vars(host_dir: &Path, hostname: &str, config: &HostConfig) -> Re
     variables.insert(
         serde_yaml::to_value("boi_groups").unwrap(),
         serde_yaml::to_value(config.groups.clone()).unwrap(),
+    );
+
+    // Insert environment dependant variables, specifically which user currently executes boi.
+    variables.insert(
+        serde_yaml::to_value("USER_ID").unwrap(),
+        serde_yaml::to_value(Uid::current().as_raw()).unwrap(),
+    );
+    variables.insert(
+        serde_yaml::to_value("GROUP_ID").unwrap(),
+        serde_yaml::to_value(Gid::current().as_raw()).unwrap(),
     );
 
     Ok(Value::Mapping(variables))
