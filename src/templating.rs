@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{env::var, path::Path};
 
 use anyhow::{Context, Result, bail};
 use log::info;
@@ -53,6 +53,10 @@ pub fn get_host_vars(host_dir: &Path, hostname: &str, config: &HostConfig) -> Re
     variables.insert(
         serde_yaml::to_value("USER_ID").unwrap(),
         serde_yaml::to_value(Uid::current().as_raw()).unwrap(),
+    );
+    variables.insert(
+        serde_yaml::to_value("USER").unwrap(),
+        serde_yaml::to_value(var("USER").unwrap_or_default()).unwrap(),
     );
     variables.insert(
         serde_yaml::to_value("GROUP_ID").unwrap(),
