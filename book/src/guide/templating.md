@@ -15,7 +15,7 @@ Here're some links to get started with how to write templates with `minijinja`.
 ### How to use templating in bois
 
 Templating functionality is opt-in in bois.
-To enable templating for a file, you must enable the `template` option in its [File configuration](./file_configuration.md) block.
+To enable templating for a file, you must enable the `template` option in its [File configuration](./file_config.md) block.
 
 ```yaml
 # bois_config

@@ -28,10 +28,10 @@ The directory structure might look something like this:
   The top level of the `vars.yml` is expected to be an object.
   I.e.
   ```yml
-  some_secret: "lorem"
-  some_secret_list:
-    - "lorem"
-    - "ipsum"
+  encrypt: false
+  machine:
+    threads: 8
+    is_laptop: true
   ```
 - All other files that're located in a host's directory are considered configuration files that should be deployed to the system.
   In the example above, that would be the `X11` and `udev` folders, as well as the `pacman.conf` for the `artifact` host.
