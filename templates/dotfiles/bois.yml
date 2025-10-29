@@ -1,0 +1,41 @@
+# This file is auto generated and needs to be copied over to
+# /etc/bois/bois.yml to be automatically discovered.
+
+# The name of the machine.
+# If this is not explicitly given, the hostname will be used.
+# name: "{{ hostname }}"
+
+# The bois directory, which contains all bois templates and alike.
+# This must be a path to an existing directory.
+# bois_dir: "~/.config/dotfiles"
+
+# The target directory to which the files should be deployed.
+# This must be a path to an existing directory.
+#
+# Uses "$XDG_CONFIG_DIR" by default.
+# Fallback to "$~/.config".
+#
+# target_dir: "~/.config"
+
+# Cache dir
+#
+# Uses "$XDG_CACHE_DIR/bois" by default.
+# Fallback to "$~/.cach/bois".
+#
+# cache_dir: "~/.cache/bois"
+
+# Runtime dir
+#
+# Uses "$XDG_RUNTIME_DIR/bois" by default.
+# Fallback to "$XDG_DATA_DIR/bois" or "$~/.local/share/bois"
+#
+# runtime_dir: "~/.local/share/bois"
+
+# This allows you to set additional environment variables.
+# This is mostly necessary for password manager integration, which need special configuration
+# envs:
+#   YOUR_ENV_VAR: "Some value"
+
+# Determine whether bois is running in system configuration mode or in
+# user configuration mode.
+mode: system

@@ -64,7 +64,7 @@ It might compile on older versions, but this isn't tested or officially supporte
 ```bash
 git clone git@github.com:Nukesor/bois
 cd bois
-cargo install --release --locked --path .
+cargo install --locked --path .
 ```
 
 The final binaries will be located in `target/release/bois`.
