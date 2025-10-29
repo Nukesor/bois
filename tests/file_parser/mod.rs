@@ -1,12 +1,12 @@
 use std::{fs::read_to_string, path::PathBuf};
 
+use bois::state::file_parser::config_file;
 use insta::assert_snapshot;
 use rstest::rstest;
 use testresult::TestResult;
 
-use bois::state::file_parser::config_file;
-
-/// Go through a list of file examples and make sure that the parser properly detects the correct blocks.
+/// Go through a list of file examples and make sure that the parser properly detects the correct
+/// blocks.
 #[rstest]
 pub fn test_at_start(#[files("tests/file_parser/input/*")] case: PathBuf) -> TestResult {
     use winnow::Parser;

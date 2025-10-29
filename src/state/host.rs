@@ -7,11 +7,13 @@ use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
-use crate::{
-    error::Error, handlers::packages::PackageManager, helper::read_yaml, templating::get_host_vars,
-};
-
 use super::{directory::*, file::read_entry, group::Group};
+use crate::{
+    config::helper::read_yaml,
+    error::Error,
+    handlers::packages::PackageManager,
+    templating::get_host_vars,
+};
 
 /// A Host is related to a
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]

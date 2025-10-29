@@ -15,18 +15,9 @@ use crate::CONFIG;
 /// This works in two modes:
 /// 1. Single password mode. The pass file is expected to have a single line with the password.
 /// 2. Data format mode with two options:
-///    - There's a password + some data format separated by a `===` in the same file
-///      ```yaml
-///      my super secret pass
-///      ===
-///      user: my@email.de
-///      ```
-///    - Pure yaml
-///      ```yaml
-///      ===
-///      user: my@email.de
-///      pass: my super secret pass
-///      ```
+///    - There's a password + some data format separated by a `===` in the same file ```yaml my
+///      super secret pass === user: my@email.de ```
+///    - Pure yaml ```yaml === user: my@email.de pass: my super secret pass ```
 ///
 /// TODO:
 /// Check if there's a smarter way to handle the case where the gpg key hasn't been added to the

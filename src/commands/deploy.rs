@@ -4,7 +4,7 @@ use log::trace;
 
 use crate::{
     changeset::{Changeset, host_to_state, state_to_host, state_to_state},
-    config::Configuration,
+    config::bois::Configuration,
     handlers::{
         packages::{install_packages, uninstall_packages},
         paths::handle_path_operations,

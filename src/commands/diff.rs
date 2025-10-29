@@ -1,7 +1,7 @@
 use anyhow::Result;
 use log::trace;
 
-use crate::{config::Configuration, state::State, system_state::SystemState};
+use crate::{config::bois::Configuration, state::State, system_state::SystemState};
 
 pub fn diff(config: Configuration) -> Result<()> {
     diff_packages(&config)

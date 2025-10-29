@@ -9,7 +9,7 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::Configuration,
+    config::bois::Configuration,
     error::Error,
     handlers::packages::{PackageManager, pacman::get_packages_for_group},
     system_state::SystemState,

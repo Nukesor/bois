@@ -7,15 +7,19 @@ use std::{
 use anyhow::{Context, Result};
 use nix::unistd::{Gid, Group as NixGroup, Uid, User as NixUser};
 
+use super::{
+    Changeset,
+    DirectoryOperation,
+    FileOperation,
+    PackageInstall,
+    PathOperation,
+    helper::equal_mode,
+};
 use crate::{
-    config::Configuration,
+    config::bois::Configuration,
     error::Error,
     state::{State, file::Entry, group::Group, host::Host},
     system_state::SystemState,
-};
-
-use super::{
-    Changeset, DirectoryOperation, FileOperation, PackageInstall, PathOperation, helper::equal_mode,
 };
 
 pub fn create_changeset(

@@ -6,9 +6,8 @@ use std::{
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 
-use crate::{error::Error, handlers::packages::PackageManager, helper::read_yaml};
-
 use super::{directory::*, file::read_entry};
+use crate::{config::helper::read_yaml, error::Error, handlers::packages::PackageManager};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Group {

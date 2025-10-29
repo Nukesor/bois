@@ -7,9 +7,9 @@ use nix::unistd::{Gid, Uid};
 use serde_yaml::{Mapping, Value};
 
 use crate::{
-    helper::read_yaml,
+    config::{file::Delimiters, helper::read_yaml},
     password_managers::add_password_manager_functions,
-    state::{file::Delimiters, host::HostConfig},
+    state::host::HostConfig,
 };
 
 /// Read the `vars.yml` from a host directory if it exists.

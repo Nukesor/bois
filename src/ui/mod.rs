@@ -6,7 +6,7 @@ use crossterm::style::Stylize;
 
 use crate::{
     changeset::{PackageInstall, PackageUninstall, PathOperation},
-    config::Configuration,
+    config::bois::Configuration,
     constants::{CURRENT_GROUP, CURRENT_USER},
     error::Error,
     handlers::packages::PackageManager,

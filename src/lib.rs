@@ -1,7 +1,5 @@
 use std::sync::OnceLock;
 
-use config::Configuration;
-
 pub mod args;
 pub mod changeset;
 pub mod commands;
@@ -9,12 +7,13 @@ pub mod config;
 pub mod constants;
 pub mod error;
 pub mod handlers;
-pub mod helper;
 pub mod password_managers;
 pub mod state;
 pub mod system_state;
 pub mod templating;
 pub mod ui;
+
+use config::bois::Configuration;
 
 /// Expose the config as a global.
 /// This is somewhat of an antipatter, but is needed to access the configuration inside of

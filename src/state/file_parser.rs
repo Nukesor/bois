@@ -7,15 +7,16 @@ use std::{
 use anyhow::{Result, bail};
 use log::debug;
 use winnow::{
-    ModalResult, Parser,
+    ModalResult,
+    Parser,
     ascii::{newline, space0, till_line_ending},
     combinator::{alt, cut_err, delimited, not, opt, preceded, repeat, separated, terminated},
     error::{StrContext, StrContextValue},
     token::rest,
 };
 
-use super::file::{File, FileConfig};
-use crate::error::Error;
+use super::file::File;
+use crate::{config::file::FileConfig, error::Error};
 
 pub struct ParsedFile<'s> {
     pub pre_config_block: Option<&'s str>,

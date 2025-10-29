@@ -6,8 +6,8 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    config::helper::{expand_home, find_directory},
     error::Error,
-    helper::{expand_home, find_directory},
 };
 
 /// The current mode we're running in.
@@ -96,10 +96,10 @@ impl RawConfiguration {
         self.mode.unwrap_or(Mode::System)
     }
 
-    /// This function takes a [RawConfiguration] from a deserialized config file and populates all values
-    /// that haven't explicitly set.
-    /// The resulting [Configuration] no longer has any `Option`als, which makes it convenient to pass
-    /// around the program during runtime.
+    /// This function takes a [RawConfiguration] from a deserialized config file and populates all
+    /// values that haven't explicitly set.
+    /// The resulting [Configuration] no longer has any `Option`als, which makes it convenient to
+    /// pass around the program during runtime.
     pub fn build_configuration(self) -> Result<Configuration> {
         // Determine the hostname of the machine, if it isn't explicitly set.
         let name = match self.name {
@@ -114,8 +114,8 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
         };
 
         // Determine the mode bois should run in.
-        // This determines what kind of default directories should be used, which is why we do it very
-        // early on.
+        // This determines what kind of default directories should be used, which is why we do it
+        // very early on.
         let mode = match self.mode {
             Some(mode) => mode,
             None => {

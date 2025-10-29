@@ -8,7 +8,7 @@ use anyhow::{Context, Result};
 use serde_yaml::{Mapping, Value};
 
 use crate::{
-    config::{Configuration, Mode},
+    config::bois::{Configuration, Mode},
     templating::render_template,
 };
 

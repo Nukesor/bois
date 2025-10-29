@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::{args::Subcommand, config::Configuration};
+use crate::{args::Subcommand, config::bois::Configuration};
 
 mod deploy;
 mod diff;

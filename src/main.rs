@@ -4,14 +4,10 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
+use bois::{CONFIG, args::Arguments, commands::run_subcommand, config::bois::RawConfiguration};
 use clap::Parser;
 use log::{LevelFilter, debug};
 use pretty_env_logger::env_logger::Builder;
-
-use bois::CONFIG;
-use bois::args::Arguments;
-use bois::commands::run_subcommand;
-use bois::config::RawConfiguration;
 
 fn main() -> Result<()> {
     // Read any .env files
