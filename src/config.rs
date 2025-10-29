@@ -264,42 +264,4 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
 
         Ok(config)
     }
-
-    // TODO: Commented out for now. May delete later.
-    // /// Save the current configuration as a file to the given path. \
-    // /// If no path is given, the default configuration path will be used. \
-    // /// The file is then written to the main configuration directory of the respective OS.
-    //pub fn save(&self, path: &Option<PathBuf>) -> Result<(), Error> {
-    //    let config_path = if let Some(path) = path {
-    //        path.clone()
-    //    } else {
-    //        PathBuf::from("/etc/bois/bois.yml")
-    //    };
-
-    //    let config_dir = PathBuf::from("/etc/bois");
-
-    //    // Create the config dir, if it doesn't exist yet
-    //    if !config_dir.exists() {
-    //        create_dir_all(&config_dir)
-    //            .map_err(|err| Error::IoPath(config_dir.clone(), "creating config dir", err))?;
-    //    }
-
-    //    // Serialize the configuration file and write it to disk
-    //    let content = match serde_yaml::to_string(self) {
-    //        Ok(content) => content,
-    //        Err(error) => {
-    //            return Err(Error::Generic(format!(
-    //                "Configuration file serialization failed:\n{error}"
-    //            )))
-    //        }
-    //    };
-
-    //    // Write the serialized content to the file.
-    //    let mut file = File::create(config_path)
-    //        .map_err(|err| Error::IoPath(config_dir.clone(), "creating settings file", err))?;
-    //    file.write_all(content.as_bytes())
-    //        .map_err(|err| Error::IoPath(config_dir, "writing settings file", err))?;
-
-    //    Ok(())
-    //}
 }
