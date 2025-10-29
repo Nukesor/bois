@@ -13,7 +13,8 @@ pub(super) fn install_packages(packages: Vec<String>) -> Result<()> {
     }
 
     // TODO: Check if there's a more elegant way of doing this.
-    //       See the docs/AUR.md section on the current approach.
+    // See the book/src/system_configuration/package_manageres/paru.md section on the current
+    // approach. Maybe make the aur user configurable.
     let output = Command::new("sudo")
         .args([
             "-u",

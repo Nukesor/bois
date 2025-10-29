@@ -1,5 +1,19 @@
 # Pacman
 
+## Configuration
+
+Packages can be added by adding a `package.pacman` section to either a `group.yml` or the `host.yml`.
+For example:
+
+```yaml
+# Packages that should be installed when this group is enabled.
+packages:
+  pacman:
+    - git
+```
+
+All pacman packages that're defined in the `host.yml` and of all enabled `group.yml` files will then be installed for the given host.
+
 ## Tips and tricks
 
 ### `bois diff`
