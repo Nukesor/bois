@@ -9,14 +9,14 @@ bump:
 # Lint all parts of the code
 lint:
     just ensure-command taplo
-    cargo fmt --all -- --check
+    cargo +nightly fmt --all -- --check
     taplo format --check
     cargo clippy --tests --workspace -- -D warnings
 
 # Format all parts of the code
 format:
     just ensure-command taplo
-    cargo fmt
+    cargo +nightly fmt
     taplo format
 
 # Serve the book locally
