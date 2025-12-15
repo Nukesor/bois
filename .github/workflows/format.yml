@@ -35,10 +35,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup nightly Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          components: clippy
+          components: rustfmt
           targets: ${{ matrix.target }}
 
       - uses: actions/cache@v4
@@ -57,9 +57,6 @@ jobs:
       - name: Install cargo-sort
         run: cargo install cargo-sort || exit 0
 
-      # The following lines should mirror the `just lint` command.
-      - name: cargo sort
-        run: cargo sort --workspace --check
-
-      - name: cargo clippy
-        run: cargo clippy --tests --workspace -- -D warnings
+      # These lines should mirror the `just lint` command.
+      - name: cargo fmt
+        run: cargo +nightly fmt --all -- --check

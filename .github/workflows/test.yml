@@ -84,8 +84,8 @@ jobs:
 
       - name: cargo test
         run: cargo nextest run --workspace --target=${{ matrix.target }}
-        env:
-          NEXTEST_PROFILE: ci # defined in .config/nextest.toml
+        #env:
+        #  NEXTEST_PROFILE: ci # defined in .config/nextest.toml
         if: ${{ !matrix.cross }}
 
       # ----- Cross path
