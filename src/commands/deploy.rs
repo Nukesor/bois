@@ -19,18 +19,15 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // This doesn't contain all system state, only stuff like packages and system services.
     // It's basically a cache struct, so we don't repeatedly run the same queries all the time.
     let mut system_state = SystemState::new()?;
-    trace!("System state: {system_state:#?}");
 
     // Read the current desired system state from the files in the specified bois directory.
     let desired_state = State::new(&config, &mut system_state)?;
-    trace!("Config state: {desired_state:#?}");
 
     // Read the state of the previous run, if existing.
     // This state will be used to determine:
     // - Any changes on the system's files since the last deployment
     // - Cleanup work that might need to be done for the new desired state.
     let previous_state = State::read_previous(&config)?;
-    trace!("Previous state: {previous_state:#?}");
 
     // Create a new empty changeset.
     // All changes will be appended into this struct
