@@ -252,11 +252,12 @@ fn print_table(mut table: Table) {
 
 /// Run an external diff tool on two paths.
 fn print_file_diff(original: &Path, new: &Path) -> Result<()> {
+    let args = vec![
+        original.to_string_lossy().to_string(),
+        new.to_string_lossy().to_string(),
+    ];
     let output = Command::new("delta")
-        .args(vec![
-            original.to_string_lossy().to_string(),
-            new.to_string_lossy().to_string(),
-        ])
+        .args(&args)
         .output()
         .map_err(|err| Error::Process("delta", err))?;
 
@@ -265,10 +266,10 @@ fn print_file_diff(original: &Path, new: &Path) -> Result<()> {
 
     let code = output.status.code();
     if code.is_none() {
-        bail!("Failed to run diff command: \nstdout:\n{stdout}\nstderr:\n{stderr}");
+        bail!("Failed to run diff command ({args:?}): \nstdout:\n{stdout}\nstderr:\n{stderr}");
     } else if let Some(code) = code {
         if code != 1 {
-            bail!("Failed to run diff command: \nstdout:\n{stdout}\nstderr:\n{stderr}");
+            bail!("Failed to run diff command ({args:?}): \nstdout:\n{stdout}\nstderr:\n{stderr}");
         }
     }
 

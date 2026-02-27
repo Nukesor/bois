@@ -1,6 +1,5 @@
 use anyhow::{Result, bail};
 use inquire::Confirm;
-use log::trace;
 
 use crate::{
     changeset::{Changeset, host_to_state, state_to_host, state_to_state},
