@@ -47,7 +47,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Compress binary
-        uses: svenstaro/upx-action@v2
+        uses: svenstaro/upx-action@v3
         with:
           file: target/${{ matrix.target }}/release/bois
           args: --best --lzma
