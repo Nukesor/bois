@@ -3,6 +3,7 @@ use std::{collections::HashMap, fs::File, io::BufReader, path::PathBuf};
 
 use anyhow::{Result, bail};
 use log::{info, warn};
+use nix::unistd::Uid;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -119,7 +120,7 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
         let mode = match self.mode {
             Some(mode) => mode,
             None => {
-                if whoami::username() == "root" {
+                if Uid::effective().is_root() {
                     Mode::System
                 } else {
                     Mode::User
@@ -221,7 +222,7 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
             path.clone()
         } else {
             // If bois is running as root, we assume that it's used te
-            let config_dir = if whoami::username() == "root" {
+            let config_dir = if Uid::effective().is_root() {
                 PathBuf::from("/etc/bois")
             } else {
                 find_directory(
