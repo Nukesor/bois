@@ -19,8 +19,8 @@ pub enum Mode {
 }
 
 /// This config is a "raw" version of the actual [Configuration] struct, allowing deserialization
-/// with missing values. It's then populated with default values and built into a [Configuration]
-/// in the [RawConfiguration::build_configuration] function.
+/// with missing values. It's populated with default values, validated and built into a
+/// [Configuration] in the [RawConfiguration::build_configuration] function.
 #[derive(PartialEq, Eq, Clone, Default, Debug, Deserialize, Serialize)]
 pub struct RawConfiguration {
     /// The name of the machine.

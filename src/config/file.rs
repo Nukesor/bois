@@ -1,3 +1,6 @@
+//! This module contains the [FileConfig], which is the inlined configuration format that can be
+//! found in source configuration files managed by bois.
+
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -5,6 +8,10 @@ use serde::{Deserialize, Serialize};
 use super::helper::expand_home;
 use crate::constants::{CURRENT_GROUP, CURRENT_USER};
 
+/// The [FileConfig] represents the inlined configuration format that can be
+/// found in source configuration files managed by bois.
+///
+/// It's primarily used to modify permissions or enable/modify templating logic.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FileConfig {
     /// If this is set, this path will be used as a destination.

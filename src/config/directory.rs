@@ -1,3 +1,5 @@
+//! This module contains the [DirectoryConfig], which is the `bois.yml` configuration file format
+//! that can be found in configuration directories.
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -7,6 +9,11 @@ use crate::{
     constants::{CURRENT_GROUP, CURRENT_USER},
 };
 
+/// The representation of a [DirectoryConfig], which is the `bois.yml` configuration file format
+/// that can be found in configuration directories.
+///
+/// This allows setting additional options to control what should happen with a specific config
+/// directory.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DirectoryConfig {

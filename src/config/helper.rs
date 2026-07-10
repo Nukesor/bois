@@ -1,3 +1,6 @@
+//! The [helper] module contains shared logic that's either for convenience or needed to verify/load
+//! files.
+
 use std::{
     fs::{create_dir_all, read_to_string},
     path::{Path, PathBuf},
