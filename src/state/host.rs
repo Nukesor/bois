@@ -12,7 +12,7 @@ use crate::{
     config::helper::read_yaml,
     error::Error,
     handlers::packages::PackageManager,
-    templating::get_host_vars,
+    templating::variables::get_host_vars,
 };
 
 /// A Host is related to a

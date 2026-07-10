@@ -7,7 +7,6 @@ pub mod config;
 pub mod constants;
 pub mod error;
 pub mod handlers;
-pub mod password_managers;
 pub mod state;
 pub mod system_state;
 pub mod templating;

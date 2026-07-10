@@ -23,7 +23,7 @@ pub enum PackageManager {
     Apt,
 }
 
-/// Return the set of all explicitly installed packages on the system.
+/// Return the set of all explicitly installed groups on the system.
 pub fn get_detected_groups(manager: PackageManager) -> Result<HashSet<String>> {
     match manager {
         PackageManager::Pacman => pacman::detect_installed_groups(),
