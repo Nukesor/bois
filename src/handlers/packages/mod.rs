@@ -12,17 +12,6 @@ use crate::{
 pub mod pacman;
 pub mod paru;
 
-#[derive(
-    Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Display, Deserialize, Serialize,
-)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "PascalCase")]
-pub enum PackageManager {
-    Pacman,
-    Paru,
-    Apt,
-}
-
 /// Return the set of all explicitly installed groups on the system.
 pub fn get_detected_groups(manager: PackageManager) -> Result<HashSet<String>> {
     match manager {

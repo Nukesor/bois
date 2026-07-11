@@ -7,7 +7,7 @@ use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 
 use super::{directory::*, file::read_entry};
-use crate::{config::helper::read_yaml, error::Error, handlers::packages::PackageManager};
+use crate::{config::helper::read_yaml, error::Error};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Group {
@@ -31,7 +31,7 @@ pub struct GroupConfig {
     pub defaults: GroupDefaults,
     /// Packages that should always be installed for this group.
     #[serde(default)]
-    pub packages: HashMap<PackageManager, HashSet<String>>,
+    pub packages: HashMap<super::PackageManager, HashSet<String>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]

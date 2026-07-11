@@ -8,21 +8,15 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
 use super::{directory::*, file::read_entry, group::Group};
-use crate::{
-    config::helper::read_yaml,
-    error::Error,
-    handlers::packages::PackageManager,
-    templating::variables::get_host_vars,
-};
+use crate::{config::helper::read_yaml, error::Error, templating::variables::get_host_vars};
 
-/// A Host is related to a
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Host {
     /// The top-level configuration file for this host.
     pub config: HostConfig,
     /// All variables that're available for templating to the host files and all groups.
     pub variables: Value,
-    /// The content of this group's directory.
+    /// The content of the host config directory.
     pub directory: Directory,
     /// Will contain all groups that have been specified as dependencies.
     pub groups: Vec<Group>,
@@ -43,7 +37,7 @@ pub struct HostConfig {
     pub groups: Vec<String>,
     /// Packages that should always be installed for this host.
     #[serde(default)]
-    pub packages: HashMap<PackageManager, HashSet<String>>,
+    pub packages: HashMap<super::PackageManager, HashSet<String>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
