@@ -1,30 +1,17 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, HashSet},
     fs::File,
     io::{BufReader, Write},
 };
 
-use anyhow::{Result, bail};
-use log::{info, warn};
+use anyhow::Result;
+use log::info;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
-use crate::{
-    aggregators::package_managers::pacman::get_packages_for_group,
-    config::bois::Configuration,
-    error::Error,
-};
+use crate::{config::bois::Configuration, error::Error, state::path::tree::Tree};
 
-pub mod directory;
-pub mod file;
-pub mod file_parser;
-pub mod group;
-pub mod host;
-
-use self::{
-    group::read_group,
-    host::{Host, read_host},
-};
+pub mod path;
 
 #[derive(
     Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Display, Deserialize, Serialize,
@@ -52,14 +39,11 @@ pub struct State {
     /// root dir or new hostname.
     pub configuration: Configuration,
 
-    /// The diffent groups that're managed by bois.
-    pub host: Host,
-
-    /// All variables that're available to all groups during templating.
-    pub variables: HashMap<String, String>,
+    /// The full tree of all configuration files as they are read from the configuration directory,
+    pub path_tree: Tree,
 
     /// The compiled list of all packages that should be installed for this current configuration.
-    pub packages: HashMap<PackageManager, HashSet<String>>,
+    pub packages: BTreeMap<PackageManager, HashSet<String>>,
 }
 
 impl State {
@@ -85,9 +69,9 @@ impl State {
 
     //    let mut state = State {
     //        host,
-    //        variables: HashMap::new(),
+    //        variables: BTreeMap::new(),
     //        configuration: configuration.clone(),
-    //        packages: HashMap::new(),
+    //        packages: BTreeMap::new(),
     //    };
 
     //    state.load_packages(system_state)?;

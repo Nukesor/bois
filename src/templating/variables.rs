@@ -4,7 +4,7 @@ use anyhow::{Result, bail};
 use nix::unistd::{Gid, Uid};
 use serde_yaml::{Mapping, Value};
 
-use crate::{config::helper::read_yaml, state::host::HostConfig};
+use crate::config::{helper::read_yaml, host::HostConfig};
 
 /// Read the `vars.yml` from a host directory if it exists.
 ///

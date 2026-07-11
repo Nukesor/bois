@@ -1,13 +1,13 @@
-use std::{
-    collections::{HashMap, HashSet},
-    path::{Path, PathBuf},
-};
+use std::path::Path;
 
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 
-use super::{directory::*, file::read_entry};
-use crate::{config::helper::read_yaml, error::Error};
+use super::file::read_entry;
+use crate::{
+    config::{group::GroupConfig, helper::read_yaml},
+    error::Error,
+};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Group {
@@ -17,29 +17,6 @@ pub struct Group {
     pub config: GroupConfig,
     /// The content of this group's directory.
     pub directory: Directory,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct GroupConfig {
-    /// Used to overwrite the target directory to which files should be deployed for
-    /// this specific group.
-    #[serde(default)]
-    pub target_directory: Option<PathBuf>,
-    /// The content of this group's directory.
-    #[serde(default)]
-    pub defaults: GroupDefaults,
-    /// Packages that should always be installed for this group.
-    #[serde(default)]
-    pub packages: HashMap<super::PackageManager, HashSet<String>>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct GroupDefaults {
-    pub owner: Option<String>,
-    pub group: Option<String>,
-    pub file_mode: Option<u32>,
-    pub directory_mode: Option<u32>,
 }
 
 pub fn read_group(root: &Path, name: &str, template_vars: &serde_yaml::Value) -> Result<Group> {
