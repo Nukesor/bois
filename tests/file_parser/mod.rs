@@ -1,6 +1,6 @@
 use std::{fs::read_to_string, path::PathBuf};
 
-use bois::state::file_parser::config_file;
+use bois::aggregators::path::file_parser::parse_file;
 use insta::assert_snapshot;
 use rstest::rstest;
 use testresult::TestResult;
@@ -12,7 +12,7 @@ pub fn test_at_start(#[files("tests/file_parser/input/*")] case: PathBuf) -> Tes
     use winnow::Parser;
 
     let input = read_to_string(&case)?;
-    let output = config_file.parse(input.as_str())?;
+    let output = parse_file.parse(input.as_str())?;
 
     let name = case.file_name().unwrap().to_str().unwrap();
 

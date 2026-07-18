@@ -153,14 +153,15 @@ fn config_block<'s>(input: &mut &'s str) -> ModalResult<String> {
     Ok(block)
 }
 
-/// Parse a config file.
-/// This check, if there's a bois config block somewhere in that file.
+/// Parse a file with an optional bois config block.
+///
+/// This checks, if there's a bois config block somewhere in that file.
 /// If we have a config block.
 /// 1. Take all lines between `bois_config` and `bois_config`. For each line
 ///   - Strip any comment trailing spaces
 ///   - Strip any comment symbols
 /// 2. Deserialize the config
-pub fn config_file<'s>(input: &mut &'s str) -> ModalResult<ParsedFile<'s>> {
+pub fn parse_file<'s>(input: &mut &'s str) -> ModalResult<ParsedFile<'s>> {
     let (pre, config, post) =
         (opt(pre_config_block), opt(config_block), opt(rest)).parse_next(input)?;
 
@@ -171,7 +172,7 @@ pub fn config_file<'s>(input: &mut &'s str) -> ModalResult<ParsedFile<'s>> {
     })
 }
 
-/// Read and, if applicable, parse a single configuration file.
+/// Read and parse a file with an optional bois config block.
 pub fn read_file(root: &Path, relative_path: &Path) -> Result<File> {
     let path = root.join(relative_path);
     let file =
@@ -185,7 +186,7 @@ pub fn read_file(root: &Path, relative_path: &Path) -> Result<File> {
     let full_file_content =
         read_to_string(&path).map_err(|err| Error::IoPath(path.clone(), "reading file", err))?;
 
-    let parsed_file = match config_file.parse(full_file_content.as_str()) {
+    let parsed_file = match parse_file.parse(full_file_content.as_str()) {
         Ok(parsed_file) => parsed_file,
         Err(err) => {
             eprintln!("{err}");
