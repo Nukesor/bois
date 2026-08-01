@@ -3,20 +3,23 @@ use std::collections::{HashMap, HashSet};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::state::{PackageManager, get_detected_groups};
+use crate::state::PackageManager;
+
+mod pacman;
+mod paru;
 
 /// This state holds all important information about the system we're running on.
 ///
 /// It's supposed to be passed around and updated while performing operations.
 /// The idea is to minimize calls to external tools such as package managers or systemd.
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct SystemState {
+pub struct SystemPackages {
     packages: HashMap<PackageManager, HashSet<String>>,
     explicit_packages: HashMap<PackageManager, HashSet<String>>,
     detected_package_groups: HashMap<PackageManager, HashSet<String>>,
 }
 
-impl SystemState {
+impl SystemPackages {
     pub fn new() -> Result<Self> {
         let state = Self::default();
 
@@ -88,5 +91,14 @@ impl SystemState {
         };
 
         Ok(list)
+    }
+}
+
+/// Return the set of all explicitly installed groups on the system.
+pub fn get_detected_groups(manager: PackageManager) -> Result<HashSet<String>> {
+    match manager {
+        PackageManager::Pacman => pacman::detect_installed_groups(),
+        PackageManager::Paru => Ok(HashSet::new()),
+        PackageManager::Apt => todo!(),
     }
 }
