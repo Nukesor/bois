@@ -26,6 +26,9 @@ pub enum Error {
     #[error("I/O error at path {:?} while {}:\n{}", .0, .1, .2)]
     FileOwnership(PathBuf, &'static str, FileOwnerError),
 
+    #[error("{}", .0)]
+    PathConflict(String),
+
     #[error("Error while running process '{}'\nError:\n{}", .0, .1)]
     Process(&'static str, std::io::Error),
 
