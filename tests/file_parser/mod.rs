@@ -1,6 +1,6 @@
 use std::{fs::read_to_string, path::PathBuf};
 
-use bois::aggregators::path::file_parser::parse_file;
+use bois::aggregators::path::file::ParsedFile;
 use insta::assert_snapshot;
 use rstest::rstest;
 use testresult::TestResult;

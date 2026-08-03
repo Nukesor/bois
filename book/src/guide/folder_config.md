@@ -36,7 +36,8 @@ Now all files inside the `udev` folder will be deployed to `/etc/udev/rules.d` w
 ## Configuration Options
 
 - `path`: `PathBuf` (optional) - Override the destination path for this directory and all its contents.
-  - If it's a relative path, it's treated as relative to the target directory.
+  - If it's a relative path, it's treated as relative to the host's/group's target directory
+    (the `target_directory` override if set, otherwise the global target directory).
   - If it's an absolute path, that absolute path is used directly.
   - This override cascades to all child files and directories, unless they specify their own `path`.
 - `owner`: `String` (optional) - The directory owner. Defaults to the current user.

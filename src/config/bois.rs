@@ -147,7 +147,7 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
             },
         };
 
-        // Determine the directory where we should look for the config files.
+        // Determine the directory to which files are deployed by default.
         let target_dir = match self.target_dir {
             Some(dir) => expand_home(&dir),
             None => match mode {
@@ -159,7 +159,7 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
                     "target",
                     true,
                 )?,
-                Mode::System => PathBuf::from("/etc/bois"),
+                Mode::System => PathBuf::from("/etc"),
             },
         };
 

@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, BTreeSet},
     fs::File,
     io::{BufReader, Write},
 };
@@ -43,7 +43,7 @@ pub struct State {
     pub path_tree: Tree,
 
     /// The compiled list of all packages that should be installed for this current configuration.
-    pub packages: BTreeMap<PackageManager, HashSet<String>>,
+    pub packages: BTreeMap<PackageManager, BTreeSet<String>>,
 }
 
 impl State {

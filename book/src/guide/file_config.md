@@ -42,7 +42,8 @@ This means you can use `bois_config` blocks in:
 ## Configuration Options
 
 - `path`: `PathBuf` (optional) - Override the destination path for this file.
-  - If it's a relative path, it's treated as relative to the target directory.
+  - If it's a relative path, it's treated as relative to the host's/group's target directory
+    (the `target_directory` override if set, otherwise the global target directory).
   - If it's an absolute path, that absolute path is used directly.
   - Takes precedence over any folder-level path overrides.
 - `rename`: `String` (optional) - Override the filename when deploying.

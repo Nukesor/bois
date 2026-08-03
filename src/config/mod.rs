@@ -2,6 +2,7 @@
 //! configuration, as well as inlined file configuration.
 
 pub mod bois;
+pub mod cleanup;
 pub mod directory;
 pub mod file;
 pub mod group;

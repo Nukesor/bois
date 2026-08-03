@@ -1,57 +1,38 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
 
 use crate::state::PackageManager;
 
 mod pacman;
 mod paru;
 
-/// This state holds all important information about the system we're running on.
+/// A lazy cache for package manager queries.
 ///
-/// It's supposed to be passed around and updated while performing operations.
-/// The idea is to minimize calls to external tools such as package managers or systemd.
-#[derive(Debug, Default, Serialize, Deserialize)]
+/// All lists are only retrieved once and cached afterwards, so we don't
+/// repeatedly shell out to package managers during a single run.
+#[derive(Debug, Default)]
 pub struct SystemPackages {
-    packages: HashMap<PackageManager, HashSet<String>>,
-    explicit_packages: HashMap<PackageManager, HashSet<String>>,
-    detected_package_groups: HashMap<PackageManager, HashSet<String>>,
+    packages: BTreeMap<PackageManager, BTreeSet<String>>,
+    explicit_packages: BTreeMap<PackageManager, BTreeSet<String>>,
+    package_groups: BTreeMap<PackageManager, BTreeSet<String>>,
 }
 
 impl SystemPackages {
-    pub fn new() -> Result<Self> {
-        let state = Self::default();
-
-        Ok(state)
-    }
-
     /// Get all installed packages for the current system, which includes potential dependencies.
-    ///
-    /// This list is cached, however if the cache isn't loaded yet it'll be retrieved.
-    pub fn packages(&mut self, manager: PackageManager) -> Result<HashSet<String>> {
-        let list = if let Some(packages) = self.packages.get(&manager) {
-            packages.clone()
-        } else {
+    pub fn packages(&mut self, manager: PackageManager) -> Result<&BTreeSet<String>> {
+        if !self.packages.contains_key(&manager) {
             self.update_packages(manager)?;
-            self.packages.get(&manager).unwrap().clone()
-        };
-
-        Ok(list)
+        }
+        Ok(self.packages.get(&manager).unwrap())
     }
 
     /// Get all **explicitly** installed packages for the current system.
-    ///
-    /// This is list is cached, however if the cache isn't set yet, load the list.
-    pub fn explicit_packages(&mut self, manager: PackageManager) -> Result<HashSet<String>> {
-        let list = if let Some(packages) = self.explicit_packages.get(&manager) {
-            packages.clone()
-        } else {
+    pub fn explicit_packages(&mut self, manager: PackageManager) -> Result<&BTreeSet<String>> {
+        if !self.explicit_packages.contains_key(&manager) {
             self.update_packages(manager)?;
-            self.explicit_packages.get(&manager).unwrap().clone()
-        };
-
-        Ok(list)
+        }
+        Ok(self.explicit_packages.get(&manager).unwrap())
     }
 
     /// Update the installed packages, both explicit and not explicit.
@@ -78,27 +59,34 @@ impl SystemPackages {
         Ok(())
     }
 
-    /// Get all installed packages for the current system.
-    ///
-    /// This is list is cached, however if the cache isn't set yet, load the list.
-    pub fn detected_package_groups(&mut self, manager: PackageManager) -> Result<HashSet<String>> {
-        let list = if let Some(packages) = self.detected_package_groups.get(&manager) {
-            packages.clone()
-        } else {
-            let list = get_detected_groups(manager)?;
-            self.detected_package_groups.insert(manager, list);
-            self.detected_package_groups.get(&manager).unwrap().clone()
-        };
-
-        Ok(list)
+    /// Get the set of all package *groups* (e.g. pacman's `base-devel`) that
+    /// are known to the system's package database.
+    pub fn package_groups(&mut self, manager: PackageManager) -> Result<&BTreeSet<String>> {
+        if let std::collections::btree_map::Entry::Vacant(entry) =
+            self.package_groups.entry(manager)
+        {
+            let list = match manager {
+                PackageManager::Pacman => pacman::detect_installed_groups()?,
+                PackageManager::Paru => BTreeSet::new(),
+                PackageManager::Apt => todo!(),
+            };
+            entry.insert(list);
+        }
+        Ok(self.package_groups.get(&manager).unwrap())
     }
-}
 
-/// Return the set of all explicitly installed groups on the system.
-pub fn get_detected_groups(manager: PackageManager) -> Result<HashSet<String>> {
-    match manager {
-        PackageManager::Pacman => pacman::detect_installed_groups(),
-        PackageManager::Paru => Ok(HashSet::new()),
-        PackageManager::Apt => todo!(),
+    /// Get the list of packages a package *group* consists of.
+    /// Not cached: this is only called for the few groups that actually show
+    /// up in a configuration.
+    pub fn packages_for_group(
+        &mut self,
+        manager: PackageManager,
+        group: &str,
+    ) -> Result<BTreeSet<String>> {
+        match manager {
+            PackageManager::Pacman => pacman::get_packages_for_group(group),
+            PackageManager::Paru => Ok(BTreeSet::new()),
+            PackageManager::Apt => todo!(),
+        }
     }
 }

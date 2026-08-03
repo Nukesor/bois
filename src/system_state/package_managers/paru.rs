@@ -1,11 +1,11 @@
-use std::{collections::HashSet, process::Command};
+use std::{collections::BTreeSet, process::Command};
 
 use anyhow::{Context, Result, bail};
 
 /// Get the list of **exlicitly** installed foreign (AUR) packages on the system.
 /// Ignore packages that are installed as a dependency, as they might be removed at any point in
 /// time when another package is uninstalled as a side-effect.
-pub fn explicit_packages() -> Result<HashSet<String>> {
+pub fn explicit_packages() -> Result<BTreeSet<String>> {
     // Get all explicitly installed packages
     let output = Command::new("pacman")
         .args(["--query", "--quiet", "--explicit", "--foreign"])

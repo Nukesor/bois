@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::helper::expand_home,
+    config::{cleanup::CleanupConfig, helper::expand_home},
     constants::{CURRENT_GROUP, CURRENT_USER},
 };
 
@@ -26,6 +26,10 @@ pub struct DirectoryConfig {
     /// This is represented as a octal `Oo755` in yaml.
     /// It's automatically parsed to a u32, which can then be used by the std lib.
     pub mode: Option<u32>,
+    /// Cleaned settings on which components should be removed once they leave this
+    /// directory's configuration.
+    #[serde(default)]
+    pub cleanup: CleanupConfig,
 }
 
 /// This impl block contains convenience getters for directory metadata, which fall back to

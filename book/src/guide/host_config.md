@@ -69,6 +69,8 @@ file_defaults:
 
 - `groups`: `List<String>` The list of groups that're enabled for this host.
   The group names correspond to the group's directory names inside the top-level `groups` directory.
+- `target_directory`: `PathBuf` (optional) - Override the target directory for all configuration files in this host directory.
+  Must be an absolute path (`~` is expanded). If not set, the global target directory is used.
 - `packages`: `Map<String -> List<String>>`: A list of packages sorted by package manager.
   Look at [Package Management](../system_configuration/package_management/package_management.md) to see the list of available package managers.
 - `file_defaults` Set defaults file permissions for all configuration files that're inside this host directory.

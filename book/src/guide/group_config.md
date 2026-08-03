@@ -60,8 +60,7 @@ defaults:
 ```
 
 - `target_directory`: `PathBuf` (optional) - Override the target directory for all configuration files in this group.
-  - If it's a relative path, it's treated as relative to the global target directory.
-  - If it's an absolute path, that absolute path is used.
+  Must be an absolute path (`~` is expanded). If not set, the global target directory is used.
 - `packages`: `Map<String -> List<String>>` (optional) - A list of packages sorted by package manager.
   Look at [Package Management](../system_configuration/package_management/package_management.md) to see the list of available package managers.
 - `defaults`: (optional) Set default file permissions for all configuration files that're inside this group directory.
