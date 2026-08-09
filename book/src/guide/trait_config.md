@@ -13,27 +13,24 @@ The directory structure might look something like this:
  │ 📂 base/
  │ │ 📁 shell/
  │ │ 📁 git/
- │ │ trait.yml
- │ └ vars.yml
+ │ └ trait.yml
  │ 📂 laptop/
  │ │ 📁 upower/
- │ │ trait.yml
- │ └ vars.yml
+ │ └ trait.yml
  └ 📂 games/
-   │ trait.yml
-   └ vars.yml
+   └ trait.yml
  📁 hosts/
 ```
 
 - The `trait.yml` file is optional.
   It allows you to set trait-specific configuration and specify packages that should be installed when this trait is included.
-- All variables inside the `vars.yml` are exposed to the templating engine.
-  Read the [templating docs](./templating.md) for detailed info.
-  The top level of the `vars.yml` is expected to be an object.
 - All other files that're located in a trait's directory are considered configuration files that should be deployed to the system.
   In the example above, that would be the `shell`, `git`, and `upower` folders.
 
-Traits are **enabled per host** by adding them to the `traits` list in the [host.yml](./host.md#hostyml).
+Templating variables are defined in the host's `vars.yml` and are available in all traits as well.
+Read the [templating docs](./templating.md) for detailed info.
+
+Traits are **enabled per host** by adding them to the `traits` list in the [host.yml](./host_config.md#hostyml).
 
 ## `trait.yml`
 
@@ -57,6 +54,10 @@ defaults:
   group: root
   file_mode: 0o644
   directory_mode: 0o755
+
+# Controls what should be cleaned up once it's removed from this trait's configuration.
+cleanup:
+  directories: true
 ```
 
 - `target_directory`: `PathBuf` (optional) - Override the target directory for all configuration files in this trait.
@@ -68,3 +69,9 @@ defaults:
   - `group`: `String` - The file's assigned group
   - `file_mode`: `OctalInt` - The default permissions that'll be set for all files.
   - `directory_mode`: `OctalInt` - The default permissions that'll be set for all directories.
+- `cleanup`: (optional) Controls what should be cleaned up once it's removed from this trait's configuration.
+  Files and packages are always cleaned up; this only covers resources where cleanup is opt-in.
+  - `directories`: `Boolean` - Whether directories are removed once they leave the configuration. Defaults to `false`.
+    Even if set to `true`, directories are only removed if they're empty.
+    If a directory still contains unmanaged files, it's never removed.
+    This setting applies to the whole trait directory and can be overridden per subtree via a folder's [dir.yml](./folder_config.md).

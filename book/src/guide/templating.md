@@ -68,6 +68,9 @@ OTHER_SECRET=sit
 
 - `host`: String - The name of the current host.
 - `traits`: `List<String>` - A list with all traits that're enabled for the host.
+- `USER`: `String` - The name of the user that currently executes bois (from the `$USER` environment variable).
+- `USER_ID`: `Integer` - The id of the user that currently executes bois.
+- `GROUP_ID`: `Integer` - The group id of the user that currently executes bois.
 
 The following example checks whether the `encrypt` trait is enabled for the current host.
 If so, it adds the `do_encryption=true` flag to the configuration file.

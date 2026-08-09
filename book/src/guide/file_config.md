@@ -1,6 +1,8 @@
 # File Config
 
-Individual files can be configured by adding a `bois_config` block inside the file itself.
+By default, individual files will just be deployed to their the relative path to their host/trait with the identical permissions.
+
+However, location, permissions, ownership and more can be configured by adding a `bois_config` block inside the file itself.
 The configuration block is commented out using the file's native comment syntax, so it doesn't interfere with the actual configuration.
 
 This allows you to:
@@ -8,7 +10,7 @@ This allows you to:
 - Rename files when deploying them
 - Set custom ownership and permissions
 - Enable templating for dynamic configuration
-- Customize template delimiters to avoid conflicts
+- Customize template delimiters to avoid conflicts with native syntax.
 
 ## Example
 
@@ -31,7 +33,7 @@ The configuration is extracted from between the two `# bois_config` delimiter li
 
 ## Supported Comment Syntaxes
 
-The parser supports multiple comment prefixes: `#`, `//`, `--`, `/*`, `*/`, `**`, `*`, `%`
+The following comment prefixes are valid: `#`, `//`, `--`, `/*`, `*/`, `**`, `*`, `%`.
 
 This means you can use `bois_config` blocks in:
 - Shell scripts, Python, Ruby, YAML (`#`)
@@ -39,12 +41,16 @@ This means you can use `bois_config` blocks in:
 - SQL, Lua, Haskell (`--`)
 - LaTeX (`%`)
 
+If anything is missing, please open a ticket.
+
 ## Configuration Options
 
 - `path`: `PathBuf` (optional) - Override the destination path for this file.
   - If it's a relative path, it's treated as relative to the host's/trait's target directory
     (the `target_directory` override if set, otherwise the global target directory).
   - If it's an absolute path, that absolute path is used directly.
+  - If the path ends with a `/`, the file is deployed **into** that directory under its own name.
+    Otherwise, the path is used as the full destination path, including the file name.
   - Takes precedence over any folder-level path overrides.
 - `rename`: `String` (optional) - Override the filename when deploying.
   Useful for deploying dotfiles without having dots in your bois directory.
@@ -53,6 +59,7 @@ This means you can use `bois_config` blocks in:
   # rename: .bashrc
   # bois_config
   ```
+  TODO: What happens when rename and `path` clash? Maybe we should remove `rename` and only allow path?
 - `owner`: `String` (optional) - The file owner. Defaults to the current user.
 - `group`: `String` (optional) - The file's assigned group. Defaults to the current user's group.
 - `mode`: `OctalInt` (optional) - File permissions (e.g., `0o644`). If not set, the source file's permissions are preserved.
@@ -69,7 +76,7 @@ This means you can use `bois_config` blocks in:
   #   comment: ["{#", "#}"]
   # bois_config
   ```
-  - `prefix`: `String` (optional) - Prefix all delimiters with this string (e.g., `#` to make templates look like comments).
+  - `prefix`: `String` (optional) - Prefix all opening delimiters with this string (e.g., `#{%` to make templates behave like comments).
   - `block`: `[String, String]` (optional) - Delimiters for logic blocks. Defaults to `["{%", "%}"]`.
   - `variable`: `[String, String]` (optional) - Delimiters for variables. Defaults to `["{{", "}}"]`.
   - `comment`: `[String, String]` (optional) - Delimiters for comments. Defaults to `["{#", "#}"]`.

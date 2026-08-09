@@ -9,7 +9,7 @@ There're however a few requirements for this to go smoothly:
 1. When you're running `bois` as `root` to configure your system, you must have a working passwordstore and gpg setup for `root` as well.
    - To avoid to also having to copy and synchronize your passwordstore to root, you can set the following environment variable in your global `bois.yml` to use your normal user's.
      ```
-     # /etc/bois.yml
+     # /etc/bois/bois.yml
      envs:
        PASSWORD_STORE_DIR: /home/your_user/.local/share/password-store
      ```
@@ -35,7 +35,7 @@ The `pass` function accepts two parameters, the second being optional:
 
 - `key` is the path you would specify when calling `pass` directly from the cli.
   If only the `key` is provided, the first line of the password file is returned.
-- `parse_mode` (optional): Can be one of `["yaml"]` (feel free to contribute more formats). \
+- `parse_mode` (optional): Can be one of `["yaml", "yml"]` (feel free to contribute more formats). \
   If this is provided, the first line of the password file **is ignored** and the remaining content is interpreted as said data format.
   The content of that data format is simply returned from the function and can be further used.
 
@@ -65,7 +65,7 @@ Interpret the passwordstore file as a dataformat and returns the data for furthe
 Note: The first line is always ignored.
 
 ```django,jinja
-{{ pass("service/kagi.com")["user"] }}
+{{ pass("service/kagi.com", "yaml")["user"] }}
 ```
 
 Would return: `my@email.de`

@@ -2,7 +2,7 @@
 
 ## Configuration
 
-Packages can be added by adding a `package.pacman` section to either a `trait.yml` or the `host.yml`.
+Packages can be added by adding a `packages.pacman` section to either a `trait.yml` or the `host.yml`.
 For example:
 
 ```yaml

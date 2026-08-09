@@ -36,9 +36,9 @@ The directory structure might look something like this:
 - All other files that're located in a host's directory are considered configuration files that should be deployed to the system.
   In the example above, that would be the `X11` and `udev` folders, as well as the `pacman.conf` for the `artifact` host.
 
-Let's anticipate the next chapter a tiny bit, which will be about [traits](./traits). Traits are a tool to allow reuse of configuration files across multiple hosts.
+Let's look ahead to the next chapter real quick, which will be about [traits](./trait_config.md). Traits are a tool to allow reuse of configuration files across multiple hosts.
 
-In contrast to [traits](./traits), host configuration files are always **exclusive** for a specific host.
+In contrast to [traits](./trait_config.md), host configuration files are always **exclusive** for a specific host.
 This allows you have a strict distinction between reusable logic, which is kept inside of traits, and machine specific configuration, which is located the machine's respective host directory.
 
 ## `host.yml`
@@ -65,6 +65,10 @@ file_defaults:
   group: root
   file_mode: 0o644
   directory_mode: 0o755
+
+# Controls what should be cleaned up once it's removed from this host's configuration.
+cleanup:
+  directories: true
 ```
 
 - `traits`: `List<String>` The list of traits that're enabled for this host.
@@ -78,3 +82,9 @@ file_defaults:
   - `group`: `String` - The file's assigned group
   - `file_mode`: `OctalInt` - The default permissions that'll be set for all files.
   - `directory_mode`: `OctalInt` - The default permissions that'll be set for all directories.
+- `cleanup`: (optional) Controls what should be cleaned up once it's removed from this host's configuration.
+  Files and packages are always cleaned up; this only covers resources where cleanup is opt-in.
+  - `directories`: `Boolean` - Whether directories are removed once they leave the configuration. Defaults to `false`.
+    Even if set to `true`, directories are only removed if they're empty.
+    If a directory still contains unmanaged files, it's never removed.
+    This setting applies to the whole host directory and can be overridden per subtree via a folder's [dir.yml](./folder_config.md).

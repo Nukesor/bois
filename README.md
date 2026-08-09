@@ -154,6 +154,20 @@ To name just a few examples I personally worked with:
 - November 2022: First actual commit in repository.
 - December 2024: Project is in a raw functional state that's actually in use by a few friends.
 
+## Why name it "bois"
+
+Quite a few reasons. First of, I kinda like the sound of it "boiiiiis". And it has a sillier connotation than "boys", mostly from usage in mostly stupid but fun memes. I always have to think about the "yeah boi" dub of a particular very angry desert frog that lets out his ferocious war cry.
+
+Also "bois" seems like a much more German way of writing that word. Feels more natural, as we barely use `y` in words.
+
+There's also those super cute grafittis **all** over Hamburg. I kind of started naming them "the bois" and at some point even started making photos of every one I found. Those are still in my "bois" album. Here's one of those pictures:
+
+![da bois](./.github/smol_bois.jpg)
+
+Also, when I talk about any of my machines, I pretty much always call them "bois", like "Ne, das läuft auf dem boi da". And when I think about the bulk of them, I imagine those small graffiti bois. They're my bois.
+
+So yeah, all of that culminates in the decision of calling this project "bois". I like it and I think it's funny.
+
 ## Contributing
 
 Feature requests and pull requests are very much appreciated and welcome!

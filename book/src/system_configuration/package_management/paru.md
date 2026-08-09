@@ -20,7 +20,7 @@ At this point of this writing, `bois` still expects this user to be named `aur`.
 
 ## Configuration
 
-Packages can be added by adding a `package.paru` section to either a `trait.yml` or the `host.yml`.
+Packages can be added by adding a `packages.paru` section to either a `trait.yml` or the `host.yml`.
 For example:
 
 ```yaml
@@ -30,4 +30,4 @@ packages:
     - pueue-git
 ```
 
-All pacman packages that're defined in the `host.yml` and of all enabled `trait.yml` files will then be installed for the given host.
+All paru packages that're defined in the `host.yml` and of all enabled `trait.yml` files will then be installed for the given host.

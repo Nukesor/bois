@@ -5,7 +5,7 @@ This file is optional - if it doesn't exist, `bois` will use sensible defaults.
 
 ## Location
 
-Bois looks at the following locatin (in this order) for a `bois.yml`:
+Bois looks at the following location (in this order) for a `bois.yml`:
 
 In **User** Mode:
 
@@ -36,7 +36,7 @@ bois_dir: ~/dotfiles
 
 # The target directory where configuration files are deployed.
 # User mode: ~/.config (default)
-# System mode: /etc/bois (default)
+# System mode: /etc (default)
 target_dir: ~/.config
 
 # Cache directory for storing deployment state.
@@ -45,7 +45,7 @@ target_dir: ~/.config
 cache_dir: ~/.cache/bois
 
 # Runtime directory for temporary files.
-# User mode: ~/run/user/$YOUR_USER_ID/bois (default)
+# User mode: /run/user/$YOUR_USER_ID/bois (default)
 # System mode: /var/lib/bois (default)
 runtime_dir: /run/user/1000/bois
 
@@ -81,7 +81,7 @@ All fields are optional:
     - `$XDG_CONFIG_DIR/`
     - `~/.config` (fallback)
   - System mode default:
-    - `/etc/bois`
+    - `/etc`
 - `cache_dir`: `PathBuf` - Cache directory for storing deployment state.
   - User mode default:
     - `XDG_CACHE_DIR/bois`
@@ -106,6 +106,7 @@ All fields are optional:
 Bois operates in two modes that determine default directories and behavior:
 
 ### User Mode
+
 - Target directory: `~/.config`
 - Cache directory: `~/.cache/bois`
 - Runtime directory: `$XDG_RUNTIME_DIR/bois`
@@ -113,7 +114,8 @@ Bois operates in two modes that determine default directories and behavior:
 - Use case: Managing personal dotfiles
 
 ### System Mode
-- Target directory: `/etc/bois`
+
+- Target directory: `/etc`
 - Cache directory: `/var/lib/bois`
 - Runtime directory: `/var/lib/bois`
 - Systemctl: Called without `--user` flag

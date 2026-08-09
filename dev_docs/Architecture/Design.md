@@ -1,60 +1,70 @@
 # Design
 
-The core idea of _Bois_ is to provide a convenient **minimalistic** configuration file manager for your **personal** machines.
-Some core components of the system are to some degree managed by Bois, such as system services and installed packages.
-To some degree in this context means that the system's state isn't fully managed, but only as far as it concerns configuration files.
+The core idea of _Bois_ is to provide a convenient **minimalistic** provisioning system for your _personal_ machines.
+As such, some components of the system are managed by Bois to a certain degree, such as system services, installed packages and configuration files.
 
-Bois is **not** intended to be used as a provisioning service for remote machines, but for machines you're living on. It's also not intended to cover complex setups with multiple-dependency setups
+To some degree in this context means that the system's state isn't necessarily fully managed, but only as much as the user decides.
+
+Bois is **not** intended to be used as a provisioning service for remote machines, but for machines that you're using.
+It's also not intended to cover complex multiple-dependency deployments and the likes.
 
 ## Tasks
 
 - Configuration management
-  - Hooks
-  - Package management
-  - systemd service management
-- Diffs between system-, last-deployed- and config directory state.
-- Changeset detection (Terraform style)
+  - Hooks (TDB)
+- Package management
+- Systemd service management
 
 ## Core concepts
 
-- Can be tracked via Git
-- Multiple system configs in a single repository
-- Shared/Base rules (will be applied to all/some systems?)
-- Simple Templating with [upon](https://docs.rs/upon/latest/upon/)
 - Unix only
+- Can be tracked via Git
+- Multiple host configs in a single repository
+- Trait system (groups of tasks/configs hosts can opt into)
+- Simple jinja-style templating
+- Diffs between various states:
+  - `current config -> current system`: Changes that must be made to reach the desired state.
+  - `last-deployed -> current config`: Previously deployed changes that must now be cleaned up.
+  - `last-deployed -> current system`: On-system changes that may be overwritten
 
 ## Configuration
 
 ### Host/Trait configuration
 
-- Multiple top-level directories represent traits
-- Entry/Host point traits
-  - Entry point traits are named as the hostname of the respective machine
-  - Defines other traits as dependencies
-  - May have global variable files
-  - May have local variable files
-  - Must have a `bois.yml`
+- Two directories for holding configurations:
+  - `hosts/$hostname`: Config that **only** exists for a host with `$hostname`
+  - `traits/$name`: Each host can opt-in to all configuration inside that trait.
+- Hosts
+  - Must be located in `hosts/$hostname`
+  - Must have a `hosts/$hostname/host.yml` to configure that host.
+    - Opt-in to a list of traits
+  - May have **global** variable file `hosts/$hostname/vars.yml`
+    Global means, that these variables are available for templating in all traits that're being executed.
 - Normal traits
-  - May have a `bois.yml`
-  - Can **only** have local variable files
+  - Must be located in `traits/$name`
+  - May have a `traits/$name/trait.yml`
 
 ### File/Directory Configuration
 
-- In file configuration
+- Located directly inside a trait (`traits/$name/`) or host directory (`hosts/$hostname/`)
+- Is, by default, deployed to the configuration root specified in the global `bois.yml` or the respective host/trait config override.
+  For example, with the target folder of `~/.config`, a `hosts/$hostname/nvim/` folder and all its contents is deployed to `~/.config/nvim/`.
+- Configuration files may contain an in-file configuration block, which allows to configure:
   - Permissions
   - Ownership
   - Location
-- In folder configuration
-  - Folder permissions
-  - File default permissions
-  - Ownership
+  - Enable Templating
+  - Configure templating (e.g. delimiters)
+- Configuration folder may contain a `dir.yml`, e.g. `hosts/$hostname/ssh/`, which allows to configure:
   - Location
-- Some form of yaml/toml for variables
+  - Ownership
+  - Folder permissions
+  - Cleanup behavior for the directory's subtree.
 
 ### Configuration aggregation/merging
 
 The idea for this configuration structure is, so defaults can be set at various levels (host, trait, directory), which are then active for the respective space.
-This is, until a "lower" configuration overwrites that default.
+This is, until a "deeper" configuration overwrites that default.
 
 The hierarchy looks like this:
 
@@ -66,8 +76,9 @@ I.e. defaults on a host level are overwritten by all other more specific configu
 
 ## Deployment process
 
-All state is loaded in the local `State` struct, which
-The state is saved to a temporary directory.
+Internally, a representation of the managed system state is put into a single `State` struct
+The currently deployed `State` struct is then serialized and saved to `deployed_state.yml` in the cache directory (`~/.cache/bois` in user mode, `/var/lib/bois` in system mode).
+This state then allows us to track on-system changes and do cleanup between two deploys.
 
 ## Datastructures
 
@@ -78,44 +89,44 @@ Example folder structure for a computer named `HOSTNAME_1`.
 ```txt
 bois
 |-- bois.yml
-|-- base
-|   |-- trait.yml
-|   |-- pacman.conf
+|-- traits
+|   |- base
+|      |-- trait.yml
+|      |-- pacman.conf
 |
-|-- HOSTNAME_1
-|   |-- host.yml
-|   |-- modprobe.d
-|       |-- nobeep.conf
-|
-|-- HOSTNAME_2
-|   |-- host.yml
-|   |-- systemd
-|       |-- network
-|           |-- 10-ethernet.network
-
-|-- .deployed
-|   |-- etc
-|       |-- pacman.conf
-|       |-- modprobe.d
-|           |-- nobeep.conf
+|-- hosts
+|   |- HOSTNAME_1
+|   |  |-- host.yml
+|   |  |-- modprobe.d
+|   |      |-- nobeep.conf
+|   |
+|   |- HOSTNAME_2
+|      |-- host.yml
+|      |-- systemd
+|          |-- network
+|              |-- 10-ethernet.network
 ```
 
 ### Data load order
 
-- At the very first, the trait that's named like the current host is loaded.
-  This trait then further specifies other traits that should be loaded.
+- At the very first, the config of the current host is loaded.
+- That config then further specifies all traits that should be loaded.
+- All trait configs are loaded in the order they're specified.
 
 ## Deployment
 
 The deployment process is rather simple and can be devided into clear-cut steps.
 
-1. Check for current deployment \
-   If there exists a previous deployment, the actual deployed files are compared with the last known deployed state.
-   This step detects any changes on files that weren't handled by Bois. \
-   The user can then be warned that those changes might get overwritten on a new deploy.
 1. Read configuration and template files. \
    In this step, all relevant files from the bois configuration directory are read and internally compiled into one large state struct.
-1. Compare the a possible previously deployed state, the actual system state and the state to-be deployed.
+1. Check the current deployment. \
+   If there exists a previous deployment, the current system files are compared with the last known deployed state.
+   This step detects any on-system changes of state that's managed by bois. \
+   The user is then warned that those changes will get overwritten on the new deploy and asked for confirmation.
+1. Compare a possible previously deployed state with the state to-be deployed.
+   This results in a cleanup changeset that removes any managed state that has been removed from the bois config.
+   After the cleanup has been executed, an intermediate state is persisted, so an aborted deploy doesn't blame the intentional cleanup on the user during the next run.
+1. Compare the state to-be deployed with the actual system state.
    Based on this, a deterministic sequential changeset is created that consists of concrete executable steps to reach the desired system state.
 1. Execute all steps of the changeset to the system.
    TODO: How do we handle error cases? What should be done during an error?
@@ -125,11 +136,10 @@ The deployment process is rather simple and can be devided into clear-cut steps.
 ### Order
 
 The order in which files are deployed doesn't need to be super-configurable, but it should be deterministic.
-How does one handle conflicts? Silent overwriting based on priority? Or hard conflict error with good error message?
+Conflicting definitions for the same target path result in a hard conflict error with a good error message.
 
-For this to work, Bois follows the following ordering :
+For this to work, Bois follows the following ordering:
 
-- `priority`: Configurable on a trait, folder and file basis. Higher priority means earlier deployment/execution.
 - Recursively by **target** Folder/File names, just like `ls -R` is working.
   ```txt
   /etc/alsa/conf.d/10-samplerate.conf
@@ -141,26 +151,16 @@ For this to work, Bois follows the following ordering :
 ## Features
 
 - Subcommands
-  - `diff` Compare the currently deployed config vs. the config that's in the repository.
-    - `--apply` Optionally apply changes on the system on a chunk-by-chunk basis to the repository?
-  - `deploy` Deploy all changes. Prompt the user for permission with a current file diff.
-    - `--force` Don't prompt the user with diff for input.
-- Simple addition of existing files in system via subcommand.
+  - `plan` Dry-run that shows all changes that would be executed on the system.
+  - `deploy` Deploy all changes. Prompt the user for permission if untracked on-system changes would be overwritten.
+  - `diff` Compare the current system against the target state. (currently packages only)
+  - `absorb` Integrate on-system changes since the last deployment back into the configuration. (not yet implemented)
+  - `init` Setup a new bois directory.
 - Automatic target detection via hostname
   - Simple migration to new PC via directory name change
 - "State management"
   - Save the current deployed state.
     Needed for diff and similar
-
-### Config
-
-```yaml
-pre_hooks:
-  - update_packages
-post_hooks:
-  - "systemctl enable --now some.service"
-variables: some_variable_1
-```
 
 ### TODOS
 

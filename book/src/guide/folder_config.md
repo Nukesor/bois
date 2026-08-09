@@ -43,6 +43,11 @@ Now all files inside the `udev` folder will be deployed to `/etc/udev/rules.d` w
 - `owner`: `String` (optional) - The directory owner. Defaults to the current user.
 - `group`: `String` (optional) - The directory's assigned group. Defaults to the current user's group.
 - `mode`: `OctalInt` (optional) - The permissions for this directory (e.g., `0o755`). Defaults to `0o755`.
+- `cleanup`: (optional) - Override the cleanup behavior for this directory and all its contents.
+  - `directories`: `Boolean` - Whether directories are removed once they leave the configuration.
+    Even if set to `true`, directories are only removed if they're empty.
+    If a directory still contains unmanaged files, it's never removed.
+    If not specified, the value is inherited from the parent directory (ultimately the host's/trait's `cleanup` setting).
 
 ## Path Inheritance
 
