@@ -1,6 +1,6 @@
 # Folder Config
 
-Any folder inside a host or trait directory can have a `bois.yml` or `bois.yaml` file to configure how that folder and its contents should be deployed.
+Any folder inside a host or trait directory can have a `dir.yml` or `dir.yaml` file to configure how that folder and its contents should be deployed.
 
 This is useful for:
 - Overriding the destination path for a whole directory tree
@@ -14,12 +14,12 @@ Imagine you have a `udev` folder in your host directory that should be deployed 
  📂 hosts/
  └ 📂 artifact/
    └ 📂 udev/
-     │ bois.yml
+     │ dir.yml
      │ 10-network.rules
      └ 20-usb.rules
 ```
 
-The `bois.yml` might look like this:
+The `dir.yml` might look like this:
 
 ```yml
 # Deploy to an absolute path outside the default target directory
@@ -50,7 +50,7 @@ When a folder has a `path` override, all files and subdirectories inside inherit
 
 ```
  📂 systemd/
- │ bois.yml (path: /etc/systemd/system)
+ │ dir.yml (path: /etc/systemd/system)
  ├ 📂 timers/
  │ └ backup.timer
  └ 📁 services/

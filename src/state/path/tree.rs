@@ -82,7 +82,7 @@ pub struct DirectoryMeta {
 /// The permissions a deployed source directory's should be set to.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DirectoryPermissions {
-    /// At least one field was declared, in the directory's `bois.yml` or a
+    /// At least one field was declared, in the directory's `dir.yml` or a
     /// `defaults` cascade.
     ///
     /// All `None` fields default to `0x755` and the current user.

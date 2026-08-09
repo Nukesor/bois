@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 /// (for now); this only covers the resources where cleanup is opt-in.
 ///
 /// The settings cascade: a host/trait config sets the baseline for its whole
-/// source tree, and a directory's `bois.yml` can override it (in either
+/// source tree, and a directory's `dir.yml` can override it (in either
 /// direction) for its subtree. Unset fields inherit from the parent.
 ///
 /// ```yaml

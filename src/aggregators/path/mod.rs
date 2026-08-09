@@ -62,7 +62,7 @@ pub struct WalkContext<'a> {
     /// The metadata defaults of this source.
     pub defaults: Defaults,
     /// The source's baseline `cleanup.directories` setting. Directory
-    /// `bois.yml`s can override it per subtree during the walk.
+    /// `dir.yml`s can override it per subtree during the walk.
     pub cleanup_directories: bool,
     /// The absolute path to the target directory of this context's source.
     /// I.e. the global `target_dir`, or the host's/trait's `target_directory` override.
@@ -209,7 +209,7 @@ fn walk_entry(
 }
 
 /// The configuration file names that are found in source sub-directories.
-const CONFIG_MARKER_FILES: [&str; 2] = ["bois.yml", "bois.yaml"];
+const CONFIG_MARKER_FILES: [&str; 2] = ["dir.yml", "dir.yaml"];
 
 /// Recursively read a directory inside a source directory and insert it and
 /// all its contents into the tree.
@@ -230,16 +230,16 @@ fn walk_directory(
     let directory_path = ctx.source_dir.join(relative_path);
     trace!("Entered directory {directory_path:?}");
 
-    // Read the `bois.yml` from the directory if it exists.
+    // Read the `dir.yml` from the directory if it exists.
     let has_config =
-        directory_path.join("bois.yml").exists() || directory_path.join("bois.yaml").exists();
+        directory_path.join("dir.yml").exists() || directory_path.join("dir.yaml").exists();
     let config = if has_config {
-        read_yaml::<DirectoryConfig>(&directory_path, "bois")?
+        read_yaml::<DirectoryConfig>(&directory_path, "dir")?
     } else {
         DirectoryConfig::default()
     };
 
-    // The cleanup setting cascades: this directory's bois.yml overrides the
+    // The cleanup setting cascades: this directory's dir.yml overrides the
     // value inherited from its parent (ultimately the host/trait config), for
     // itself and everything below it.
     let cleanup_directories = config.cleanup.directories.unwrap_or(cleanup_directories);
