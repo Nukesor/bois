@@ -1,9 +1,9 @@
-use std::{collections::HashSet, process::Command};
+use std::process::Command;
 
 use anyhow::{Context, Result, bail};
 use log::info;
 
-use crate::{handlers::packages::PackageManager, system_state::SystemState};
+use crate::{state::PackageManager, system_state::SystemState};
 
 /// Install a package via paru.
 pub(super) fn install_packages(packages: Vec<String>) -> Result<()> {

@@ -37,7 +37,7 @@ use crate::{
 
 pub mod file;
 
-use file::{SourceFile, read_source_file};
+use file::SourceFile;
 
 /// The defaults for file/directory metadata of a single source (host or group).
 /// Lowest layer of the `defaults < directory config < file config` cascade.
@@ -342,7 +342,7 @@ fn handle_file(
         mode: source_mode,
         config,
         mut content,
-    } = read_source_file(&path)?;
+    } = SourceFile::from_path(&path)?;
 
     // Perform templating, if enabled.
     if config.template {

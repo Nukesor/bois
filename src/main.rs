@@ -1,34 +1,31 @@
-// Allow dead code while prototyping.
-#![allow(clippy::assigning_clones)]
-// Allow dead code while prototyping.
-#![allow(dead_code)]
-
 use anyhow::Result;
-//use bois::{CONFIG, args::Arguments, commands::run_subcommand,
-// config::bois::RawConfiguration}; use clap::Parser;
-use log::LevelFilter;
+use bois::{CONFIG, args::Arguments, commands::run_subcommand, config::bois::RawConfiguration};
+use clap::Parser;
+use log::{LevelFilter, debug};
 use pretty_env_logger::env_logger::Builder;
 
 fn main() -> Result<()> {
     // Read any .env files
     dotenv::dotenv().ok();
     // Parse commandline options.
-    //let args = Arguments::parse();
+    let args = Arguments::parse();
 
-    //// Initalize everything
-    //init_app(args.verbose)?;
+    // Initalize everything
+    init_app(args.verbose)?;
 
-    //// Build the final configuration based on the values from the config file.
-    //// All other values are populated with default values.
-    //let raw_config = RawConfiguration::read(&args.config)?;
-    //let config = raw_config.build_configuration()?;
+    // Build the final configuration based on the values from the config file.
+    // All other values are populated with default values.
+    let raw_config = RawConfiguration::read(&args.config)?;
+    let config = raw_config.build_configuration()?;
 
-    //debug!("Running with the following config:\n{config:#?}");
+    debug!("Running with the following config:\n{config:#?}");
 
-    //// Set the config globally.
-    //CONFIG.set(config.clone()).unwrap();
+    // Set the config globally.
+    // It's only ever accessed from inside minijinja template functions, which
+    // cannot take extra arguments. See the docs on [CONFIG].
+    CONFIG.set(config.clone()).unwrap();
 
-    //run_subcommand(config, &args.subcommand)?;
+    run_subcommand(config, &args.subcommand)?;
 
     Ok(())
 }

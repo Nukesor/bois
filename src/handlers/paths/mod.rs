@@ -1,60 +1,72 @@
 use anyhow::Result;
-use directory::{create_directory, modify_directory, remove_directory};
+use directory::{
+    cleanup_directory,
+    create_directory,
+    modify_directory,
+    remove_conflicting_directory,
+};
 use file::{create_file, modify_file, remove_file};
 
 mod directory;
 mod file;
 
-use crate::{changeset::PathOperation, system_state::SystemState};
+use crate::changeset::{DirectoryOperation, FileOperation, PathOperation};
 
-/// Execute a full set of changes.
-/// After this function has run, the system should be in its desired state, any errors in here are
-/// to be considered critical.
-/// Continueing on error could lead to dependency problems and further broken state in the system.
-pub fn handle_path_operations(
-    system_state: &mut SystemState,
-    operations: &[PathOperation],
-) -> Result<()> {
+/// Execute a full set of path operations.
+///
+/// After this function has run, the paths should be in their desired state.
+/// Any error in here is considered critical, as continuing could lead to
+/// dependency problems and broken state on the system.
+pub fn execute_path_operations(operations: &[PathOperation]) -> Result<()> {
     for op in operations.iter() {
-        handle_path_operation(system_state, op)?
+        execute_path_operation(op)?
     }
 
     Ok(())
 }
 
-fn handle_path_operation(_system_state: &mut SystemState, op: &PathOperation) -> Result<()> {
+fn execute_path_operation(op: &PathOperation) -> Result<()> {
     match op {
         PathOperation::File(op) => match op {
-            crate::changeset::FileOperation::Create {
+            FileOperation::Create {
                 path,
                 content,
                 mode,
                 owner,
                 group,
-            } => create_file(path, content, mode, owner, group),
-            crate::changeset::FileOperation::Modify {
+            } => create_file(path, content.bytes(), *mode, owner, group),
+            FileOperation::Modify {
                 path,
                 content,
                 mode,
                 owner,
                 group,
-            } => modify_file(path, content, mode, owner, group),
-            crate::changeset::FileOperation::Delete { path } => remove_file(path),
+            } => modify_file(
+                path,
+                &content.as_ref().map(|content| content.bytes().to_vec()),
+                mode,
+                owner,
+                group,
+            ),
+            FileOperation::Cleanup { path } | FileOperation::Conflict { path, .. } => {
+                remove_file(path)
+            }
         },
         PathOperation::Directory(op) => match op {
-            crate::changeset::DirectoryOperation::Create {
+            DirectoryOperation::Create {
                 path,
                 mode,
                 owner,
                 group,
-            } => create_directory(path, mode, owner, group),
-            crate::changeset::DirectoryOperation::Modify {
+            } => create_directory(path, *mode, owner, group),
+            DirectoryOperation::Modify {
                 path,
                 mode,
                 owner,
                 group,
             } => modify_directory(path, mode, owner, group),
-            crate::changeset::DirectoryOperation::Delete { path } => remove_directory(path),
+            DirectoryOperation::Cleanup { path } => cleanup_directory(path),
+            DirectoryOperation::Conflict { path, .. } => remove_conflicting_directory(path),
         },
     }
 }

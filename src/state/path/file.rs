@@ -26,7 +26,7 @@ pub struct FileState {
     pub source: Source,
 }
 
-/// The file-type to abstract
+/// How a file's content is encoded in the state file.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub enum FileContent {
     Text(String),
@@ -38,7 +38,7 @@ pub enum FileContent {
 }
 
 impl FileContent {
-    /// Get the file content as bytes independent of type.
+    /// Get the file content as bytes independent of encoding.
     pub fn bytes(&self) -> &[u8] {
         match self {
             FileContent::Text(text) => text.as_bytes(),

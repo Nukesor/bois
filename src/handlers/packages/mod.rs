@@ -1,31 +1,30 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
-use strum::Display;
 
 use crate::{
     changeset::{PackageInstall, PackageUninstall},
+    state::PackageManager,
     system_state::SystemState,
 };
 
 pub mod pacman;
 pub mod paru;
 
-/// Execute a list of package uninstall.
+/// Execute a list of package uninstalls.
 ///
 /// This is done during the cleanup phase when packages have been removed since the last deploy.
 /// Packages are grouped by package manager and then uninstalled in one go.
+///
+/// This must be done to prevent dependency issues when uninstalling groups of packages.
 pub fn uninstall_packages(
     system_state: &mut SystemState,
-    packages: &Vec<PackageUninstall>,
+    packages: &[PackageUninstall],
 ) -> Result<()> {
     let mut sorted_packages: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
 
     // First up, sort all packages by manager.
     // That way, we get lists of packages that can be uninstalled in one go.
-    //
-    // This must be done to prevent dependency issues when uninstalling groups of packages.
     for pkg in packages {
         let list = sorted_packages.entry(pkg.manager).or_default();
         list.push(pkg.name.clone());
@@ -42,11 +41,11 @@ pub fn uninstall_packages(
     Ok(())
 }
 
-/// Execute a list of package install.
+/// Execute a list of package installs.
 ///
-/// This is done during whenever a package is missing on the system.
+/// This is done whenever a package is missing on the system.
 /// Packages are grouped by package manager and then installed in one go.
-pub fn install_packages(packages: &Vec<PackageInstall>) -> Result<()> {
+pub fn install_packages(system_state: &mut SystemState, packages: &[PackageInstall]) -> Result<()> {
     let mut sorted_packages: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
 
     // First up, sort all packages by manager.
@@ -61,6 +60,10 @@ pub fn install_packages(packages: &Vec<PackageInstall>) -> Result<()> {
             PackageManager::Paru => paru::install_packages(packages)?,
             PackageManager::Apt => todo!(),
         }
+
+        // The install may have pulled in new packages/dependencies:
+        // refresh the cached system view.
+        system_state.update_packages(manager)?;
     }
 
     Ok(())

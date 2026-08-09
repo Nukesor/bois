@@ -4,13 +4,12 @@ use bois::aggregators::path::file::ParsedFile;
 use insta::assert_snapshot;
 use rstest::rstest;
 use testresult::TestResult;
+use winnow::Parser;
 
 /// Go through a list of file examples and make sure that the parser properly detects the correct
 /// blocks.
 #[rstest]
 pub fn test_at_start(#[files("tests/file_parser/input/*")] case: PathBuf) -> TestResult {
-    use winnow::Parser;
-
     let input = read_to_string(&case)?;
     let output = ParsedFile::parser.parse(input.as_str())?;
 

@@ -15,91 +15,79 @@ use crate::{config::file::FileConfig, error::Error, state::path::FileContent};
 
 /// A raw source file as read from a bois configuration directory.
 ///
-/// This struct is only internally used to have a proper presentation of a (potentially)
-/// untemplated file with its original metadata.
+/// This is used an intermediate representation of a (potentially) untemplated file with its
+/// original metadata.
 #[derive(Clone, Debug)]
 pub struct SourceFile {
-    /// The raw on-disk `st_mode` of the source file (including filetype bits).
+    /// The on-disk permissions of the source file.
     /// Used as the mode fallback in case no override or default applies.
+    ///
+    /// This includes filetype bits, which may need to be truncated.
     pub mode: u32,
 
     /// The parsed configuration block for this file, if one exists.
-    /// Always default for binary files, which cannot carry a config block.
+    /// Defaults to `FileConfig::default` for binary files, or the ones not carrying a config
+    /// block.
     pub config: FileConfig,
 
     /// The file's content, without the bois configuration block.
     pub content: FileContent,
 }
 
-/// Parse a file with an optional bois config block.
-///
-/// This checks, if there's a bois config block somewhere in that file.
-/// If we have a config block.
-/// 1. Take all lines between `bois_config` and `bois_config`. For each line
-///   - Strip any comment trailing spaces
-///   - Strip any comment symbols
-/// 2. Deserialize the config
-pub fn parse_file<'s>(input: &mut &'s str) -> ModalResult<ParsedFile<'s>> {
-    let (pre, config, post) =
-        (opt(pre_config_block), opt(config_block), opt(rest)).parse_next(input)?;
+impl SourceFile {
+    /// Read and parse a source file with an optional bois config block.
+    ///
+    /// The optional config block is removed from the file during parsing, leaving the actual
+    /// (potentially templatable) content.
+    ///
+    /// If the file cannot be parsed as UTF-8, it's returned as [`FileContent::Binary`].
+    pub fn from_path(path: &Path) -> Result<Self> {
+        let mode = fs::metadata(path)
+            .map_err(|err| Error::IoPath(path.to_path_buf(), "reading file metadata", err))?
+            .mode();
 
-    Ok(ParsedFile {
-        pre_config_block: pre,
-        config_block: config,
-        post_config_block: post.and_then(|block| (!block.is_empty()).then_some(block)),
-    })
-}
+        let bytes =
+            fs::read(path).map_err(|err| Error::IoPath(path.to_path_buf(), "reading file", err))?;
 
-/// Read and parse a source file with an optional bois config block.
-///
-/// UTF-8 files go through the `bois_config` block parser; anything else is
-/// treated as an opaque binary file without configuration.
-pub fn read_source_file(path: &Path) -> Result<SourceFile> {
-    let mode = fs::metadata(path)
-        .map_err(|err| Error::IoPath(path.to_path_buf(), "reading file metadata", err))?
-        .mode();
+        let full_file_content = match String::from_utf8(bytes) {
+            Ok(text) => text,
+            Err(err) => {
+                // We got a binary (or non-UTF-8) file.
+                return Ok(SourceFile {
+                    mode,
+                    config: FileConfig::default(),
+                    content: FileContent::Binary(err.into_bytes()),
+                });
+            }
+        };
 
-    let bytes =
-        fs::read(path).map_err(|err| Error::IoPath(path.to_path_buf(), "reading file", err))?;
+        let parsed_file = match ParsedFile::parser.parse(full_file_content.as_str()) {
+            Ok(parsed_file) => parsed_file,
+            Err(err) => {
+                eprintln!("{err}");
+                bail!("Encountered parsing error in file {path:?}. See log above.");
+            }
+        };
 
-    // Binary (non-UTF-8) files cannot carry a config block: keep them as they are.
-    let full_file_content = match String::from_utf8(bytes) {
-        Ok(text) => text,
-        Err(err) => {
-            return Ok(SourceFile {
-                mode,
-                config: FileConfig::default(),
-                content: FileContent::Binary(err.into_bytes()),
-            });
+        // Concatenate the content from before and after the config block.
+        let mut content = parsed_file.pre_config_block.unwrap_or_default().to_string();
+        if let Some(post_config_block) = parsed_file.post_config_block {
+            content.push_str(post_config_block);
         }
-    };
 
-    let parsed_file = match parse_file.parse(full_file_content.as_str()) {
-        Ok(parsed_file) => parsed_file,
-        Err(err) => {
-            eprintln!("{err}");
-            bail!("Encountered parsing error in file {path:?}. See log above.");
+        let mut config = FileConfig::default();
+        if let Some(raw_config) = parsed_file.config_block {
+            debug!("Found config block in file {path:?}:\n{raw_config}");
+            config = serde_yaml::from_str(&raw_config)
+                .map_err(|err| Error::Deserialization(path.to_path_buf(), err))?;
         }
-    };
 
-    // Concatenate the content from before and after the config block.
-    let mut content = parsed_file.pre_config_block.unwrap_or_default().to_string();
-    if let Some(post_config_block) = parsed_file.post_config_block {
-        content.push_str(post_config_block);
+        Ok(SourceFile {
+            mode,
+            config,
+            content: FileContent::Text(content),
+        })
     }
-
-    let mut config = FileConfig::default();
-    if let Some(raw_config) = parsed_file.config_block {
-        debug!("Found config block in file {path:?}:\n{raw_config}");
-        config = serde_yaml::from_str(&raw_config)
-            .map_err(|err| Error::Deserialization(path.to_path_buf(), err))?;
-    }
-
-    Ok(SourceFile {
-        mode,
-        config,
-        content: FileContent::Text(content),
-    })
 }
 
 /// The output of a source UTF-8 file with the (optional) parsed bois config block.
@@ -107,6 +95,27 @@ pub struct ParsedFile<'s> {
     pub pre_config_block: Option<&'s str>,
     pub config_block: Option<String>,
     pub post_config_block: Option<&'s str>,
+}
+
+impl<'s> ParsedFile<'s> {
+    /// Parse a file with an optional bois config block.
+    ///
+    /// This checks, if there's a bois config block somewhere in that file.
+    /// If we have a config block.
+    /// 1. Take all lines between `bois_config` and `bois_config`. For each line
+    ///   - Strip any comment trailing spaces
+    ///   - Strip any comment symbols
+    /// 2. Deserialize the config
+    pub fn parser(input: &mut &'s str) -> ModalResult<Self> {
+        let (pre, config, post) =
+            (opt(pre_config_block), opt(config_block), opt(rest)).parse_next(input)?;
+
+        Ok(ParsedFile {
+            pre_config_block: pre,
+            config_block: config,
+            post_config_block: post.and_then(|block| (!block.is_empty()).then_some(block)),
+        })
+    }
 }
 
 /// The list of all accepted comment syntaxes that may be used to

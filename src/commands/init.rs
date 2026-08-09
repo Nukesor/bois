@@ -58,12 +58,14 @@ pub fn run_init(config: Configuration, directory: &Option<PathBuf>) -> Result<()
 
     let hosts_dir = root_dir.join("hosts").join(&config.name);
     create_dir_all(&hosts_dir).context("Failed to create hosts directory")?;
-    let host_config_path = hosts_dir.join("hosts.yml");
+    let host_config_path = hosts_dir.join("host.yml");
     fs::write(host_config_path, host_content)?;
+    let host_vars_path = hosts_dir.join("vars.yml");
+    fs::write(host_vars_path, "")?;
 
     let groups_dir = root_dir.join("groups").join("base");
     create_dir_all(&groups_dir).context("Failed to create groups directory")?;
-    let group_config_path = groups_dir.join("hosts.yml");
+    let group_config_path = groups_dir.join("group.yml");
     fs::write(group_config_path, group_content)?;
 
     Ok(())

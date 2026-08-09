@@ -84,8 +84,8 @@ pub struct DirectoryMeta {
 pub enum DirectoryPermissions {
     /// At least one field was declared, in the directory's `bois.yml` or a
     /// `defaults` cascade.
-    /// Declared fields are enforced as given.
-    /// Undeclared fields are treated like [DirectoryPermissions::Default]
+    ///
+    /// All `None` fields default to `0x755` and the current user.
     Declared {
         mode: Option<u32>,
         owner: Option<String>,
@@ -184,9 +184,27 @@ impl Tree {
         entries.get(&name)
     }
 
+    /// Remove the node at the given absolute path from the tree.
+    ///
+    /// Returns the removed node, if there was one.
+    /// Parent directories are left in place, even if they become empty.
+    pub fn remove(&mut self, path: &Path) -> Option<Node> {
+        let (parent_components, name) = Self::split_absolute_path(path, None).ok()?;
+
+        let mut entries = &mut self.root;
+        for component in parent_components {
+            match entries.get_mut(&component) {
+                Some(Node::Directory(dir)) => entries = &mut dir.entries,
+                _ => return None,
+            }
+        }
+
+        entries.remove(&name)
+    }
+
     /// Insert a fully resolved file at an absolute target path.
     ///
-    /// Missing parent directories are created as [DirectoryKind::Implicit],
+    /// Missing parent directories are created as [DirectoryBacking::Implicit],
     /// with the file's source attached to them.
     ///
     /// ## Errors

@@ -1,15 +1,27 @@
+//! All user-facing output of changesets and drift reports:
+//! change summaries, metadata tables and content diffs.
+
 use std::{collections::BTreeMap, fs::File, io::Write, path::Path, process::Command};
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use comfy_table::{Attribute, Cell, CellAlignment, Column, ContentArrangement, Table, presets};
 use crossterm::style::Stylize;
 
 use crate::{
-    changeset::{PackageInstall, PackageUninstall, PathOperation},
+    changeset::{
+        DirectoryOperation,
+        FileOperation,
+        PackageInstall,
+        PackageUninstall,
+        PathChange,
+        PathChangeKind,
+        PathOperation,
+        UntrackedChanges,
+    },
     config::bois::Configuration,
     constants::{CURRENT_GROUP, CURRENT_USER},
     error::Error,
-    handlers::packages::PackageManager,
+    state::{PackageManager, path::FileContent},
 };
 
 pub fn print_package_uninstalls(packages: &[PackageUninstall]) {
@@ -46,6 +58,8 @@ pub fn print_package_installs(packages: &[PackageInstall]) {
     }
 }
 
+/// Print a list of path operations, including content diffs for
+/// modifications (via an external diff tool).
 pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> Result<()> {
     let mut change_iter = changes.iter().peekable();
     print_header("File changes");
@@ -53,12 +67,12 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
     while let Some(op) = change_iter.next() {
         match op {
             PathOperation::File(op) => match op {
-                crate::changeset::FileOperation::Create {
+                FileOperation::Create {
                     path,
+                    content,
                     mode,
                     owner,
                     group,
-                    ..
                 } => {
                     println!(
                         "{} {}:      {}",
@@ -77,9 +91,16 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                     if *group != *CURRENT_GROUP {
                         add_table_row(&mut table, "Group", group);
                     }
+                    if let FileContent::Binary(bytes) = content {
+                        add_table_row(
+                            &mut table,
+                            "Content",
+                            &format!("binary, {} bytes", bytes.len()),
+                        );
+                    }
                     print_table(table);
                 }
-                crate::changeset::FileOperation::Modify {
+                FileOperation::Modify {
                     path,
                     content,
                     mode,
@@ -110,41 +131,29 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                     }
 
                     if let Some(new_content) = content {
-                        let temp_path = config.runtime_dir.join("bois_new_file");
-
-                        // Write file to a temporary file in the user's runtime directory.
-                        // That way, we can diff the file with external tools.
-                        {
-                            if temp_path.exists() {
-                                std::fs::remove_file(&temp_path).map_err(|err| {
-                                    Error::IoPath(temp_path.clone(), "removing old temp file.", err)
-                                })?;
-                            };
-
-                            let mut temporary_file = File::create(&temp_path).map_err(|err| {
-                                Error::IoPath(
-                                    temp_path.clone(),
-                                    "opening temporary diff file.",
-                                    err,
-                                )
-                            })?;
-
-                            temporary_file.write_all(new_content).map_err(|err| {
-                                Error::IoPath(
-                                    temp_path.clone(),
-                                    "writing to temporary diff file.",
-                                    err,
-                                )
-                            })?;
-                        }
-
-                        print_file_diff(path, &temp_path)?;
+                        // Diff direction: live file (old) -> desired content (new).
+                        print_content_diff(config, path, new_content)?;
                     }
                 }
-                crate::changeset::FileOperation::Delete { .. } => continue,
+                FileOperation::Cleanup { path } => {
+                    println!(
+                        "{} {}: {}",
+                        "Deleting".red().bold(),
+                        "file".bold(),
+                        path.to_string_lossy(),
+                    );
+                }
+                FileOperation::Conflict { path, found } => {
+                    println!(
+                        "{} {}: {}",
+                        "Removing".red().bold(),
+                        format!("conflicting {found}").bold(),
+                        path.to_string_lossy(),
+                    );
+                }
             },
             PathOperation::Directory(op) => match op {
-                crate::changeset::DirectoryOperation::Create {
+                DirectoryOperation::Create {
                     path,
                     mode,
                     owner,
@@ -169,7 +178,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                     }
                     print_table(table);
                 }
-                crate::changeset::DirectoryOperation::Modify {
+                DirectoryOperation::Modify {
                     path,
                     mode,
                     owner,
@@ -198,7 +207,23 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                         print_table(table);
                     }
                 }
-                crate::changeset::DirectoryOperation::Delete { .. } => continue,
+                DirectoryOperation::Cleanup { path } => {
+                    println!(
+                        "{} {}: {}",
+                        "Deleting".red().bold(),
+                        "directory".bold(),
+                        path.to_string_lossy(),
+                    );
+                }
+                DirectoryOperation::Conflict { path, found } => {
+                    println!(
+                        "{} {}: {}",
+                        "Removing".red().bold(),
+                        format!("conflicting {found}").bold(),
+                        path.to_string_lossy(),
+                    );
+                    println!("  (fails if the directory isn't empty)");
+                }
             },
         }
 
@@ -207,6 +232,73 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
             println!("{}", "              ".underlined());
         }
     }
+    Ok(())
+}
+
+/// Print everything that changed on the system since the last deployment.
+/// Diff direction is deployed (old) -> live (new): the diff shows what the
+/// user changed on their system.
+pub fn print_untracked_changes(changes: &UntrackedChanges, config: &Configuration) -> Result<()> {
+    print_header("Untracked changes on the system since the last deploy");
+
+    for PathChange { path, change } in &changes.changed_paths {
+        match change {
+            PathChangeKind::FileTypeChanged { deployed, live } => {
+                println!(
+                    "{} {}: was deployed as {}, is now a {}",
+                    "Replaced".yellow().bold(),
+                    path.to_string_lossy(),
+                    deployed.to_string().bold(),
+                    live.to_string().bold(),
+                );
+            }
+            PathChangeKind::Modified {
+                content,
+                mode,
+                owner,
+                group,
+            } => {
+                println!("{} {}", "Modified".yellow().bold(), path.to_string_lossy());
+
+                let mut table = Table::new();
+                if let Some((deployed, live)) = mode {
+                    add_table_row(&mut table, "Mod", &format!("{deployed:#o} -> {live:#o}"));
+                }
+                if let Some((deployed, live)) = owner {
+                    add_table_row(&mut table, "Owner", &format!("{deployed} -> {live}"));
+                }
+                if let Some((deployed, live)) = group {
+                    add_table_row(&mut table, "Group", &format!("{deployed} -> {live}"));
+                }
+                if !table.is_empty() {
+                    print_table(table);
+                }
+
+                if let Some(content_change) = content {
+                    // Write the *deployed* content to a temp file and diff it
+                    // against the live file: deployed -> live.
+                    print_diff_against_temp(config, &content_change.deployed, path)?;
+                }
+            }
+        }
+    }
+
+    for path in &changes.deleted_paths {
+        println!(
+            "{} {}: was deployed, no longer exists",
+            "Deleted".red().bold(),
+            path.to_string_lossy()
+        );
+    }
+
+    for (manager, package) in &changes.removed_packages {
+        println!(
+            "{} package {} ({manager}): still configured, will be re-installed",
+            "Removed".red().bold(),
+            package.clone().bold(),
+        );
+    }
+
     Ok(())
 }
 
@@ -250,30 +342,90 @@ fn print_table(mut table: Table) {
     println!("{table}");
 }
 
+/// Show the content diff `live file -> desired content` for a deploy Modify.
+fn print_content_diff(config: &Configuration, path: &Path, desired: &FileContent) -> Result<()> {
+    match desired {
+        FileContent::Binary(bytes) => {
+            println!("  Binary content changed ({} bytes)", bytes.len());
+            Ok(())
+        }
+        FileContent::Text(_) => {
+            let temp_path = write_temp_diff_file(config, desired)?;
+            print_file_diff(path, &temp_path)
+        }
+    }
+}
+
+/// Show the content diff `deployed content -> live file` for drift reporting.
+fn print_diff_against_temp(
+    config: &Configuration,
+    deployed: &FileContent,
+    live_path: &Path,
+) -> Result<()> {
+    match deployed {
+        FileContent::Binary(_) => {
+            println!("  Binary content changed");
+            Ok(())
+        }
+        FileContent::Text(_) => {
+            let temp_path = write_temp_diff_file(config, deployed)?;
+            print_file_diff(&temp_path, live_path)
+        }
+    }
+}
+
+/// Write content to a temporary file in the runtime dir, so external diff
+/// tools can be pointed at it.
+fn write_temp_diff_file(
+    config: &Configuration,
+    content: &FileContent,
+) -> Result<std::path::PathBuf> {
+    std::fs::create_dir_all(&config.runtime_dir).map_err(|err| {
+        Error::IoPathString(
+            config.runtime_dir.clone(),
+            "creating runtime directory".to_string(),
+            err,
+        )
+    })?;
+
+    let temp_path = config.runtime_dir.join("bois_diff_file");
+    let mut temporary_file = File::create(&temp_path)
+        .map_err(|err| Error::IoPath(temp_path.clone(), "opening temporary diff file.", err))?;
+    temporary_file
+        .write_all(content.bytes())
+        .map_err(|err| Error::IoPath(temp_path.clone(), "writing to temporary diff file.", err))?;
+
+    Ok(temp_path)
+}
+
 /// Run an external diff tool on two paths.
+///
+/// Degrades gracefully when the tool isn't installed.
 fn print_file_diff(original: &Path, new: &Path) -> Result<()> {
     let args = vec![
         original.to_string_lossy().to_string(),
         new.to_string_lossy().to_string(),
     ];
-    let output = Command::new("delta")
-        .args(&args)
-        .output()
-        .map_err(|err| Error::Process("delta", err))?;
+    let output = match Command::new("delta").args(&args).output() {
+        Ok(output) => output,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            println!("  (install `delta` to see content diffs)");
+            return Ok(());
+        }
+        Err(err) => return Err(Error::Process("delta", err).into()),
+    };
 
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    // delta exits 0 for no differences and 1 when differences were found.
     let stdout = String::from_utf8_lossy(&output.stdout);
-
-    let code = output.status.code();
-    if code.is_none() {
-        bail!("Failed to run diff command ({args:?}): \nstdout:\n{stdout}\nstderr:\n{stderr}");
-    } else if let Some(code) = code {
-        if code != 1 {
-            bail!("Failed to run diff command ({args:?}): \nstdout:\n{stdout}\nstderr:\n{stderr}");
+    match output.status.code() {
+        Some(0) | Some(1) => println!("{stdout}"),
+        _ => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            anyhow::bail!(
+                "Failed to run diff command ({args:?}): \nstdout:\n{stdout}\nstderr:\n{stderr}"
+            );
         }
     }
-
-    println!("{stdout}");
 
     Ok(())
 }

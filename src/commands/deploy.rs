@@ -2,134 +2,152 @@ use anyhow::{Result, bail};
 use inquire::Confirm;
 
 use crate::{
-    changeset::{Changeset, host_to_state, state_to_host, state_to_state},
+    aggregators::aggregate_state,
+    changeset::{
+        Changeset,
+        cleanup::post_cleanup_state,
+        cleanup_changeset,
+        deploy_changeset,
+        detect_untracked_changes,
+    },
     config::bois::Configuration,
     handlers::{
         packages::{install_packages, uninstall_packages},
-        paths::handle_path_operations,
+        paths::execute_path_operations,
     },
     state::State,
     system_state::SystemState,
-    ui::{print_package_installs, print_package_uninstalls, print_path_changes},
+    ui::{
+        print_package_installs,
+        print_package_uninstalls,
+        print_path_changes,
+        print_untracked_changes,
+    },
 };
 
+/// Run a full deployment.
+///
+/// TODO: dev_docs are completely outdated.
+/// The overall flow, as documented in `dev_docs/Architecture/Stages.md`:
+///
+/// 1. Report untracked changes on the system since the last deploy and ask for confirmation before
+///    they get overwritten.
+/// 2. Compute + execute the cleanup changeset, then persist an intermediate state.
+/// 3. Compute + execute the deploy changeset.
+/// 4. Persist final deployed state for the next run.
 pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
-    // This struct will hold state of the current system to compare it with the desired state.
-    // This doesn't contain all system state, only stuff like packages and system services.
-    // It's basically a cache struct, so we don't repeatedly run the same queries all the time.
+    // Gather all cacheable system info that we may need during deployment.
     let mut system_state = SystemState::new()?;
 
-    // Read the current desired system state from the files in the specified bois directory.
-    let desired_state = State::new(&config, &mut system_state)?;
+    // Read the desired system state from the files in the bois directory.
+    let desired_state = aggregate_state(&config, &mut system_state)?;
 
-    // Read the state of the previous run, if existing.
-    // This state will be used to determine:
-    // - Any changes on the system's files since the last deployment
-    // - Cleanup work that might need to be done for the new desired state.
+    // Read the state of the previous run, if any. This is used to determine:
+    // - Any changes on the system's files since the last deployment.
+    // - Cleanup work that's needed for the new desired state.
     let previous_state = State::read_previous(&config)?;
 
-    // Create a new empty changeset.
-    // All changes will be appended into this struct
-    let mut changeset = Changeset::new();
+    // ---------- Step 1: Detect untracked system changes ----------
+    // Compare the last deployed state against the live system. The user might
+    // have forgotten to integrate manual changes into the bois config, so we
+    // inform them before anything gets overwritten.
+    if let Some(previous) = &previous_state {
+        let untracked = detect_untracked_changes(previous, &desired_state, &mut system_state)?;
 
-    // ---------- Step 1: Detect system changes ----------
-    // Create the changeset between the current system and the last deployment.
-    // This will allows us to detect any changes that were done to the system,
-    //
-    // The user might have forgotten to integrate those changes into the bois config, so we
-    // want to inform them about it.
-    if let Some(previous_state) = &previous_state {
-        let system_changes = host_to_state::create_changeset(
-            &config,
-            &mut system_state,
-            previous_state,
-            &desired_state,
-        )?;
-
-        // TODO: Logic to absorb system state
-        if !system_changes.is_empty() {
-            println!("Some untracked changes were detected on the system since last deployment.");
-            if !system_changes.path_operations.is_empty() {
-                print_path_changes(&system_changes.path_operations, &config)?;
-            }
+        if !untracked.is_empty() {
+            print_untracked_changes(&untracked, &config)?;
 
             if !dry_run {
-                let ans = Confirm::new("These changes will be overwritten. Are you sure that's okay?")
-                    .with_default(false)
-                    .with_help_message("The changes above have been made on your system and haven't been merged into your config yet.")
-                    .prompt();
+                let answer =
+                    Confirm::new("These changes will be overwritten. Are you sure that's okay?")
+                        .with_default(false)
+                        .with_help_message(
+                            "The changes above were made on your system and haven't been \
+                             merged into your config yet.",
+                        )
+                        .prompt();
 
-                match ans {
+                match answer {
                     Ok(true) => (),
                     _ => bail!("Aborting"),
                 }
             }
         }
+    }
+
+    // ---------- Step 2: Cleanup ----------
+    // Determine everything the previous deployment left behind that's no
+    // longer part of the desired state and remove it.
+    let cleanup = match &previous_state {
+        Some(previous) => cleanup_changeset(previous, &desired_state, &mut system_state)?,
+        None => Changeset::new(),
     };
 
-    // ---------- Step 2: Detect old changes that need to be cleaned up ----------
-    // Determine any cleanup that needs to be done due to changes in configuration since the
-    // last deployment.
-    if let Some(state) = &previous_state {
-        let cleanup = state_to_state::create_changeset(&mut system_state, state, &desired_state)?;
+    if !cleanup.is_empty() {
+        if !cleanup.path_cleanup.is_empty() {
+            print_path_changes(&cleanup.path_cleanup, &config)?;
+            println!();
+        }
+        if !cleanup.package_uninstalls.is_empty() {
+            print_package_uninstalls(&cleanup.package_uninstalls);
+            println!();
+        }
 
-        changeset.merge(cleanup);
-    };
-
-    // ---------- Step 3: Compute changes that will be deployed ----------
-    // Create and execute the changeset to reach the desired state.
-    let new_changes = state_to_host::create_changeset(&config, &desired_state, &mut system_state)?;
-
-    changeset.merge(new_changes);
-
-    // ------------------- Execution phase -------------------
-    // We now start to actually execute commands.
-
-    // ---------- Step 4: Uninstall unwanted packages ----------
-    if !changeset.package_uninstalls.is_empty() {
-        println!("Cleanup changes to be executed:");
-
-        print_package_uninstalls(&changeset.package_uninstalls);
-        println!();
-
-        if !dry_run {
-            uninstall_packages(&mut system_state, &changeset.package_uninstalls)?;
+        if dry_run {
+            println!("Dry-run. Not cleaning anything up... yet");
         } else {
-            println!("Dry-run. Not uninstalling anything... yet");
+            // Cleanup in the following order:
+            // - system services
+            // - packages
+            // - on-disk files
+            uninstall_packages(&mut system_state, &cleanup.package_uninstalls)?;
+            execute_path_operations(&cleanup.path_cleanup)?;
+
+            // Persist the left-over state of the last deployment after cleanup.
+            // If the following deploy phase aborts, the next run's drift detection won't blame
+            // the intentional cleanup on the user.
+            if let Some(previous) = &previous_state {
+                post_cleanup_state(previous, &cleanup).save()?;
+            }
         }
     }
 
-    // ---------- Step 5: Install new packages ----------
-    if !changeset.package_installs.is_empty() {
-        // Print all package related changes .
-        print_package_installs(&changeset.package_installs);
+    // ---------- Step 3: Deploy ----------
+    // Create the changeset that transforms the system into the desired state.
+    let deploy = deploy_changeset(&desired_state, &mut system_state)?;
+
+    if deploy.is_empty() && cleanup.is_empty() {
+        println!("Everything is up to date.");
+        return Ok(());
+    }
+
+    if !deploy.package_installs.is_empty() {
+        print_package_installs(&deploy.package_installs);
         println!();
-
-        // Execute all package related changes.
-        if !dry_run {
-            install_packages(&changeset.package_installs)?;
-        } else {
-            println!("Dry-run. Not installing anything... yet");
-        }
     }
-
-    // ---------- Step 6: Execute all path operations ----------
-    if !changeset.path_operations.is_empty() {
-        print_path_changes(&changeset.path_operations, &config)?;
+    if !deploy.path_operations.is_empty() {
+        print_path_changes(&deploy.path_operations, &config)?;
         println!();
-
-        // Execute all path related changes.
-        if !dry_run {
-            handle_path_operations(&mut system_state, &changeset.path_operations)?;
-        } else {
-            println!("Dry-run. Not changing any files... yet");
-        }
     }
 
-    // Save the current desired state to disk for the next run.
-    if !dry_run {
-        desired_state.save()?;
+    if dry_run {
+        println!("Dry-run. Not deploying anything... yet");
+        return Ok(());
     }
+
+    // Deploy order
+    // - Packages as they may install/create:
+    //  - directories that we want to deploy to
+    //  - systemd service files
+    // - Files.
+    //
+    // TODO: Check what happens if a path is scheduled for creation, but that path is then
+    // created by a package installation
+    install_packages(&mut system_state, &deploy.package_installs)?;
+    execute_path_operations(&deploy.path_operations)?;
+
+    // ---------- Step 4: Persist the new state ----------
+    desired_state.save()?;
 
     Ok(())
 }

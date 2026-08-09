@@ -1,9 +1,9 @@
-use std::{collections::HashSet, process::Command};
+use std::process::Command;
 
 use anyhow::{Context, Result, bail};
 use log::info;
 
-use crate::{handlers::packages::PackageManager, system_state::SystemState};
+use crate::{state::PackageManager, system_state::SystemState};
 
 /// Install a package via pacman.
 /// We install packages in `--asexplicit` mode, so they show up as exiplictly installed packages.
@@ -15,7 +15,7 @@ pub(super) fn install_packages(packages: Vec<String>) -> Result<()> {
     }
 
     let output = Command::new("pacman")
-        .args(["--sync", "--refresh", "--noconfirm"])
+        .args(["--sync", "--refresh", "--noconfirm", "--asexplicit"])
         .args(packages)
         .output()
         .context("Failed to install pacman package {}")?;

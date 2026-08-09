@@ -11,13 +11,7 @@ use file_owner::PathExt;
 
 use crate::error::Error;
 
-pub fn create_file(
-    path: &Path,
-    content: &[u8],
-    mode: &u32,
-    owner: &str,
-    group: &str,
-) -> Result<()> {
+pub fn create_file(path: &Path, content: &[u8], mode: u32, owner: &str, group: &str) -> Result<()> {
     println!("{} file at {path:?}", "Creating".green());
     let mut file = File::create(path)
         .map_err(|err| Error::IoPath(path.to_path_buf(), "creating file.", err))?;
@@ -25,7 +19,7 @@ pub fn create_file(
     file.write_all(content)
         .map_err(|err| Error::IoPath(path.to_path_buf(), "writing to file.", err))?;
 
-    set_permissions(path, Permissions::from_mode(*mode))?;
+    set_permissions(path, Permissions::from_mode(mode))?;
 
     path.set_owner(owner)
         .map_err(|err| Error::FileOwnership(path.to_path_buf(), "setting owner", err))?;
@@ -82,8 +76,12 @@ pub fn modify_file(
 }
 
 pub fn remove_file(path: &Path) -> Result<()> {
-    // This shouldn't happen, but let's handle it anyway.
-    if !path.exists() {
+    // The file might already be gone (e.g. a cleanup op raced a filetype-replace
+    // delete for the same path). That's fine.
+    // `symlink_metadata` instead of `exists()`: the latter follows symlinks,
+    // which would make a dangling symlink look non-existing even though the
+    // link itself is there to be removed.
+    if path.symlink_metadata().is_err() {
         return Ok(());
     }
 
