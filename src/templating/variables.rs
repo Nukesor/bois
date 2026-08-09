@@ -37,10 +37,10 @@ pub fn get_host_vars(host_dir: &Path, hostname: &str, config: &HostConfig) -> Re
         serde_yaml::to_value(hostname).unwrap(),
     );
 
-    // Insert the list of all enabled groups for this host.
+    // Insert the list of all enabled traits for this host.
     variables.insert(
-        serde_yaml::to_value("boi_groups").unwrap(),
-        serde_yaml::to_value(config.groups.clone()).unwrap(),
+        serde_yaml::to_value("traits").unwrap(),
+        serde_yaml::to_value(config.traits.clone()).unwrap(),
     );
 
     // Insert environment dependant variables, specifically which user currently executes boi.

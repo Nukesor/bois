@@ -1,5 +1,5 @@
-# The enabled groups for this host.
-groups:
+# The enabled traits for this host.
+traits:
   - base
 
 # The default directory to where files will be deployed for files in this directory

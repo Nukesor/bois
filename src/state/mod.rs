@@ -26,7 +26,7 @@ pub enum PackageManager {
 
 /// This struct all configuration that's applicable for this machine.
 /// This includes:
-/// - All applicable groups
+/// - All applicable traits
 ///     - Variables
 ///     - Directories
 ///     - Files/Templates
@@ -57,14 +57,14 @@ impl State {
     //        bail!("Couldn't find config directory.");
     //    }
 
-    //    // Read the initial group for this host.
+    //    // Read the initial trait for this host.
     //    // This specifieds all other dependencies.
     //    let mut host = read_host(&configuration.bois_dir, &configuration.name)?;
 
     //    // Go through all dependencies and load them as well.
-    //    for group_name in &host.config.groups {
-    //        let group = read_group(&configuration.bois_dir, group_name, &host.variables)?;
-    //        host.groups.push(group);
+    //    for trait_name in &host.config.traits {
+    //        let trait_config = read_trait(&configuration.bois_dir, trait_name, &host.variables)?;
+    //        host.traits.push(trait_config);
     //    }
 
     //    let mut state = State {
@@ -94,16 +94,16 @@ impl State {
     //        known_packages.extend(packages.clone());
     //    }
 
-    //    // Check all group packages.
-    //    for group in self.host.groups.iter() {
-    //        for (manager, packages) in group.config.packages.iter() {
+    //    // Check all trait packages.
+    //    for enabled_trait in self.host.traits.iter() {
+    //        for (manager, packages) in enabled_trait.config.packages.iter() {
     //            let known_packages = self.packages.entry(*manager).or_default();
 
     //            // Print a warning for all duplicate packages
     //            for duplicate in packages.intersection(known_packages) {
     //                warn!(
-    //                    "Found duplicate package {duplicate} in group.yml for group {}",
-    //                    group.name
+    //                    "Found duplicate package {duplicate} in trait.yml for trait {}",
+    //                    enabled_trait.name
     //                );
     //            }
 

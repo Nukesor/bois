@@ -1,4 +1,4 @@
-/// Packages that should always be installed for this group.
+/// Packages that should always be installed for this trait.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Packages {
     #[serde(default)]

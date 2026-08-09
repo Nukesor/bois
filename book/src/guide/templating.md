@@ -67,13 +67,13 @@ OTHER_SECRET=sit
 `bois` pre-populates the templating environment with a few variables for your convenience:
 
 - `host`: String - The name of the current host.
-- `boi_groups`: `List<String>` - A list with all groups that're enabled for the host.
+- `traits`: `List<String>` - A list with all traits that're enabled for the host.
 
-The following example checks whether the `encrypt` group is enabled for the current host.
+The following example checks whether the `encrypt` trait is enabled for the current host.
 If so, it adds the `do_encryption=true` flag to the configuration file.
 
 ```django,jinja
-{% if "encrypt" in boi_groups %}
+{% if "encrypt" in traits %}
 do_encryption=true
 {% endif %}
 ```

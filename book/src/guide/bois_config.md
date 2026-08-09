@@ -30,7 +30,7 @@ Here's a full example of a `bois.yml`:
 # If not set, the system hostname is used.
 name: my-laptop
 
-# The directory containing your bois configuration (hosts, groups, etc).
+# The directory containing your bois configuration (hosts, traits, etc).
 # Defaults to the directory where this bois.yml is located.
 bois_dir: ~/dotfiles
 
@@ -67,7 +67,7 @@ All fields are optional:
 
 - `name`: `String` - The machine name, used to select which host directory to use.
   Defaults to the system hostname.
-- `bois_dir`: `PathBuf` - The directory containing your bois configuration (hosts, groups, etc).
+- `bois_dir`: `PathBuf` - The directory containing your bois configuration (hosts, traits, etc).
   - By default, it picks the first directory it finds at the following locations:
     - `~/.config/dotfiles`
     - `~/.config/bois`

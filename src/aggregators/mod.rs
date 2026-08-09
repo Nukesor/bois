@@ -1,6 +1,6 @@
 //! Aggregation logic for a bois source directory.
 //!
-//! This module reads the whole bois configuration for the current host and its enabled groups.
+//! This module reads the whole bois configuration for the current host and its enabled traits.
 //! All that information is bundled into a single [State] struct.
 //!
 //! The resulting [State] struct is fully resolved, which means the following guarantees are upheld:
@@ -17,7 +17,7 @@ pub mod path;
 use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::{Result, bail};
-use configs::{read_group_config, read_host_config};
+use configs::{read_host_config, read_trait_config};
 use log::info;
 use path::{WalkContext, walk_source};
 
@@ -39,15 +39,15 @@ pub fn aggregate_state(config: &Configuration, system_state: &mut SystemState) -
     // Read the host config for this machine.
     let host = read_host_config(&bois_dir, &config.name)?;
 
-    // Read the configs of all enabled groups.
-    let mut groups = Vec::new();
-    for group_name in &host.config.groups {
-        let group_config = read_group_config(&bois_dir, group_name)?;
-        groups.push((group_name.clone(), group_config));
+    // Read the configs of all enabled traits.
+    let mut traits = Vec::new();
+    for trait_name in &host.config.traits {
+        let trait_config = read_trait_config(&bois_dir, trait_name)?;
+        traits.push((trait_name.clone(), trait_config));
     }
 
     // ---------- File tree ----------
-    // Walk through the host directory and all group directories in their
+    // Walk through the host directory and all trait directories in their
     // configured order.
     //
     // This step gathers all source files and directories for deployment,
@@ -59,15 +59,15 @@ pub fn aggregate_state(config: &Configuration, system_state: &mut SystemState) -
         &mut tree,
     )?;
 
-    for (name, group_config) in &groups {
+    for (name, trait_config) in &traits {
         walk_source(
-            &WalkContext::for_group(config, group_config, name, &host.variables)?,
+            &WalkContext::for_trait(config, trait_config, name, &host.variables)?,
             &mut tree,
         )?;
     }
 
     // ---------- Packages ----------
-    let packages = aggregate_packages(&host.config.packages, &groups, system_state)?;
+    let packages = aggregate_packages(&host.config.packages, &traits, system_state)?;
 
     Ok(State {
         configuration: config.clone(),
@@ -76,7 +76,7 @@ pub fn aggregate_state(config: &Configuration, system_state: &mut SystemState) -
     })
 }
 
-/// Merge the host's and all groups' package sets into a single set per package
+/// Merge the host's and all traits' package sets into a single set per package
 /// manager.
 ///
 /// Duplicates across sources are legal but produce an info log.
@@ -85,7 +85,7 @@ pub fn aggregate_state(config: &Configuration, system_state: &mut SystemState) -
 /// are cleaned up), as the set of packages included in a group may change at any point in time.
 fn aggregate_packages(
     host_packages: &BTreeMap<PackageManager, BTreeSet<String>>,
-    groups: &[(String, crate::config::group::GroupConfig)],
+    traits: &[(String, crate::config::traits::TraitConfig)],
     system_state: &mut SystemState,
 ) -> Result<BTreeMap<PackageManager, BTreeSet<String>>> {
     let mut packages: BTreeMap<PackageManager, BTreeSet<String>> = BTreeMap::new();
@@ -103,10 +103,10 @@ fn aggregate_packages(
     };
 
     merge("host.yml", host_packages, &mut packages);
-    for (name, group_config) in groups {
+    for (name, trait_config) in traits {
         merge(
-            &format!("group.yml of group '{name}'"),
-            &group_config.packages,
+            &format!("trait.yml of trait '{name}'"),
+            &trait_config.packages,
             &mut packages,
         );
     }

@@ -8,7 +8,7 @@
 - [Setup](guide/setup.md)
 - [Bois Config](guide/bois_config.md)
 - [Host Config](guide/host_config.md)
-- [Group Config](guide/group_config.md)
+- [Trait Config](guide/trait_config.md)
 - [File Configuration](guide/file_config.md)
 - [Folder Configuration](guide/folder_config.md)
 - [Templating](guide/templating.md)

@@ -21,7 +21,7 @@ pub struct FileState {
     /// The group that should own the file.
     pub group: String,
 
-    /// Used to keep track of which group/host and path this file originated from.
+    /// Used to keep track of which trait/host and path this file originated from.
     /// We need this to show conflict errors and display diffs.
     pub source: Source,
 }

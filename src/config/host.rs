@@ -21,9 +21,9 @@ pub struct HostConfig {
     /// configuration.
     #[serde(default)]
     pub cleanup: CleanupConfig,
-    /// Groups that're required by this host.
+    /// Traits that're required by this host.
     #[serde(default)]
-    pub groups: Vec<String>,
+    pub traits: Vec<String>,
     /// Packages that should always be installed for this host.
     #[serde(default)]
     pub packages: BTreeMap<PackageManager, BTreeSet<String>>,

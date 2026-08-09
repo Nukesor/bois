@@ -25,16 +25,16 @@ Bois is **not** intended to be used as a provisioning service for remote machine
 
 ## Configuration
 
-### Host/Group configuration
+### Host/Trait configuration
 
-- Multiple top-level directories represent groups
-- Entry/Host point groups
-  - Entry point groups are named as the hostname of the respective machine
-  - Defines other groups as dependencies
+- Multiple top-level directories represent traits
+- Entry/Host point traits
+  - Entry point traits are named as the hostname of the respective machine
+  - Defines other traits as dependencies
   - May have global variable files
   - May have local variable files
   - Must have a `bois.yml`
-- Normal groups
+- Normal traits
   - May have a `bois.yml`
   - Can **only** have local variable files
 
@@ -53,13 +53,13 @@ Bois is **not** intended to be used as a provisioning service for remote machine
 
 ### Configuration aggregation/merging
 
-The idea for this configuration structure is, so defaults can be set at various levels (host, group, directory), which are then active for the respective space.
+The idea for this configuration structure is, so defaults can be set at various levels (host, trait, directory), which are then active for the respective space.
 This is, until a "lower" configuration overwrites that default.
 
 The hierarchy looks like this:
 
 ```txt
-host < group < directory < subdirectory < file
+host < trait < directory < subdirectory < file
 ```
 
 I.e. defaults on a host level are overwritten by all other more specific configurations.
@@ -79,7 +79,7 @@ Example folder structure for a computer named `HOSTNAME_1`.
 bois
 |-- bois.yml
 |-- base
-|   |-- group.yml
+|   |-- trait.yml
 |   |-- pacman.conf
 |
 |-- HOSTNAME_1
@@ -102,8 +102,8 @@ bois
 
 ### Data load order
 
-- At the very first, the group that's named like the current host is loaded.
-  This group then further specifies other groups that should be loaded.
+- At the very first, the trait that's named like the current host is loaded.
+  This trait then further specifies other traits that should be loaded.
 
 ## Deployment
 
@@ -129,7 +129,7 @@ How does one handle conflicts? Silent overwriting based on priority? Or hard con
 
 For this to work, Bois follows the following ordering :
 
-- `priority`: Configurable on a group, folder and file basis. Higher priority means earlier deployment/execution.
+- `priority`: Configurable on a trait, folder and file basis. Higher priority means earlier deployment/execution.
 - Recursively by **target** Folder/File names, just like `ls -R` is working.
   ```txt
   /etc/alsa/conf.d/10-samplerate.conf
@@ -192,18 +192,18 @@ The order in which things are executed should be clearly defined.
 Global execution order:
 
 - At first, all removals should be executed.
-  Removals should be executed in the order of dependencies, with the host group being the first one.
+  Removals should be executed in the order of dependencies, with the host trait being the first one.
 - Changes and additions are executed afterwards
-  They should also be executed in the order of dependencies, with the host group being the first one.
+  They should also be executed in the order of dependencies, with the host trait being the first one.
 
-Execution order of removals **inside** of groups/directories with the **same priority**.
+Execution order of removals **inside** of traits/directories with the **same priority**.
 
 - Files/directories are executed in alphabetic order.
   - Disable/stop services.
   - Remove configuration files
   - Uninstall packages
 
-Execution order **inside** of groups/directories with the **same priority**.
+Execution order **inside** of traits/directories with the **same priority**.
 
 - Files/directories are executed in alphabetic order.
   - Install packages

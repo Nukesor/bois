@@ -116,7 +116,7 @@ What bois has on top:
 
 - Templating
 - Builtin support for multiple machines
-- Groups to allow modular package installation/configuration for various hosts.
+- Traits to allow modular package installation/configuration for various hosts.
 
 #### System configuration manager
 

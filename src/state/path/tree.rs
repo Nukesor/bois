@@ -10,10 +10,10 @@ use crate::{error::Error, state::path::file::FileState};
 
 /// This is the fully resolved representation of all configuration files for a given host.
 ///
-/// This includes the config directory of the `host` and all its enabled groups.
+/// This includes the config directory of the `host` and all its enabled traits.
 ///
 /// The paths of this tree are **absolute**, which means that relative paths and all
-/// path overrides on group, directory and files have already been resolved.
+/// path overrides on trait, directory and files have already been resolved.
 ///
 /// The tree thereby directly mirrors the state to-be deployed on the filesystem.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -61,7 +61,7 @@ impl DirectoryState {
 /// in the source directory that introduced this node.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DirectoryBacking {
-    /// A real directory in a host/group source tree, with its resolved
+    /// A real directory in a host/trait source tree, with its resolved
     /// permission management and cleanup settings.
     Backed(DirectoryMeta),
     /// Only exists as a parent component of some other entry's target path
@@ -100,14 +100,14 @@ pub enum DirectoryPermissions {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Origin {
     Host(String),
-    Group(String),
+    Trait(String),
 }
 
 impl Display for Origin {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Origin::Host(name) => write!(f, "Host '{name}'"),
-            Origin::Group(name) => write!(f, "Group '{name}'"),
+            Origin::Trait(name) => write!(f, "Trait '{name}'"),
         }
     }
 }
@@ -116,7 +116,7 @@ impl Display for Origin {
 /// can point the user to the actual files that caused issues.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
-    /// The host or group.
+    /// The host or trait.
     pub origin: Origin,
     /// The path of the source file/directory
     ///

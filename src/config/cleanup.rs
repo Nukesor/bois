@@ -1,4 +1,4 @@
-//! The `cleanup` configuration section, shared by host, group and directory
+//! The `cleanup` configuration section, shared by host, trait and directory
 //! configuration files.
 
 use serde::{Deserialize, Serialize};
@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Files, packages and services are always cleaned up and not configurable
 /// (for now); this only covers the resources where cleanup is opt-in.
 ///
-/// The settings cascade: a host/group config sets the baseline for its whole
+/// The settings cascade: a host/trait config sets the baseline for its whole
 /// source tree, and a directory's `bois.yml` can override it (in either
 /// direction) for its subtree. Unset fields inherit from the parent.
 ///

@@ -4,7 +4,7 @@ use anyhow::{Result, bail};
 use serde_yaml::Value;
 
 use crate::{
-    config::{group::GroupConfig, helper::read_yaml, host::HostConfig},
+    config::{helper::read_yaml, host::HostConfig, traits::TraitConfig},
     error::Error,
     templating::variables::get_host_vars,
 };
@@ -16,7 +16,7 @@ use crate::{
 pub struct Host {
     /// The top-level configuration file for this host.
     pub config: HostConfig,
-    /// All variables that're available for templating to the host files and all groups.
+    /// All variables that're available for templating to the host files and all traits.
     pub variables: Value,
 }
 
@@ -37,24 +37,24 @@ pub fn read_host_config(root: &Path, hostname: &str) -> Result<Host> {
     Ok(Host { config, variables })
 }
 
-/// Read the `group.yml` of a group directory.
+/// Read the `trait.yml` of a trait directory.
 ///
-/// A missing `group.yml` is fine and results in a default config.
-/// The group directory's files are read later on via
+/// A missing `trait.yml` is fine and results in a default config.
+/// The trait directory's files are read later on via
 /// [crate::aggregators::path::walk_source].
-pub fn read_group_config(root: &Path, name: &str) -> Result<GroupConfig> {
-    let group_dir = root.join("groups").join(name);
+pub fn read_trait_config(root: &Path, name: &str) -> Result<TraitConfig> {
+    let trait_dir = root.join("traits").join(name);
 
-    if !group_dir.exists() {
-        bail!("Couldn't find config directory for group '{name}' at {group_dir:?}. Aborting.");
+    if !trait_dir.exists() {
+        bail!("Couldn't find config directory for trait '{name}' at {trait_dir:?}. Aborting.");
     }
 
-    // Read the `group.yml` from the group directory.
-    // Return a default config if the group config doesn't exist.
-    let config = match read_yaml::<GroupConfig>(&group_dir, "group") {
+    // Read the `trait.yml` from the trait directory.
+    // Return a default config if the trait config doesn't exist.
+    let config = match read_yaml::<TraitConfig>(&trait_dir, "trait") {
         Ok(config) => config,
         Err(error) => match error {
-            Error::FileNotFound(_, _) => GroupConfig::default(),
+            Error::FileNotFound(_, _) => TraitConfig::default(),
             _ => bail!(error),
         },
     };

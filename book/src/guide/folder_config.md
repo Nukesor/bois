@@ -1,6 +1,6 @@
 # Folder Config
 
-Any folder inside a host or group directory can have a `bois.yml` or `bois.yaml` file to configure how that folder and its contents should be deployed.
+Any folder inside a host or trait directory can have a `bois.yml` or `bois.yaml` file to configure how that folder and its contents should be deployed.
 
 This is useful for:
 - Overriding the destination path for a whole directory tree
@@ -36,7 +36,7 @@ Now all files inside the `udev` folder will be deployed to `/etc/udev/rules.d` w
 ## Configuration Options
 
 - `path`: `PathBuf` (optional) - Override the destination path for this directory and all its contents.
-  - If it's a relative path, it's treated as relative to the host's/group's target directory
+  - If it's a relative path, it's treated as relative to the host's/trait's target directory
     (the `target_directory` override if set, otherwise the global target directory).
   - If it's an absolute path, that absolute path is used directly.
   - This override cascades to all child files and directories, unless they specify their own `path`.

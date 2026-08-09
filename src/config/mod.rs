@@ -5,6 +5,6 @@ pub mod bois;
 pub mod cleanup;
 pub mod directory;
 pub mod file;
-pub mod group;
 pub mod helper;
 pub mod host;
+pub mod traits;

@@ -1,6 +1,6 @@
 //! The recursive directory walker of the aggregation phase.
 //!
-//! Walks a host's or group's source directory, resolves every entry (target
+//! Walks a host's or trait's source directory, resolves every entry (target
 //! path, metadata, templating) and inserts it into the [Tree].
 
 use std::{
@@ -17,9 +17,9 @@ use crate::{
         bois::Configuration,
         directory::DirectoryConfig,
         file::FileConfig,
-        group::GroupConfig,
         helper::{expand_home, read_yaml},
         host::HostConfig,
+        traits::TraitConfig,
     },
     constants::{CURRENT_GROUP, CURRENT_USER},
     error::Error,
@@ -39,7 +39,7 @@ pub mod file;
 
 use file::SourceFile;
 
-/// The defaults for file/directory metadata of a single source (host or group).
+/// The defaults for file/directory metadata of a single source (host or trait).
 /// Lowest layer of the `defaults < directory config < file config` cascade.
 #[derive(Clone, Debug, Default)]
 pub struct Defaults {
@@ -52,12 +52,12 @@ pub struct Defaults {
 /// Everything the walker needs to know about the source it's currently reading.
 pub struct WalkContext<'a> {
     /// The absolute path of the source directory (`<bois_dir>/hosts/<name>` or
-    /// `<bois_dir>/groups/<name>`).
+    /// `<bois_dir>/traits/<name>`).
     pub source_dir: PathBuf,
     /// The source directory relative to the bois dir, e.g. `hosts/strelok`.
     /// Used to build [Source] infos.
     pub source_prefix: PathBuf,
-    /// `host:<name>` or `group:<name>`, used to build [Source] infos.
+    /// `host:<name>` or `trait:<name>`, used to build [Source] infos.
     pub origin: Origin,
     /// The metadata defaults of this source.
     pub defaults: Defaults,
@@ -65,7 +65,7 @@ pub struct WalkContext<'a> {
     /// `bois.yml`s can override it per subtree during the walk.
     pub cleanup_directories: bool,
     /// The absolute path to the target directory of this context's source.
-    /// I.e. the global `target_dir`, or the host's/group's `target_directory` override.
+    /// I.e. the global `target_dir`, or the host's/trait's `target_directory` override.
     /// Relative path overrides of directories resolve against this value.
     pub target_dir: PathBuf,
     /// The templating variables of the current host.
@@ -95,24 +95,24 @@ impl<'a> WalkContext<'a> {
         })
     }
 
-    pub fn for_group(
+    pub fn for_trait(
         config: &Configuration,
-        group_config: &GroupConfig,
+        trait_config: &TraitConfig,
         name: &str,
         vars: &'a Value,
     ) -> Result<Self> {
         Ok(WalkContext {
-            source_dir: config.bois_dir.join("groups").join(name),
-            source_prefix: PathBuf::from("groups").join(name),
-            origin: Origin::Group(name.into()),
+            source_dir: config.bois_dir.join("traits").join(name),
+            source_prefix: PathBuf::from("traits").join(name),
+            origin: Origin::Trait(name.into()),
             defaults: Defaults {
-                owner: group_config.defaults.owner.clone(),
-                group: group_config.defaults.group.clone(),
-                file_mode: group_config.defaults.file_mode,
-                directory_mode: group_config.defaults.directory_mode,
+                owner: trait_config.defaults.owner.clone(),
+                group: trait_config.defaults.group.clone(),
+                file_mode: trait_config.defaults.file_mode,
+                directory_mode: trait_config.defaults.directory_mode,
             },
-            cleanup_directories: group_config.cleanup.directories.unwrap_or(false),
-            target_dir: resolve_target_dir(&config.target_dir, &group_config.target_directory)?,
+            cleanup_directories: trait_config.cleanup.directories.unwrap_or(false),
+            target_dir: resolve_target_dir(&config.target_dir, &trait_config.target_directory)?,
             vars,
         })
     }
@@ -139,18 +139,18 @@ fn resolve_target_dir(target_dir: &Path, over_ride: &Option<PathBuf>) -> Result<
     }
 }
 
-/// The configuration file names that are found in the root of host and gropu
+/// The configuration file names that are found in the root of host and trait
 /// directories. Those should never be deployed.
 const ROOT_MARKER_FILES: [&str; 6] = [
     "host.yml",
     "host.yaml",
-    "group.yml",
-    "group.yaml",
+    "trait.yml",
+    "trait.yaml",
     "vars.yml",
     "vars.yaml",
 ];
 
-/// Walk the top level of a host/group source directory and insert all
+/// Walk the top level of a host/trait source directory and insert all
 /// deployable entries into the tree.
 ///
 /// The root of the source directory itself maps to the source's target directory, which is never
@@ -182,7 +182,7 @@ pub fn walk_source(ctx: &WalkContext, tree: &mut Tree) -> Result<()> {
 /// Dispatch a directory entry to the file/directory handler.
 ///
 /// `cleanup_directories` is the setting recursively inherited from the
-/// parent-directory/host/group config.
+/// parent-directory/host/trait config.
 fn walk_entry(
     ctx: &WalkContext,
     entry: &DirEntry,
@@ -240,7 +240,7 @@ fn walk_directory(
     };
 
     // The cleanup setting cascades: this directory's bois.yml overrides the
-    // value inherited from its parent (ultimately the host/group config), for
+    // value inherited from its parent (ultimately the host/trait config), for
     // itself and everything below it.
     let cleanup_directories = config.cleanup.directories.unwrap_or(cleanup_directories);
 
@@ -259,7 +259,7 @@ fn walk_directory(
 
     if is_unmanaged_target(ctx, &target) {
         // We ignore any permission settings on directories that are either `/` or the default path
-        // of a group/host. Root shouldn't be managed and the default path basically acts as
+        // of a trait/host. Root shouldn't be managed and the default path basically acts as
         // a sort of "mount point" and should mostly never be managed by us anyway (i.e.
         // `~/.config` or `/etc`)
         if config.mode.is_some() || config.owner.is_some() || config.group.is_some() {
@@ -321,7 +321,7 @@ fn resolve_directory_permissions(
     }
 }
 
-/// Paths that bois never manages: the filesystem root and the host's/group's target
+/// Paths that bois never manages: the filesystem root and the host's/trait's target
 /// directory itself.
 fn is_unmanaged_target(ctx: &WalkContext, target: &Path) -> bool {
     target == Path::new("/") || target == ctx.target_dir

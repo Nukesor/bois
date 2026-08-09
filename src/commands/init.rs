@@ -15,13 +15,13 @@ use crate::{
 pub mod user {
     pub const BOIS: &str = include_str!("../../templates/dotfiles/bois.yml");
     pub const HOST: &str = include_str!("../../templates/dotfiles/host.yml");
-    pub const GROUP: &str = include_str!("../../templates/dotfiles/group.yml");
+    pub const TRAIT: &str = include_str!("../../templates/dotfiles/trait.yml");
 }
 
 pub mod system {
     pub const BOIS: &str = include_str!("../../templates/system/bois.yml");
     pub const HOST: &str = include_str!("../../templates/system/host.yml");
-    pub const GROUP: &str = include_str!("../../templates/system/group.yml");
+    pub const TRAIT: &str = include_str!("../../templates/system/trait.yml");
 }
 
 pub fn run_init(config: Configuration, directory: &Option<PathBuf>) -> Result<()> {
@@ -42,9 +42,9 @@ pub fn run_init(config: Configuration, directory: &Option<PathBuf>) -> Result<()
     }
 
     // Read template files based on config mode.
-    let (bois_content, host_content, group_content) = match config.mode {
-        Mode::User => (user::BOIS, user::HOST, user::GROUP),
-        Mode::System => (system::BOIS, system::HOST, system::GROUP),
+    let (bois_content, host_content, trait_content) = match config.mode {
+        Mode::User => (user::BOIS, user::HOST, user::TRAIT),
+        Mode::System => (system::BOIS, system::HOST, system::TRAIT),
     };
 
     let mut variables = Mapping::new();
@@ -63,10 +63,10 @@ pub fn run_init(config: Configuration, directory: &Option<PathBuf>) -> Result<()
     let host_vars_path = hosts_dir.join("vars.yml");
     fs::write(host_vars_path, "")?;
 
-    let groups_dir = root_dir.join("groups").join("base");
-    create_dir_all(&groups_dir).context("Failed to create groups directory")?;
-    let group_config_path = groups_dir.join("group.yml");
-    fs::write(group_config_path, group_content)?;
+    let traits_dir = root_dir.join("traits").join("base");
+    create_dir_all(&traits_dir).context("Failed to create traits directory")?;
+    let trait_config_path = traits_dir.join("trait.yml");
+    fs::write(trait_config_path, trait_content)?;
 
     Ok(())
 }

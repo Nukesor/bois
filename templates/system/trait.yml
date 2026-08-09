@@ -2,7 +2,7 @@
 #
 #target_directory: /etc
 
-# The default permissions for all files inside this group.
+# The default permissions for all files inside this trait.
 # Can be overwritten on a directory or filebases deeper down the file hierarchy.
 #defaults:
 #  owner: root
@@ -10,7 +10,7 @@
 #  file_mode: 0o644,
 #  directory_mode: 0o755,
 
-# Which packages should be installed when this groups is active on a host.
+# Which packages should be installed when this trait is active on a host.
 # Check the bois book for supported package managers.
 #packages:
 #  pacman:
