@@ -59,7 +59,7 @@ If anything is missing, please open a ticket.
   # rename: .bashrc
   # bois_config
   ```
-  TODO: What happens when rename and `path` clash? Maybe we should remove `rename` and only allow path?
+  If `rename` and a non-dir-style `path` (does not end with `/`) is set, the filename in `path` will be overwritten and a warning will be emitted.
 - `owner`: `String` (optional) - The file owner. Defaults to the current user.
 - `group`: `String` (optional) - The file's assigned group. Defaults to the current user's group.
 - `mode`: `OctalInt` (optional) - File permissions (e.g., `0o644`). If not set, the source file's permissions are preserved.

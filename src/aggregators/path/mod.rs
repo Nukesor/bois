@@ -358,7 +358,7 @@ fn handle_file(
         }
     }
 
-    let target = resolve_file_target(ctx, &config, default_target_path);
+    let target = resolve_file_target(ctx, &config, default_target_path, &path);
 
     let file_state = FileState {
         content,
@@ -393,11 +393,14 @@ fn handle_file(
 ///   this directory"; without one, the override is the full destination path including the file
 ///   name.
 /// - Otherwise the file lands in its parent's target directory under its own name.
-/// - A `rename` override replaces the resulting file name.
+/// - A `rename` override replaces the resulting file name. If a non-dir-style `path` override
+///   exists, it will be ignored and `rename` wins. In that case, a warning is logged to warn the
+///   user about this behavior.
 fn resolve_file_target(
     ctx: &WalkContext,
     config: &FileConfig,
     default_target_path: &Path,
+    source_path: &Path,
 ) -> PathBuf {
     let mut target = match config.path() {
         Some(path) => {
@@ -423,6 +426,17 @@ fn resolve_file_target(
 
     // If a rename is requested, replace the file name.
     if let Some(file_name) = &config.rename {
+        // A `path` without a trailing `/` already contains a file name, which the rename is
+        // about to replace.
+        if config
+            .path()
+            .is_some_and(|path| !path.to_string_lossy().ends_with('/'))
+        {
+            warn!(
+                "File {source_path:?} sets both `path` and `rename`: \
+                 the file name from `path` is replaced by `rename: {file_name}`"
+            );
+        }
         target.set_file_name(file_name);
     }
 
