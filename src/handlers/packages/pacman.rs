@@ -15,7 +15,24 @@ pub(super) fn install_packages(packages: Vec<String>) -> Result<()> {
     }
 
     let output = Command::new("pacman")
-        .args(["--sync", "--refresh", "--noconfirm", "--asexplicit"])
+        .args(["--sync", "--refresh", "--noconfirm"])
+        .args(&packages)
+        .output()
+        .context("Failed to install pacman package {}")?;
+
+    if !output.status.success() {
+        bail!(
+            "Failed to install pacman packages:\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        );
+    }
+
+    // In a second go, mark all those packages as explicitly installed in case they were installed
+    // as a dependency beforehand.
+    // We do this in a separate step as otherwise all dependencies are marked as explicit as well.
+    let output = Command::new("pacman")
+        .args(["--database", "--asexplicit"])
         .args(packages)
         .output()
         .context("Failed to install pacman package {}")?;
