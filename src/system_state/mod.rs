@@ -2,9 +2,14 @@ use std::collections::BTreeSet;
 
 use anyhow::Result;
 
-use crate::{state::PackageManager, system_state::package_managers::SystemPackages};
+use crate::{
+    config::bois::Mode,
+    state::{PackageManager, ServiceManager},
+    system_state::{package_managers::SystemPackages, service_managers::SystemServices},
+};
 
 pub mod package_managers;
+pub mod service_managers;
 
 /// This state holds all important information about the system we're running on.
 ///
@@ -17,14 +22,26 @@ pub mod package_managers;
 /// filesystem into a state struct.
 #[derive(Debug)]
 pub struct SystemState {
+    /// The mode bois runs in.
+    /// - User mode: target the user's services
+    /// - System mode: target system-wide services.
+    mode: Mode,
     packages: SystemPackages,
+    services: SystemServices,
 }
 
 impl SystemState {
-    pub fn new() -> Result<Self> {
+    pub fn new(mode: Mode) -> Result<Self> {
         Ok(SystemState {
+            mode,
             packages: SystemPackages::default(),
+            services: SystemServices::default(),
         })
+    }
+
+    /// The mode bois runs in (user vs. system configuration).
+    pub fn mode(&self) -> Mode {
+        self.mode
     }
 
     /// Get all installed packages for the current system, which includes potential dependencies.
@@ -55,5 +72,26 @@ impl SystemState {
         group: &str,
     ) -> Result<BTreeSet<String>> {
         self.packages.packages_for_group(manager, group)
+    }
+
+    /// Whether the given service is enabled.
+    /// Services whose unit doesn't yet exist count as "not enabled".
+    pub fn service_enabled(&mut self, manager: ServiceManager, name: &str) -> Result<bool> {
+        self.services.is_enabled(manager, name, self.mode)
+    }
+
+    /// Whether the given service is currently running.
+    pub fn service_active(&mut self, manager: ServiceManager, name: &str) -> Result<bool> {
+        self.services.is_active(manager, name, self.mode)
+    }
+
+    /// Update a service's cached enabled state.
+    pub fn update_service_enabled(&mut self, manager: ServiceManager, name: &str, enabled: bool) {
+        self.services.update_enabled(manager, name, enabled)
+    }
+
+    /// Update a service's cached active state.
+    pub fn update_service_active(&mut self, manager: ServiceManager, name: &str, active: bool) {
+        self.services.update_active(manager, name, active)
     }
 }

@@ -19,3 +19,5 @@
   - [Package Managers](system_configuration/package_management/package_management.md)
     - [Pacman](system_configuration/package_management/pacman.md)
     - [Paru](system_configuration/package_management/paru.md)
+  - [Service Managers](system_configuration/service_management/service_management.md)
+    - [Systemd](system_configuration/service_management/systemd.md)

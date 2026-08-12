@@ -16,12 +16,14 @@ use crate::{
         PathChange,
         PathChangeKind,
         PathOperation,
+        ServiceDisable,
+        ServiceEnable,
         UntrackedChanges,
     },
     config::bois::Configuration,
     constants::{CURRENT_GROUP, CURRENT_USER},
     error::Error,
-    state::{PackageManager, path::FileContent},
+    state::{PackageManager, ServiceManager, path::FileContent},
 };
 
 pub fn print_package_uninstalls(packages: &[PackageUninstall]) {
@@ -54,6 +56,44 @@ pub fn print_package_installs(packages: &[PackageInstall]) {
         println!("{}:", manager.to_string().bold());
         for package in packages {
             println!("  {} {package}", "+".green());
+        }
+    }
+}
+
+pub fn print_service_enables(services: &[ServiceEnable]) {
+    let mut sorted_changes: BTreeMap<ServiceManager, Vec<&ServiceEnable>> = BTreeMap::new();
+    print_header("Service enables");
+
+    for service in services.iter() {
+        let list = sorted_changes.entry(service.manager).or_default();
+        list.push(service);
+    }
+
+    for (manager, services) in sorted_changes {
+        println!("{}:", manager.to_string().bold());
+        for service in services {
+            if service.start {
+                println!("  {} {} (will be started)", "+".green(), service.name);
+            } else {
+                println!("  {} {}", "+".green(), service.name);
+            }
+        }
+    }
+}
+
+pub fn print_service_disables(services: &[ServiceDisable]) {
+    let mut sorted_changes: BTreeMap<ServiceManager, Vec<&ServiceDisable>> = BTreeMap::new();
+    print_header("Service disables");
+
+    for service in services.iter() {
+        let list = sorted_changes.entry(service.manager).or_default();
+        list.push(service);
+    }
+
+    for (manager, services) in sorted_changes {
+        println!("{}:", manager.to_string().bold());
+        for service in services {
+            println!("  {} {} (will be stopped)", "-".red(), service.name);
         }
     }
 }
@@ -296,6 +336,14 @@ pub fn print_untracked_changes(changes: &UntrackedChanges, config: &Configuratio
             "{} package {} ({manager}): still configured, will be re-installed",
             "Removed".red().bold(),
             package.clone().bold(),
+        );
+    }
+
+    for (manager, service) in &changes.disabled_services {
+        println!(
+            "{} service {} ({manager}): still configured, will be re-enabled",
+            "Disabled".red().bold(),
+            service.clone().bold(),
         );
     }
 

@@ -18,6 +18,7 @@ use crate::{
         FileType,
         PackageInstall,
         PathOperation,
+        ServiceEnable,
         system::{LiveEntry, read_live_content, read_live_entry},
     },
     constants::{CURRENT_GROUP, CURRENT_USER},
@@ -31,12 +32,13 @@ use crate::{
 /// Create the changeset that transforms the live system into the desired state.
 ///
 /// - The target [`State::path_tree`] is checked against the live filesystem
-/// - Packages are checked against the cached system state.
+/// - Packages and services are checked against the cached system state.
 pub fn deploy_changeset(new: &State, system_state: &mut SystemState) -> Result<Changeset> {
     let mut changeset = Changeset::new();
 
     handle_paths(new, &mut changeset)?;
     handle_packages(new, system_state, &mut changeset)?;
+    handle_services(new, system_state, &mut changeset)?;
 
     Ok(changeset)
 }
@@ -268,12 +270,40 @@ fn handle_packages(
         //   be re-installed on the next run of bois.
         let installed_packages = system_state.packages(*manager)?;
         for package in packages {
-            if !installed_packages.contains(package) {
-                changeset.package_installs.push(PackageInstall {
-                    manager: *manager,
-                    name: package.clone(),
-                });
+            if installed_packages.contains(package) {
+                continue;
             }
+
+            changeset.package_installs.push(PackageInstall {
+                manager: *manager,
+                name: package.clone(),
+            });
+        }
+    }
+
+    Ok(())
+}
+
+/// Detect any services that aren't enabled on the current system and queue them to be enabled.
+///
+/// A service with the `start` flag is started at the moment it gets enabled, but if a service
+/// is already enabled, it won't be started again, no matter its current status.
+fn handle_services(
+    new: &State,
+    system_state: &mut SystemState,
+    changeset: &mut Changeset,
+) -> Result<()> {
+    for (manager, services) in new.services.iter() {
+        for service in services {
+            if system_state.service_enabled(*manager, &service.name)? {
+                continue;
+            }
+
+            changeset.service_enables.push(ServiceEnable {
+                manager: *manager,
+                name: service.name.clone(),
+                start: service.start,
+            });
         }
     }
 

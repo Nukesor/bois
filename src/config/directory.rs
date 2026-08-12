@@ -1,12 +1,16 @@
 //! This module contains the [DirectoryConfig], which is the `dir.yml` configuration file format
 //! that can be found in configuration directories.
-use std::path::PathBuf;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::PathBuf,
+};
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{cleanup::CleanupConfig, helper::expand_home},
+    config::{cleanup::CleanupConfig, helper::expand_home, services::Service},
     constants::{CURRENT_GROUP, CURRENT_USER},
+    state::ServiceManager,
 };
 
 /// The representation of a [DirectoryConfig], which is the `dir.yml` configuration file format
@@ -30,6 +34,9 @@ pub struct DirectoryConfig {
     /// directory's configuration.
     #[serde(default)]
     pub cleanup: CleanupConfig,
+    /// Services that should be enabled.
+    #[serde(default)]
+    pub services: BTreeMap<ServiceManager, BTreeSet<Service>>,
 }
 
 /// This impl block contains convenience getters for directory metadata, which fall back to

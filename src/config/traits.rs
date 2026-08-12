@@ -5,7 +5,10 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{config::cleanup::CleanupConfig, state::PackageManager};
+use crate::{
+    config::{cleanup::CleanupConfig, services::Service},
+    state::{PackageManager, ServiceManager},
+};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -24,6 +27,9 @@ pub struct TraitConfig {
     /// Packages that should always be installed for this trait.
     #[serde(default)]
     pub packages: BTreeMap<PackageManager, BTreeSet<String>>,
+    /// Services that should be enabled.
+    #[serde(default)]
+    pub services: BTreeMap<ServiceManager, BTreeSet<Service>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]

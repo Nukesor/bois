@@ -5,6 +5,7 @@ Any folder inside a host or trait directory can have a `dir.yml` or `dir.yaml` f
 This is useful for:
 - Overriding the destination path for a whole directory tree
 - Setting ownership and permissions for all files in that directory
+- Enabling services that belong to the configuration in that directory
 
 ## Example
 
@@ -29,6 +30,15 @@ path: /etc/udev/rules.d
 owner: root
 group: root
 mode: 0o755
+
+cleanup:
+  # If this directory is removed from the config, it will be cleaned up.
+  directories: true
+
+# System services that should be enabled
+services:
+  systemd:
+    - backup.timer
 ```
 
 Now all files inside the `udev` folder will be deployed to `/etc/udev/rules.d` with the specified ownership and permissions.
@@ -48,6 +58,8 @@ Now all files inside the `udev` folder will be deployed to `/etc/udev/rules.d` w
     Even if set to `true`, directories are only removed if they're empty.
     If a directory still contains unmanaged files, it's never removed.
     If not specified, the value is inherited from the parent directory (ultimately the host's/trait's `cleanup` setting).
+- `services`: (optional) - A list of services sorted by service manager.
+  This is identical to service sections on a trait or host level and allows service declarations close to the configuration files the services belong to.
 
 ## Path Inheritance
 

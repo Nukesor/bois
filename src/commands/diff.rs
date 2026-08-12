@@ -10,7 +10,7 @@ pub fn diff(config: Configuration) -> Result<()> {
 /// Compare the current desired state with the current state of the system.
 /// Show any packages that are installed on the system, but aren't tracked by us.
 fn diff_packages(config: &Configuration) -> Result<()> {
-    let mut system_state = SystemState::new()?;
+    let mut system_state = SystemState::new(config.mode)?;
 
     // Read the current desired system state from the files in the specified bois directory.
     let desired_state = aggregate_state(config, &mut system_state)?;

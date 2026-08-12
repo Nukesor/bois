@@ -4,6 +4,7 @@
 //! path, metadata, templating) and inserts it into the [Tree].
 
 use std::{
+    collections::{BTreeMap, BTreeSet},
     fs::DirEntry,
     path::{Path, PathBuf},
 };
@@ -13,24 +14,29 @@ use log::{trace, warn};
 use serde_yaml::Value;
 
 use crate::{
+    aggregators::services::merge_services,
     config::{
         bois::Configuration,
         directory::DirectoryConfig,
         file::FileConfig,
         helper::{expand_home, read_yaml},
         host::HostConfig,
+        services::Service,
         traits::TraitConfig,
     },
     constants::{CURRENT_GROUP, CURRENT_USER},
     error::Error,
-    state::path::{
-        DirectoryMeta,
-        DirectoryPermissions,
-        FileContent,
-        FileState,
-        Source,
-        Tree,
-        tree::Origin,
+    state::{
+        ServiceManager,
+        path::{
+            DirectoryMeta,
+            DirectoryPermissions,
+            FileContent,
+            FileState,
+            Source,
+            Tree,
+            tree::Origin,
+        },
     },
     templating::render_template,
 };
@@ -153,9 +159,15 @@ const ROOT_MARKER_FILES: [&str; 6] = [
 /// Walk the top level of a host/trait source directory and insert all
 /// deployable entries into the tree.
 ///
+/// Services that're declared by `dir.yml` files along the way are merged into `services`.
+///
 /// The root of the source directory itself maps to the source's target directory, which is never
 /// managed by bois, so no directory node is created for it. (E.g. `~/.config` for user configs).
-pub fn walk_source(ctx: &WalkContext, tree: &mut Tree) -> Result<()> {
+pub fn walk_source(
+    ctx: &WalkContext,
+    tree: &mut Tree,
+    services: &mut BTreeMap<ServiceManager, BTreeSet<Service>>,
+) -> Result<()> {
     for entry in read_dir_sorted(&ctx.source_dir)? {
         let file_name = entry.file_name().to_string_lossy().to_string();
 
@@ -173,6 +185,7 @@ pub fn walk_source(ctx: &WalkContext, tree: &mut Tree) -> Result<()> {
             default_target,
             ctx.cleanup_directories,
             tree,
+            services,
         )?;
     }
 
@@ -190,6 +203,7 @@ fn walk_entry(
     default_target: PathBuf,
     cleanup_directories: bool,
     tree: &mut Tree,
+    services: &mut BTreeMap<ServiceManager, BTreeSet<Service>>,
 ) -> Result<()> {
     let path = entry.path();
     if path.is_dir() {
@@ -199,6 +213,7 @@ fn walk_entry(
             default_target,
             cleanup_directories,
             tree,
+            services,
         )
     } else if path.is_file() {
         handle_file(ctx, relative_path, &default_target, tree)
@@ -226,6 +241,7 @@ fn walk_directory(
     default_target: PathBuf,
     cleanup_directories: bool,
     tree: &mut Tree,
+    services: &mut BTreeMap<ServiceManager, BTreeSet<Service>>,
 ) -> Result<()> {
     let directory_path = ctx.source_dir.join(relative_path);
     trace!("Entered directory {directory_path:?}");
@@ -238,6 +254,13 @@ fn walk_directory(
     } else {
         DirectoryConfig::default()
     };
+
+    // Merge any services that're declared by this directory's config.
+    merge_services(
+        &format!("dir.yml at {directory_path:?}"),
+        &config.services,
+        services,
+    );
 
     // The cleanup setting cascades: this directory's dir.yml overrides the
     // value inherited from its parent (ultimately the host/trait config), for
@@ -295,6 +318,7 @@ fn walk_directory(
             default_target,
             cleanup_directories,
             tree,
+            services,
         )?;
     }
 

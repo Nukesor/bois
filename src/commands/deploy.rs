@@ -14,6 +14,7 @@ use crate::{
     handlers::{
         packages::{install_packages, uninstall_packages},
         paths::execute_path_operations,
+        services::{disable_services, enable_services},
     },
     state::State,
     system_state::SystemState,
@@ -21,6 +22,8 @@ use crate::{
         print_package_installs,
         print_package_uninstalls,
         print_path_changes,
+        print_service_disables,
+        print_service_enables,
         print_untracked_changes,
     },
 };
@@ -37,7 +40,7 @@ use crate::{
 /// 4. Persist final deployed state for the next run.
 pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // Gather all cacheable system info that we may need during deployment.
-    let mut system_state = SystemState::new()?;
+    let mut system_state = SystemState::new(config.mode)?;
 
     // Read the desired system state from the files in the bois directory.
     let desired_state = aggregate_state(&config, &mut system_state)?;
@@ -84,6 +87,10 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     };
 
     if !cleanup.is_empty() {
+        if !cleanup.service_disables.is_empty() {
+            print_service_disables(&cleanup.service_disables);
+            println!();
+        }
         if !cleanup.path_cleanup.is_empty() {
             print_path_changes(&cleanup.path_cleanup, &config)?;
             println!();
@@ -97,11 +104,12 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
             println!("Dry-run. Not cleaning anything up... yet");
         } else {
             // Cleanup in the following order:
-            // - system services
-            // - packages
-            // - on-disk files
-            uninstall_packages(&mut system_state, &cleanup.package_uninstalls)?;
+            // - System services.
+            // - On-disk files.
+            // - Packages.
+            disable_services(&mut system_state, &cleanup.service_disables)?;
             execute_path_operations(&cleanup.path_cleanup)?;
+            uninstall_packages(&mut system_state, &cleanup.package_uninstalls)?;
 
             // Persist the left-over state of the last deployment after cleanup.
             // If the following deploy phase aborts, the next run's drift detection won't blame
@@ -129,6 +137,10 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
         print_path_changes(&deploy.path_operations, &config)?;
         println!();
     }
+    if !deploy.service_enables.is_empty() {
+        print_service_enables(&deploy.service_enables);
+        println!();
+    }
 
     if dry_run {
         println!("Dry-run. Not deploying anything... yet");
@@ -140,11 +152,14 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     //  - directories that we want to deploy to
     //  - systemd service files
     // - Files.
+    // - Services.
+    //  - Deployed last, as they may require unit files that're installed by packages or us.
     //
     // TODO: Check what happens if a path is scheduled for creation, but that path is then
     // created by a package installation
     install_packages(&mut system_state, &deploy.package_installs)?;
     execute_path_operations(&deploy.path_operations)?;
+    enable_services(&mut system_state, &deploy.service_enables)?;
 
     // ---------- Step 4: Persist the new state ----------
     desired_state.save()?;

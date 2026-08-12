@@ -9,7 +9,11 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
-use crate::{config::bois::Configuration, error::Error, state::path::tree::Tree};
+use crate::{
+    config::{bois::Configuration, services::Service},
+    error::Error,
+    state::path::tree::Tree,
+};
 
 pub mod path;
 
@@ -22,6 +26,15 @@ pub enum PackageManager {
     Pacman,
     Paru,
     Apt,
+}
+
+#[derive(
+    Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Display, Deserialize, Serialize,
+)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum ServiceManager {
+    Systemd,
 }
 
 /// This struct all configuration that's applicable for this machine.
@@ -44,98 +57,13 @@ pub struct State {
 
     /// The compiled list of all packages that should be installed for this current configuration.
     pub packages: BTreeMap<PackageManager, BTreeSet<String>>,
+
+    /// The compiled list of all services that should be enabled for this current configuration.
+    #[serde(default)]
+    pub services: BTreeMap<ServiceManager, BTreeSet<Service>>,
 }
 
 impl State {
-    // Build a new state from a current bois configuration.
-    // This state only represents the desired state for the **current** machine.
-    //pub fn new(configuration: &Configuration, system_state: &mut SystemState) -> Result<Self> {
-    //    // Check whether the most important directories are present as expected.
-    //    let bois_dir = configuration.bois_dir.clone();
-    //    if !bois_dir.exists() {
-    //        eprintln!("Couldn't find bois config directory at {bois_dir:?}. Aborting.");
-    //        bail!("Couldn't find config directory.");
-    //    }
-
-    //    // Read the initial trait for this host.
-    //    // This specifieds all other dependencies.
-    //    let mut host = read_host(&configuration.bois_dir, &configuration.name)?;
-
-    //    // Go through all dependencies and load them as well.
-    //    for trait_name in &host.config.traits {
-    //        let trait_config = read_trait(&configuration.bois_dir, trait_name, &host.variables)?;
-    //        host.traits.push(trait_config);
-    //    }
-
-    //    let mut state = State {
-    //        host,
-    //        variables: BTreeMap::new(),
-    //        configuration: configuration.clone(),
-    //        packages: BTreeMap::new(),
-    //    };
-
-    //    state.load_packages(system_state)?;
-
-    //    Ok(state)
-    //}
-
-    //fn load_packages(&mut self, system_state: &mut SystemState) -> Result<()> {
-    //    // Check all host packages.
-
-    //    // Check whether there're any duplicate packages for a given package manager.
-    //    for (manager, packages) in self.host.config.packages.iter() {
-    //        let known_packages = self.packages.entry(*manager).or_default();
-
-    //        // Print a warning for all duplicate packages
-    //        for duplicate in packages.intersection(known_packages) {
-    //            warn!("Found duplicate package {duplicate} in host.yml");
-    //        }
-
-    //        known_packages.extend(packages.clone());
-    //    }
-
-    //    // Check all trait packages.
-    //    for enabled_trait in self.host.traits.iter() {
-    //        for (manager, packages) in enabled_trait.config.packages.iter() {
-    //            let known_packages = self.packages.entry(*manager).or_default();
-
-    //            // Print a warning for all duplicate packages
-    //            for duplicate in packages.intersection(known_packages) {
-    //                warn!(
-    //                    "Found duplicate package {duplicate} in trait.yml for trait {}",
-    //                    enabled_trait.name
-    //                );
-    //            }
-
-    //            known_packages.extend(packages.clone());
-    //        }
-    //    }
-
-    //    // If there're any groups for any of the package managers, unroll the group and remove
-    // the    // group from the list off packages to install.
-    //    for (manager, ref mut packages) in self.packages.iter_mut() {
-    //        let mut detected_groups = HashSet::new();
-    //        let mut group_packages = HashSet::new();
-    //        let groups_on_system = system_state.detected_package_groups(*manager)?;
-
-    //        for name in packages.iter() {
-    //            // Check if any package is a group
-    //            if groups_on_system.contains(name) {
-    //                // Safe the group and its packages so we can fix the package list.
-    //                detected_groups.insert(name.clone());
-    //                group_packages.extend(get_packages_for_group(name)?)
-    //            }
-    //        }
-
-    //        // Add all packages from detected groups.
-    //        packages.extend(group_packages);
-    //        // Remove all groups.
-    //        packages.retain(|name| !detected_groups.contains(name));
-    //    }
-
-    //    Ok(())
-    //}
-
     /// Try to read the state of a previous deployment.
     /// This state will be used to determine:
     /// - Any changes on the system's files since the last deployment

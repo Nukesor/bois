@@ -6,6 +6,7 @@
 //! Such system state that must be cleaned up consists of:
 //! - Files/directories that were removed from (or moved within) the bois dir.
 //! - Packages that were dropped from the config.
+//! - Services that were dropped from the config. Those are stopped and disabled.
 //!
 //! On top of that, any detected cleanup operation is validated against the live system
 //! and should not be reported if no longer necessary.
@@ -21,6 +22,7 @@ use crate::{
         FileOperation,
         PackageUninstall,
         PathOperation,
+        ServiceDisable,
         system::{LiveEntry, read_live_entry},
     },
     state::{
@@ -44,6 +46,7 @@ pub fn cleanup_changeset(
 
     handle_paths(old, new, &mut changeset)?;
     handle_packages(old, new, system_state, &mut changeset)?;
+    handle_services(old, new, system_state, &mut changeset)?;
 
     Ok(changeset)
 }
@@ -121,6 +124,12 @@ pub fn post_cleanup_state(old: &State, cleanup: &Changeset) -> State {
         }
     }
 
+    for disable in &cleanup.service_disables {
+        if let Some(services) = state.services.get_mut(&disable.manager) {
+            services.retain(|service| service.name != disable.name);
+        }
+    }
+
     state
 }
 
@@ -154,6 +163,40 @@ fn handle_packages(
                 changeset.package_uninstalls.push(PackageUninstall {
                     manager: *manager,
                     name: old_package.clone(),
+                });
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Check for any services that were previously deployed but are no longer
+/// part of the desired state and queue them to be stopped + disabled.
+fn handle_services(
+    old: &State,
+    new: &State,
+    system_state: &mut SystemState,
+    changeset: &mut Changeset,
+) -> Result<()> {
+    for (manager, old_services) in old.services.iter() {
+        let new_services = new.services.get(manager);
+
+        for old_service in old_services {
+            let still_desired = new_services
+                .is_some_and(|services| services.iter().any(|new| new.name == old_service.name));
+            if still_desired {
+                continue;
+            }
+
+            // Only queue services that're actually still enabled or running. Anything else, like a
+            // unit that was manually disabled or vanished, needs no cleanup.
+            if system_state.service_enabled(*manager, &old_service.name)?
+                || system_state.service_active(*manager, &old_service.name)?
+            {
+                changeset.service_disables.push(ServiceDisable {
+                    manager: *manager,
+                    name: old_service.name.clone(),
                 });
             }
         }

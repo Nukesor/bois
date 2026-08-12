@@ -22,6 +22,7 @@ use crate::{
     },
     state::{
         PackageManager,
+        ServiceManager,
         State,
         path::{DirectoryPermissions, DirectoryState, FileContent, FileState, Node},
     },
@@ -38,6 +39,8 @@ pub struct UntrackedChanges {
     pub deleted_paths: Vec<PathBuf>,
     /// Managed packages that were manually uninstalled from the system.
     pub removed_packages: Vec<(PackageManager, String)>,
+    /// Managed services that were manually disabled on the system.
+    pub disabled_services: Vec<(ServiceManager, String)>,
 }
 
 impl UntrackedChanges {
@@ -45,6 +48,7 @@ impl UntrackedChanges {
         self.changed_paths.is_empty()
             && self.deleted_paths.is_empty()
             && self.removed_packages.is_empty()
+            && self.disabled_services.is_empty()
     }
 }
 
@@ -93,6 +97,7 @@ pub fn detect_untracked_changes(
 
     handle_paths(old, &mut changes)?;
     handle_packages(old, new, system_state, &mut changes)?;
+    handle_services(old, new, system_state, &mut changes)?;
 
     Ok(changes)
 }
@@ -264,6 +269,37 @@ fn handle_packages(
                 .is_some_and(|packages| packages.contains(package));
             if still_desired {
                 changes.removed_packages.push((*manager, package.clone()));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Report any services that were deployed, are still desired, but have been
+/// manually disabled on the system since the last deploy.
+fn handle_services(
+    old: &State,
+    new: &State,
+    system_state: &mut SystemState,
+    changes: &mut UntrackedChanges,
+) -> Result<()> {
+    for (manager, old_services) in old.services.iter() {
+        for service in old_services {
+            if system_state.service_enabled(*manager, &service.name)? {
+                continue;
+            }
+
+            // Only report the disable if the service is still desired.
+            // Otherwise it's simply an already-done cleanup.
+            let still_desired = new
+                .services
+                .get(manager)
+                .is_some_and(|services| services.iter().any(|new| new.name == service.name));
+            if still_desired {
+                changes
+                    .disabled_services
+                    .push((*manager, service.name.clone()));
             }
         }
     }

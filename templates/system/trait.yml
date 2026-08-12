@@ -15,3 +15,13 @@
 #packages:
 #  pacman:
 #    - linux-firmware
+
+# Which services should be enabled when this trait is active on a host.
+# Services are only enabled, not started, unless `start: true` is set.
+# Check the bois book for supported service managers.
+#services:
+#  systemd:
+#    - systemd-timesyncd
+#    - backup.timer
+#    - name: docker
+#      start: true

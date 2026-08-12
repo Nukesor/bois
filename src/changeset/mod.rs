@@ -21,7 +21,7 @@ use std::path::PathBuf;
 
 use strum::Display;
 
-use crate::state::{PackageManager, path::FileContent};
+use crate::state::{PackageManager, ServiceManager, path::FileContent};
 
 pub mod cleanup;
 pub mod deploy;
@@ -52,6 +52,10 @@ pub struct Changeset {
     /// Delete operations
     /// The paths are scheduled in a leaf-to-root order.
     pub path_cleanup: Vec<PathOperation>,
+    /// Services to enable during deployment.
+    pub service_enables: Vec<ServiceEnable>,
+    /// Services to stop + disable during cleanup.
+    pub service_disables: Vec<ServiceDisable>,
 }
 
 impl Changeset {
@@ -64,6 +68,8 @@ impl Changeset {
             && self.package_uninstalls.is_empty()
             && self.path_operations.is_empty()
             && self.path_cleanup.is_empty()
+            && self.service_enables.is_empty()
+            && self.service_disables.is_empty()
     }
 
     /// Merge changes of the given changeset into self.
@@ -75,6 +81,8 @@ impl Changeset {
         self.package_uninstalls.extend(other.package_uninstalls);
         self.path_operations.extend(other.path_operations);
         self.path_cleanup.extend(other.path_cleanup);
+        self.service_enables.extend(other.service_enables);
+        self.service_disables.extend(other.service_disables);
     }
 }
 
@@ -87,6 +95,23 @@ pub struct PackageInstall {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PackageUninstall {
     pub manager: PackageManager,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ServiceEnable {
+    pub manager: ServiceManager,
+    pub name: String,
+    /// Whether the service should also be started right away when it gets
+    /// enabled.
+    pub start: bool,
+}
+
+/// A service that's no longer part of the desired state.
+/// It gets stopped and disabled during cleanup.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ServiceDisable {
+    pub manager: ServiceManager,
     pub name: String,
 }
 

@@ -88,15 +88,6 @@ pub struct Configuration {
 }
 
 impl RawConfiguration {
-    /// The mode in which bois operates (root vs. user).
-    /// Fallback to `Mode::System` for now, will be changed later.
-    /// This determines a few things, such as:
-    /// - Whether `systemctl` should be called with the `--user` flag
-    /// - What the default target directory is `~/.config` vs `/etc`
-    pub fn mode(&self) -> Mode {
-        self.mode.unwrap_or(Mode::System)
-    }
-
     /// This function takes a [RawConfiguration] from a deserialized config file and populates all
     /// values that haven't explicitly set.
     /// The resulting [Configuration] no longer has any `Option`als, which makes it convenient to

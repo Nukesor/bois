@@ -7,4 +7,5 @@ pub mod directory;
 pub mod file;
 pub mod helper;
 pub mod host;
+pub mod services;
 pub mod traits;

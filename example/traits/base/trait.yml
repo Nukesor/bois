@@ -32,3 +32,9 @@ packages:
     - paru-bin
     - proximity-sort
     - neovim-symlinks
+services:
+  systemd:
+    - name: systemd-timesyncd
+      start: true
+    - systemd-networkd
+    - systemd-resolved

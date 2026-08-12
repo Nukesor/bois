@@ -59,6 +59,12 @@ packages:
     - base-devel
     - tuned
 
+# Services that should be enabled for this host.
+services:
+  systemd:
+    - systemd-timesyncd
+    - backup.timer
+
 # Defaults that should be applied to all files.
 file_defaults:
   owner: root
@@ -77,6 +83,10 @@ cleanup:
   Must be an absolute path (`~` is expanded). If not set, the global target directory is used.
 - `packages`: `Map<String -> List<String>>`: A list of packages sorted by package manager.
   Look at [Package Management](../system_configuration/package_management/package_management.md) to see the list of available package managers.
+- `services`: (optional) - A list of services sorted by service manager.
+  Listed services are enabled during deployment. Once removed, they're stopped and disabled.
+  A service can either be a plain name, or an object with a `name` and a `start` flag to also start the service right away when it gets enabled.
+  Look at [Service Management](../system_configuration/service_management/service_management.md) to see the list of available service managers.
 - `file_defaults` Set defaults file permissions for all configuration files that're inside this host directory.
   - `owner`: `String` - The file's owner
   - `group`: `String` - The file's assigned group
