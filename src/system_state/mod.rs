@@ -8,6 +8,7 @@ use crate::{
     system_state::{package_managers::SystemPackages, service_managers::SystemServices},
 };
 
+pub mod entry;
 pub mod package_managers;
 pub mod service_managers;
 

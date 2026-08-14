@@ -16,17 +16,17 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 
 use crate::{
-    changeset::{
-        FileType,
-        system::{LiveEntry, read_live_content, read_live_entry},
-    },
+    changeset::FileType,
     state::{
         PackageManager,
         ServiceManager,
         State,
         path::{DirectoryPermissions, DirectoryState, FileContent, FileState, Node},
     },
-    system_state::SystemState,
+    system_state::{
+        SystemState,
+        entry::{LiveEntry, points_to_directory, read_live_content},
+    },
 };
 
 /// Everything that changed on the live system since the last deployment.
@@ -114,7 +114,7 @@ fn handle_paths(old: &State, changes: &mut UntrackedChanges) -> Result<()> {
 }
 
 fn handle_file(path: &Path, file: &FileState, changes: &mut UntrackedChanges) -> Result<()> {
-    let live = read_live_entry(path)?;
+    let live = LiveEntry::read(path)?;
 
     match live {
         LiveEntry::Missing => changes.deleted_paths.push(path.to_path_buf()),
@@ -172,14 +172,12 @@ fn handle_directory(
         return Ok(());
     };
 
-    // The per-field permission declarations, if there are any. Only declared
-    // fields are actively managed, so only they can drift.
     let (declared_mode, declared_owner, declared_group) = match &meta.permissions {
         DirectoryPermissions::Declared { mode, owner, group } => (*mode, owner, group),
         DirectoryPermissions::Default => (None, &None, &None),
     };
 
-    let live = read_live_entry(path)?;
+    let live = LiveEntry::read(path)?;
 
     match live {
         LiveEntry::Missing => changes.deleted_paths.push(path.to_path_buf()),
@@ -197,6 +195,14 @@ fn handle_directory(
         }
 
         LiveEntry::Symlink => {
+            // Symlinks are accepted, as long as they point to a direcetory and no explicit
+            // permissions are declared for the path.
+            let is_explicit =
+                declared_mode.is_some() || declared_owner.is_some() || declared_group.is_some();
+            if !is_explicit && points_to_directory(path)? {
+                return Ok(());
+            }
+
             changes.changed_paths.push(PathChange {
                 path: path.to_path_buf(),
                 change: PathChangeKind::FileTypeChanged {

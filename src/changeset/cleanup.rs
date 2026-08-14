@@ -11,7 +11,7 @@
 //! On top of that, any detected cleanup operation is validated against the live system
 //! and should not be reported if no longer necessary.
 
-use std::path::Path;
+use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::Result;
 
@@ -23,85 +23,13 @@ use crate::{
         PackageUninstall,
         PathOperation,
         ServiceDisable,
-        system::{LiveEntry, read_live_entry},
     },
     state::{
         State,
-        path::{DirectoryBacking, Node},
+        path::{DirectoryBacking, Node, Tree},
     },
-    system_state::SystemState,
+    system_state::{SystemState, entry::LiveEntry},
 };
-
-/// Compare the previously deployed state with the new desired state and
-/// create the changeset of all necessary cleanup operations.
-///
-/// This comparison is "filetype-sensitive" This means that a path that's a file in the old state
-/// and a directory in the new state (or vice versa) counts as removed.
-pub fn cleanup_changeset(
-    old: &State,
-    new: &State,
-    system_state: &mut SystemState,
-) -> Result<Changeset> {
-    let mut changeset = Changeset::new();
-
-    handle_paths(old, new, &mut changeset)?;
-    handle_packages(old, new, system_state, &mut changeset)?;
-    handle_services(old, new, system_state, &mut changeset)?;
-
-    Ok(changeset)
-}
-
-/// Queue deletions for all previously deployed paths that're absent from the
-/// new state.
-///
-/// The old tree is walked in leaf-to-root order, so files and subdirectories are deleted before
-/// their parent directories.
-fn handle_paths(old: &State, new: &State, changeset: &mut Changeset) -> Result<()> {
-    for (path, node) in old.path_tree.flatten().into_iter().rev() {
-        // Anything that's still present in the new state should not be cleaned up.
-        if still_present(new, &path, node) {
-            continue;
-        }
-
-        match node {
-            Node::File(_) => {
-                if let LiveEntry::File { .. } = read_live_entry(&path)? {
-                    changeset
-                        .path_cleanup
-                        .push(PathOperation::File(FileOperation::Cleanup { path }));
-                }
-            }
-            Node::Directory(dir) => {
-                // Only cleanup directories that were explicitly handled by bois
-                // and where cleanup is explicitly enabled.
-                let DirectoryBacking::Backed(meta) = &dir.backing else {
-                    continue;
-                };
-                if !meta.cleanup {
-                    continue;
-                }
-
-                if let LiveEntry::Directory { .. } = read_live_entry(&path)? {
-                    changeset.path_cleanup.push(PathOperation::Directory(
-                        DirectoryOperation::Cleanup { path },
-                    ));
-                }
-            }
-        }
-    }
-
-    Ok(())
-}
-
-/// Whether the new state still contains this exact path with the same filetype.
-fn still_present(new: &State, path: &Path, old_node: &Node) -> bool {
-    match (new.path_tree.get(path), old_node) {
-        (Some(Node::File(_)), Node::File(_)) => true,
-        (Some(Node::Directory(_)), Node::Directory(_)) => true,
-        // Either missing, or present with a different filetype.
-        _ => false,
-    }
-}
 
 /// Compute the state that remains from a previous deployment after the cleanup phase
 /// has been executed.
@@ -131,6 +59,101 @@ pub fn post_cleanup_state(old: &State, cleanup: &Changeset) -> State {
     }
 
     state
+}
+
+/// Compare the previously deployed state with the new desired state and
+/// create the changeset of all necessary cleanup operations.
+///
+/// This comparison is "filetype-sensitive" This means that a path that's a file in the old state
+/// and a directory in the new state (or vice versa) counts as removed.
+pub fn cleanup_changeset(
+    old: &State,
+    new: &State,
+    system_state: &mut SystemState,
+) -> Result<Changeset> {
+    let mut changeset = Changeset::new();
+
+    handle_paths(&old.path_tree, &new.path_tree, &mut changeset)?;
+    handle_packages(old, new, system_state, &mut changeset)?;
+    handle_services(old, new, system_state, &mut changeset)?;
+
+    Ok(changeset)
+}
+
+/// Queue deletions for all previously deployed paths that're absent from the
+/// new state.
+///
+/// The old tree is walked in leaf-to-root order, so files and subdirectories are deleted before
+/// their parent directories.
+fn handle_paths(old: &Tree, new: &Tree, changeset: &mut Changeset) -> Result<()> {
+    // Lookup of the new state's paths with all parent symlinks resolved.
+    let resolved_new_paths: HashMap<PathBuf, bool> = new
+        .flatten()
+        .into_iter()
+        .filter_map(|(path, node)| {
+            let resolved = path.canonicalize().ok()?;
+            Some((resolved, matches!(node, Node::Directory(_))))
+        })
+        .collect();
+
+    for (path, node) in old.flatten().into_iter().rev() {
+        // Anything that's still present in the new state should not be cleaned up.
+        // So we check if the new state still contains this exact path with the same filetype.
+        let still_present = match (new.get(&path), node) {
+            (Some(Node::File(_)), Node::File(_))
+            | (Some(Node::Directory(_)), Node::Directory(_)) => true,
+            // Either missing, or present with a different filetype.
+            _ => false,
+        };
+        if !still_present {
+            continue;
+        }
+
+        // The path might have been renamed to a path that resolves to the same physical location
+        // through symlinks. Cleaning up the old path would then delete the file although it should
+        // remain untouched. Because of this, the following logic checks for such symlink "renames".
+        //
+        // For a conflict to happen, the old path must exist and resolve.
+        if path.exists()
+            && let Ok(resolved) = path.canonicalize()
+        {
+            // And the new state must have a path with the same type that resolves to the same
+            // value.
+            if let Some(is_new_dir) = resolved_new_paths.get(&resolved)
+                && *is_new_dir == matches!(node, Node::Directory(_))
+            {
+                continue;
+            }
+        }
+
+        match node {
+            Node::File(_) => {
+                if let LiveEntry::File { .. } = LiveEntry::read(&path)? {
+                    changeset
+                        .path_cleanup
+                        .push(PathOperation::File(FileOperation::Cleanup { path }));
+                }
+            }
+            Node::Directory(dir) => {
+                // Only cleanup directories that were explicitly handled by bois
+                // and where cleanup is explicitly enabled.
+                let DirectoryBacking::Backed(meta) = &dir.backing else {
+                    continue;
+                };
+                if !meta.cleanup {
+                    continue;
+                }
+
+                if let LiveEntry::Directory { .. } = LiveEntry::read(&path)? {
+                    changeset.path_cleanup.push(PathOperation::Directory(
+                        DirectoryOperation::Cleanup { path },
+                    ));
+                }
+            }
+        }
+    }
+
+    Ok(())
 }
 
 /// Check for any packages that were previously deployed but are no longer

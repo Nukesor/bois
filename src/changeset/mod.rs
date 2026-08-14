@@ -25,7 +25,6 @@ use crate::state::{PackageManager, ServiceManager, path::FileContent};
 
 pub mod cleanup;
 pub mod deploy;
-mod system;
 pub mod untracked;
 
 pub use cleanup::cleanup_changeset;

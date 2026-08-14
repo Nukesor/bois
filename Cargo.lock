@@ -171,6 +171,7 @@ dependencies = [
  "serde_yaml",
  "shellexpand",
  "strum",
+ "tempfile",
  "testresult",
  "thiserror",
  "winnow",

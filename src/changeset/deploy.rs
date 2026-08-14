@@ -19,14 +19,16 @@ use crate::{
         PackageInstall,
         PathOperation,
         ServiceEnable,
-        system::{LiveEntry, read_live_content, read_live_entry},
     },
     constants::{CURRENT_GROUP, CURRENT_USER},
     state::{
         State,
-        path::{DirectoryPermissions, DirectoryState, FileState, Node},
+        path::{DirectoryPermissions, DirectoryState, FileState, Node, Tree},
     },
-    system_state::SystemState,
+    system_state::{
+        SystemState,
+        entry::{LiveEntry, points_to_directory, read_live_content},
+    },
 };
 
 /// Create the changeset that transforms the live system into the desired state.
@@ -36,7 +38,7 @@ use crate::{
 pub fn deploy_changeset(new: &State, system_state: &mut SystemState) -> Result<Changeset> {
     let mut changeset = Changeset::new();
 
-    handle_paths(new, &mut changeset)?;
+    handle_paths(&new.path_tree, &mut changeset)?;
     handle_packages(new, system_state, &mut changeset)?;
     handle_services(new, system_state, &mut changeset)?;
 
@@ -44,13 +46,40 @@ pub fn deploy_changeset(new: &State, system_state: &mut SystemState) -> Result<C
 }
 
 /// Recursively walk the target path tree and compare each node with the filesystem.
-fn handle_paths(new: &State, changeset: &mut Changeset) -> Result<()> {
-    for (path, node) in new.path_tree.flatten() {
-        let live = read_live_entry(&path)?;
+///
+/// This relies on [Tree::flatten] returning a pre-order walk:
+/// - Parents come before their children
+/// - A directory's subtree is contiguous.
+fn handle_paths(new: &Tree, changeset: &mut Changeset) -> Result<()> {
+    // The root of the last directory subtree that will be created from scratch during
+    // execution. Either nothing exists at that path yet, or a conflicting entry (e.g. a
+    // symlink) gets deleted and replaced with a new directory.
+    //
+    // Either way, nothing can exist below that path once the directory is created, so all
+    // descendants are compared as missing.
+    let mut new_dir: Option<std::path::PathBuf> = None;
+
+    for (path, node) in new.flatten() {
+        let inside_new_dir = new_dir.as_ref().is_some_and(|root| path.starts_with(root));
+
+        let live = if inside_new_dir {
+            LiveEntry::Missing
+        } else {
+            LiveEntry::read(&path)?
+        };
 
         match node {
             Node::File(file) => handle_file(&path, file, &live, changeset)?,
-            Node::Directory(dir) => handle_directory(&path, dir, &live, changeset),
+            Node::Directory(dir) => match handle_directory(&path, dir, &live, changeset)? {
+                DirectoryOutcome::Kept => (),
+                DirectoryOutcome::Created | DirectoryOutcome::Replaced => {
+                    if !inside_new_dir {
+                        // Set `new_dir` in case the directory is newly created, so that all
+                        // descendants are marked as missing.
+                        new_dir = Some(path);
+                    }
+                }
+            },
         }
     }
 
@@ -150,12 +179,26 @@ fn handle_file(
     Ok(())
 }
 
+/// The type of action to perform at a given path.
+///
+/// This is used by [handle_paths] to decide how the directory's descendants are compared.
+enum DirectoryOutcome {
+    /// A usable directory (or an accepted dir-pointing symlink) is already in place
+    /// and is kept, apart from possible permission fixes.
+    Kept,
+    /// Nothing exists at this path yet and a new directory will be created.
+    Created,
+    /// A conflicting live entry will be deleted and replaced with a new directory.
+    Replaced,
+}
+
+/// Compare a single directory node against its live entry.
 fn handle_directory(
     path: &std::path::Path,
     dir: &DirectoryState,
     live: &LiveEntry,
     changeset: &mut Changeset,
-) {
+) -> Result<DirectoryOutcome> {
     // Get the permissions for this directory.
     //
     // Note: It's possible for declared directories to not have any permissions set either.
@@ -176,6 +219,10 @@ fn handle_directory(
         .clone()
         .unwrap_or_else(|| CURRENT_GROUP.clone());
 
+    // Whether the user declared any permissions for this directory.
+    let is_explicit =
+        declared_mode.is_some() || declared_owner.is_some() || declared_group.is_some();
+
     let create = || {
         PathOperation::Directory(DirectoryOperation::Create {
             path: path.to_path_buf(),
@@ -185,8 +232,11 @@ fn handle_directory(
         })
     };
 
-    match live {
-        LiveEntry::Missing => changeset.path_operations.push(create()),
+    let outcome = match live {
+        LiveEntry::Missing => {
+            changeset.path_operations.push(create());
+            DirectoryOutcome::Created
+        }
 
         // The path exists, but isn't a directory.
         // Delete the conflicting path and create the directory.
@@ -201,10 +251,19 @@ fn handle_directory(
                     }));
             }
             changeset.path_operations.push(create());
+            DirectoryOutcome::Replaced
         }
 
         // The path exists, but it's a symlink.
         LiveEntry::Symlink => {
+            // Symlinks are accepted in place of non-explicit directories, as long as
+            // they point towards a directory. All reads and writes of deployed
+            // children simply resolve through the link.
+            // Dangling symlinks and link loops also count as conflicts.
+            if !is_explicit && points_to_directory(path)? {
+                return Ok(DirectoryOutcome::Kept);
+            }
+
             changeset
                 .path_operations
                 .push(PathOperation::File(FileOperation::Conflict {
@@ -212,6 +271,7 @@ fn handle_directory(
                     found: FileType::Symlink,
                 }));
             changeset.path_operations.push(create());
+            DirectoryOutcome::Replaced
         }
 
         // The directory exists. Check for any differences.
@@ -248,8 +308,11 @@ fn handle_directory(
                     },
                 ));
             }
+            DirectoryOutcome::Kept
         }
-    }
+    };
+
+    Ok(outcome)
 }
 
 /// Detect any packages that're missing on the current system and queue them
