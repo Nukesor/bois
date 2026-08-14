@@ -2,8 +2,8 @@
 
 By default, individual files will just be deployed to their the relative path to their host/trait with the identical permissions.
 
-However, location, permissions, ownership and more can be configured by adding a `bois_config` block inside the file itself.
-The configuration block is commented out using the file's native comment syntax, so it doesn't interfere with the actual configuration.
+However, location, permissions, ownership and more can be configured by adding a `bois_config` YAML block inside the file itself.
+The configuration block is commented out using the file's native comment syntax, so it doesn't interfere with the actual configuration, and is pruned during deployment.
 
 This allows you to:
 - Override the destination path for a specific file

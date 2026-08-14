@@ -4,19 +4,19 @@ Hosts are an important concept in `bois`.
 Since `bois` is designed for your personal computers, hosts are configured on a `hostname` basis.
 
 The configuration files for your hosts are located in the `hosts` directory. \
-Imagine having two hosts named `ghost` and `fang` (which are also their respective `hostname`s).
+Imagine having two hosts named `milo` and `cleo` (which are also their respective `hostname`s).
 The directory structure might look something like this:
 
 ```
  📁 traits/
  📂 hosts/
- │ 📂 fang/
+ │ 📂 cleo/
  │ │ 📁 udev/
  │ │ 📁 X11/
  │ │ pacman.conf
  │ │ host.yml
  │ └ vars.yml
- └ 📂 ghost/
+ └ 📂 milo/
    │ host.yml
    └ vars.yml
 ```
@@ -34,7 +34,7 @@ The directory structure might look something like this:
     is_laptop: true
   ```
 - All other files that're located in a host's directory are considered configuration files that should be deployed to the system.
-  In the example above, that would be the `X11` and `udev` folders, as well as the `pacman.conf` for the host `fang` .
+  In the example above, that would be the `X11` and `udev` folders, as well as the `pacman.conf` for the host `cleo` .
 
 Let's look ahead to the next chapter real quick, which will be about [traits](./trait_config.md). Traits are a tool to allow reuse of configuration files across multiple hosts.
 

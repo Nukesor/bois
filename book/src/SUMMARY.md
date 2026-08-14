@@ -6,7 +6,8 @@
 
 - [Installation](guide/installation.md)
 - [Setup](guide/setup.md)
-- [Basic Usage](guide/basic_usage.md)
+- [How to: Dotfiles](guide/how_to_dotfiles.md)
+- [How to: System Provisioning](guide/how_to_system_provisioning.md)
 - [Bois Config](guide/bois_config.md)
 - [Host Config](guide/host_config.md)
 - [Trait Config](guide/trait_config.md)
