@@ -54,11 +54,11 @@ envs:
   PASSWORD_STORE_DIR: ~/.password-store
   GOPASS_SESSION: some-session-token
 
-# Operating mode: User or System
+# Operating mode: user or system
 # User mode deploys to user directories (~/.config)
 # System mode deploys to system directories (/etc)
-# Defaults to System when running as root, User otherwise.
-mode: User
+# Defaults to system when running as root, user otherwise.
+mode: user
 ```
 
 ## Configuration Options
@@ -97,9 +97,9 @@ All fields are optional:
 - `envs`: `Map<String -> String>`
   This can be used to set additional environment variables that should be loaded into bois environment.
   That's useful for password manager integration which often requires special configuration or session variables.
-- `mode`: `User | System` The mode of operatation. By default, this is detected based on the current user: `root` users run in `System` mode while non-root users run in `User` mode.
-  - `User`: Deploy to user directories and perform actions as user, such as running `systemctl` with `--user` flag
-  - `System`: Deploy to system directories and perform actions as root, such as installing packages as root or running `systemctl` as root.
+- `mode`: `user | system` The mode of operation. By default, this is detected based on the current user: `root` users run in `system` mode while non-root users run in `user` mode.
+  - `user`: Deploy to user directories and perform actions as user, such as running `systemctl` with `--user` flag
+  - `system`: Deploy to system directories and perform actions as root, such as installing packages as root or running `systemctl` as root.
 
 ## Modes
 

@@ -17,7 +17,7 @@ pub fn get_host_vars(host_dir: &Path, hostname: &str, config: &HostConfig) -> Re
         host_dir.join("vars.yaml").exists() || host_dir.join("vars.yml").exists();
 
     // We expect vars to a top level map, so yamls consisting of a single array will throw an
-    // error. If no file is found, return an empty map.
+    // error. If no file is found or the file is empty, return an empty map.
     let mut variables = if vars_file_exists {
         let value = read_yaml::<Value>(host_dir, "vars")?;
         match value {

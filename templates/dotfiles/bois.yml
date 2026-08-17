@@ -1,7 +1,11 @@
-# This file is auto generated. It's automatically discovered if the bois
-# directory is one of the default search locations:
+# This file is AUTO GENERATED.
+# It's automatically discovered as long as the bois directory is at one of
+# the default locations:
 # ~/.config/dotfiles, ~/.config/bois, ~/.dotfiles, ~/.dots, ~/.bois
-# Otherwise, copy it to ~/.config/bois/bois.yml and set `bois_dir`.
+#
+# Otherwise, pass it explicitly via
+#
+# `bois --config <path/to/bois.yml>`.
 
 # The name of the machine.
 # If this is not explicitly given, the hostname will be used.
@@ -15,14 +19,14 @@
 # This must be a path to an existing directory.
 #
 # Uses "$XDG_CONFIG_DIR" by default.
-# Fallback to "$~/.config".
+# Fallback to "~/.config".
 #
 # target_dir: "~/.config"
 
 # Cache dir
 #
 # Uses "$XDG_CACHE_DIR/bois" by default.
-# Fallback to "$~/.cach/bois".
+# Fallback to "~/.cache/bois".
 #
 # cache_dir: "~/.cache/bois"
 

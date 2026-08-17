@@ -26,7 +26,7 @@ The `dir.yml` might look like this:
 # Deploy to an absolute path outside the default target directory
 path: /etc/udev/rules.d
 
-# Set ownership and permissions
+# Set ownership and permissions for the directory itself
 owner: root
 group: root
 mode: 0o755
@@ -41,7 +41,10 @@ services:
     - backup.timer
 ```
 
-Now all files inside the `udev` folder will be deployed to `/etc/udev/rules.d` with the specified ownership and permissions.
+Now all files inside the `udev` folder will be deployed to `/etc/udev/rules.d`.
+
+Note that `owner`, `group`, and `mode` only apply to the directory itself, not to the files inside it.
+File ownership and permissions are set per file via its [file config](./file_config.md) block, via the host's/trait's defaults, or fall back to the deploying user.
 
 ## Configuration Options
 

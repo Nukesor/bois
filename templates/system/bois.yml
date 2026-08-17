@@ -1,5 +1,10 @@
-# This file is auto generated and needs to be copied over to
-# /etc/bois/bois.yml to be automatically discovered.
+# This file is AUTO GENERATED.
+#
+# It's automatically discovered as long as it's located at /etc/bois/bois.yml.
+# If your bois directory is somewhere else, copy this file over to
+# /etc/bois/bois.yml and set `bois_dir`, or pass it explicitly via
+#
+# `bois --config <path/to/bois.yml>`.
 
 # The name of the machine.
 # If this is not explicitly given, the hostname will be used.
