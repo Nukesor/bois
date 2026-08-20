@@ -13,8 +13,12 @@ use crate::{
 
 /// The current mode we're running in.
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Mode {
+    // TODO: Keep the aliases for a bit, so that old state files still work.
+    #[serde(alias = "User")]
     User,
+    #[serde(alias = "System")]
     System,
 }
 
@@ -94,30 +98,12 @@ impl RawConfiguration {
     /// pass around the program during runtime.
     pub fn build_configuration(self) -> Result<Configuration> {
         // Determine the hostname of the machine, if it isn't explicitly set.
-        let name = match self.name {
-            Some(name) => name,
-            None => match hostname::get() {
-                Ok(hostname) => hostname.to_string_lossy().to_string(),
-                Err(err) => bail!(
-                    "Failed to determine hostname for machine: {err}
-If this doesn't work, set the machine's name manually in the global bois.yml."
-                ),
-            },
-        };
+        let name = self.resolve_name()?;
 
         // Determine the mode bois should run in.
         // This determines what kind of default directories should be used, which is why we do it
         // very early on.
-        let mode = match self.mode {
-            Some(mode) => mode,
-            None => {
-                if Uid::effective().is_root() {
-                    Mode::System
-                } else {
-                    Mode::User
-                }
-            }
-        };
+        let mode = self.resolve_mode();
 
         // Determine the directory where we should look for the config files.
         let bois_dir = match self.bois_dir {
@@ -195,6 +181,36 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
         })
     }
 
+    /// Determine the name of the machine.
+    /// If it isn't explicitly set, the hostname is used.
+    pub fn resolve_name(&self) -> Result<String> {
+        match &self.name {
+            Some(name) => Ok(name.clone()),
+            None => match hostname::get() {
+                Ok(hostname) => Ok(hostname.to_string_lossy().to_string()),
+                Err(err) => bail!(
+                    "Failed to determine hostname for machine: {err}
+If this doesn't work, set the machine's name manually via your bois.yml."
+                ),
+            },
+        }
+    }
+
+    /// Determine the mode bois should run in.
+    /// If it isn't explicitly set, root runs in system mode, everyone else in user mode.
+    pub fn resolve_mode(&self) -> Mode {
+        match self.mode {
+            Some(mode) => mode,
+            None => {
+                if Uid::effective().is_root() {
+                    Mode::System
+                } else {
+                    Mode::User
+                }
+            }
+        }
+    }
+
     /// Try to read existing config files, while using default values for non-existing fields.
     /// If successful, this will return a full config as well as a boolean on whether we found an
     /// existing configuration file or not.
@@ -216,7 +232,7 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
             let config_dir = if Uid::effective().is_root() {
                 PathBuf::from("/etc/bois")
             } else {
-                find_directory(
+                let dir = find_directory(
                     vec![
                         dirs::config_dir().map(|path| path.join("dotfiles")),
                         dirs::config_dir().map(|path| path.join("bois")),
@@ -226,7 +242,17 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
                     ],
                     "bois config",
                     false,
-                )?
+                );
+
+                // There's no bois directory yet.
+                // This might be due to `bois init` not being called yet.
+                // We just fallback to the default config.
+                let Ok(dir) = dir else {
+                    warn!("No config file found. Using default config.");
+                    return Ok(RawConfiguration::default());
+                };
+
+                dir
             };
 
             // Get the default path for the user's configuration directory.
@@ -235,7 +261,7 @@ If this doesn't work, set the machine's name manually in the global bois.yml."
 
             // Use the default path, if we cannot find any file.
             if !path.exists() || !path.is_file() {
-                warn!("No config file found. Use default config.");
+                warn!("No config file found. Using default config.");
                 // Return a default configuration if we couldn't find a file.
                 return Ok(RawConfiguration::default());
             };

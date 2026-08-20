@@ -22,6 +22,8 @@ pub fn get_host_vars(host_dir: &Path, hostname: &str, config: &HostConfig) -> Re
         let value = read_yaml::<Value>(host_dir, "vars")?;
         match value {
             Value::Mapping(map) => map,
+            // An empty or comment-only vars file deserializes to Null.
+            Value::Null => Mapping::new(),
             _ => bail!("Expected map for variables. Got {value:#?}"),
         }
     } else {

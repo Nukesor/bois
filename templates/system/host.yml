@@ -8,11 +8,11 @@ traits:
 
 # The default permissions for deployed files and directories inside this host directory.
 # Can be overwritten on a directory or filebases deeper down the file hierarchy.
-#defaults:
+#file_defaults:
 #  owner: root
 #  group: root
-#  file_mode: 0o644,
-#  directory_mode: 0o755,
+#  file_mode: 0o644
+#  directory_mode: 0o755
 
 # Which packages should always be installed on this specific host.
 # Check the bois book for supported package managers.

@@ -105,7 +105,7 @@ fn handle_paths(old: &Tree, new: &Tree, changeset: &mut Changeset) -> Result<()>
             // Either missing, or present with a different filetype.
             _ => false,
         };
-        if !still_present {
+        if still_present {
             continue;
         }
 

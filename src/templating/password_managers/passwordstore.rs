@@ -54,7 +54,6 @@ pub fn pass(key: &str, parse_mode: Option<String>) -> Result<Value, Error> {
     // If the first command failed, we just assume that the gpg key hasn't been unlocked
     // and added to gpg-agent yet. We need to give the user a chance to do this.
     if !output.status.success() {
-        println!("Failure the first");
         // Call pass again with the I/O attached to the current process
         // This will result in password prompt to be shown.
         let spawn_result = Command::new("pass")

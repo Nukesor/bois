@@ -1,5 +1,7 @@
-# This file is auto generated and needs to be copied over to
-# /etc/bois/bois.yml to be automatically discovered.
+# This file is auto generated. It's automatically discovered if the bois
+# directory is one of the default search locations:
+# ~/.config/dotfiles, ~/.config/bois, ~/.dotfiles, ~/.dots, ~/.bois
+# Otherwise, copy it to ~/.config/bois/bois.yml and set `bois_dir`.
 
 # The name of the machine.
 # If this is not explicitly given, the hostname will be used.
@@ -38,4 +40,4 @@
 
 # Determine whether bois is running in system configuration mode or in
 # user configuration mode.
-mode: system
+mode: user

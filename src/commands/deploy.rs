@@ -126,7 +126,9 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
 
     if deploy.is_empty() && cleanup.is_empty() {
         println!("Everything is up to date.");
-        desired_state.save()?;
+        if !dry_run {
+            desired_state.save()?;
+        }
         return Ok(());
     }
 

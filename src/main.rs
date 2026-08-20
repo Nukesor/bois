@@ -1,7 +1,7 @@
 use anyhow::Result;
-use bois::{CONFIG, args::Arguments, commands::run_subcommand, config::bois::RawConfiguration};
+use bois::{args::Arguments, commands::run_subcommand, config::bois::RawConfiguration};
 use clap::Parser;
-use log::{LevelFilter, debug};
+use log::LevelFilter;
 use pretty_env_logger::env_logger::Builder;
 
 fn main() -> Result<()> {
@@ -13,19 +13,11 @@ fn main() -> Result<()> {
     // Initalize everything
     init_app(args.verbose)?;
 
-    // Build the final configuration based on the values from the config file.
-    // All other values are populated with default values.
+    // Read the raw configuration file.
+    // The full configuration is built later in `run_subcommand`.
     let raw_config = RawConfiguration::read(&args.config)?;
-    let config = raw_config.build_configuration()?;
 
-    debug!("Running with the following config:\n{config:#?}");
-
-    // Set the config globally.
-    // It's only ever accessed from inside minijinja template functions, which
-    // cannot take extra arguments. See the docs on [CONFIG].
-    CONFIG.set(config.clone()).unwrap();
-
-    run_subcommand(config, &args.subcommand)?;
+    run_subcommand(raw_config, &args.subcommand)?;
 
     Ok(())
 }

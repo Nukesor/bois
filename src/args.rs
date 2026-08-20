@@ -18,11 +18,6 @@ pub struct Arguments {
     #[clap(short, long)]
     pub config: Option<PathBuf>,
 
-    /// The name of the machine.
-    /// This is usually automatically deducted via the hostname.
-    #[clap(short, long)]
-    pub name: Option<String>,
-
     #[command(subcommand)]
     pub subcommand: Subcommand,
 }
