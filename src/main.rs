@@ -10,7 +10,7 @@ fn main() -> Result<()> {
     // Parse commandline options.
     let args = Arguments::parse();
 
-    // Initalize everything
+    // Initialize everything
     init_app(args.verbose)?;
 
     // Read the raw configuration file.

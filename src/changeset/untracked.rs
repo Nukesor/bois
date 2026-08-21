@@ -5,11 +5,16 @@
 //! the bois config, so we inform them before the changes are overwritten or
 //! removed by the deployment.
 //!
-//! This deliberately **doesn't** produce a [super::Changeset].
-//! Nothing in here should ever be executed. It's only displayed to the user.
+//! Changes that are already reflected in the new desired state, however, must
+//! **not** be detected as drift. The user has already absorbed those into the
+//! config and the deployment will leave them untouched anyway.
 //!
-//! TODO: The idea is to (maybe) later on create an `bois absorb` command, which
-//! would go attempt to copy over on-system changes to bude directory.
+//! This module deliberately **doesn't** produce a [super::Changeset].
+//! Nothing that's detected in here should ever be executed. It's only ever
+//! displayed to the user.
+//!
+//! TODO: The idea is to (maybe) later on create a `bois absorb` command, which
+//! would attempt to copy over on-system changes to the bois directory.
 
 use std::path::{Path, PathBuf};
 
@@ -21,7 +26,7 @@ use crate::{
         PackageManager,
         ServiceManager,
         State,
-        path::{DirectoryPermissions, DirectoryState, FileContent, FileState, Node},
+        path::{DirectoryPermissions, DirectoryState, FileContent, FileState, Node, Tree},
     },
     system_state::{
         SystemState,
@@ -85,9 +90,8 @@ pub struct ContentChange {
 
 /// Compare the last-deployed state with the live system.
 ///
-/// `new` (the currently desired state) is only used to filter out scenarios where something
-/// has been removed manually, but is also no longer tracked by bois.
-/// In that case, we don't report the manual removal as drift.
+/// The `new` (desired) state is used to filter out changes that the user has
+/// already integrated into the config.
 pub fn detect_untracked_changes(
     old: &State,
     new: &State,
@@ -95,31 +99,64 @@ pub fn detect_untracked_changes(
 ) -> Result<UntrackedChanges> {
     let mut changes = UntrackedChanges::default();
 
-    handle_paths(old, &mut changes)?;
+    handle_paths(&old.path_tree, &new.path_tree, &mut changes)?;
     handle_packages(old, new, system_state, &mut changes)?;
     handle_services(old, new, system_state, &mut changes)?;
 
     Ok(changes)
 }
 
-fn handle_paths(old: &State, changes: &mut UntrackedChanges) -> Result<()> {
-    for (path, node) in old.path_tree.flatten() {
+fn handle_paths(old: &Tree, new: &Tree, changes: &mut UntrackedChanges) -> Result<()> {
+    for (path, node) in old.flatten() {
+        // The respective node the new state wants at this path, if any.
+        // If this is `None`, the path is no longer desired.
+        let desired = new.get(&path);
+
         match node {
-            Node::File(file) => handle_file(&path, file, changes)?,
-            Node::Directory(dir) => handle_directory(&path, dir, changes)?,
+            Node::File(file) => handle_file(&path, file, desired, changes)?,
+            Node::Directory(dir) => handle_directory(&path, dir, desired, changes)?,
         }
     }
 
     Ok(())
 }
 
-fn handle_file(path: &Path, file: &FileState, changes: &mut UntrackedChanges) -> Result<()> {
+fn handle_file(
+    path: &Path,
+    file: &FileState,
+    desired: Option<&Node>,
+    changes: &mut UntrackedChanges,
+) -> Result<()> {
+    // The file is no longer desired.
+    // Since we're going to abandon/remove it anyway, any on-system changes are moot.
+    let Some(desired) = desired else {
+        return Ok(());
+    };
+
     let live = LiveEntry::read(path)?;
 
+    // The file the new state desires at this path, if it still does.
+    let desired_file = match desired {
+        Node::File(file) => Some(file),
+        _ => None,
+    };
+
     match live {
-        LiveEntry::Missing => changes.deleted_paths.push(path.to_path_buf()),
+        LiveEntry::Missing => {
+            // Only report the deletion if a file is still desired at this path.
+            if desired_file.is_some() {
+                changes.deleted_paths.push(path.to_path_buf());
+            }
+        }
 
         LiveEntry::Directory { .. } | LiveEntry::Symlink | LiveEntry::Special => {
+            // The on-system entry changed type and is not a file.
+            // This may be acceptable if the path has been swapped for a directory in
+            // the config and the on-system change is reflected in the config.
+            if live_entry_satisfies_desired(path, desired, &live)? {
+                return Ok(());
+            }
+
             // `Missing` is the only entry without a filetype and it's handled above.
             if let Some(live) = live.file_type() {
                 changes.changed_paths.push(PathChange {
@@ -133,17 +170,35 @@ fn handle_file(path: &Path, file: &FileState, changes: &mut UntrackedChanges) ->
         }
 
         LiveEntry::File { mode, owner, group } => {
+            // Handle the case that the desired filetype changed.
+            // Due to this, the file will be replaced anyway and any on-system
+            // changes are moot.
+            let Some(desired_file) = desired_file else {
+                return Ok(());
+            };
+
             let live_content = read_live_content(path)?;
 
-            let content =
-                (file.content.bytes() != live_content.as_slice()).then(|| ContentChange {
+            // Check for differences in the actual file content.
+            // If any are detected, they're only reported if the new on-system state differs from
+            // the desired state.
+            let content_absorbed = desired_file.content.bytes() == live_content.as_slice();
+            let mode_absorbed = desired_file.mode == mode;
+            let owner_absorbed = desired_file.owner == owner;
+            let group_absorbed = desired_file.group == group;
+
+            let content = (file.content.bytes() != live_content.as_slice() && !content_absorbed)
+                .then(|| ContentChange {
                     deployed: file.content.clone(),
                     live: live_content,
                 });
-            let mode = (mode != file.mode).then_some((file.mode, mode));
-            let owner = (owner != file.owner).then(|| (file.owner.clone(), owner.clone()));
-            let group = (group != file.group).then(|| (file.group.clone(), group.clone()));
+            let mode = (mode != file.mode && !mode_absorbed).then_some((file.mode, mode));
+            let owner = (owner != file.owner && !owner_absorbed)
+                .then(|| (file.owner.clone(), owner.clone()));
+            let group = (group != file.group && !group_absorbed)
+                .then(|| (file.group.clone(), group.clone()));
 
+            // Only report the path if at least one field changed to a value that isn't desired.
             if content.is_some() || mode.is_some() || owner.is_some() || group.is_some() {
                 changes.changed_paths.push(PathChange {
                     path: path.to_path_buf(),
@@ -164,8 +219,15 @@ fn handle_file(path: &Path, file: &FileState, changes: &mut UntrackedChanges) ->
 fn handle_directory(
     path: &Path,
     dir: &DirectoryState,
+    desired: Option<&Node>,
     changes: &mut UntrackedChanges,
 ) -> Result<()> {
+    // The directory is no longer desired.
+    // Since we're going to abandon/remove it anyway, any on-system changes are moot.
+    let Some(desired) = desired else {
+        return Ok(());
+    };
+
     // Implicit directories aren't managed: their existence and metadata are
     // none of our business.
     let Some(meta) = dir.meta() else {
@@ -177,11 +239,40 @@ fn handle_directory(
         DirectoryPermissions::Default => (None, &None, &None),
     };
 
+    // The directory the new state wants at this path, if it still wants one.
+    let desired_dir = match desired {
+        Node::Directory(dir) => Some(dir),
+        _ => None,
+    };
+    // The new state's declared permissions for this path.
+    let (desired_mode, desired_owner, desired_group) = match desired_dir
+        .and_then(|dir| dir.meta())
+        .map(|meta| &meta.permissions)
+    {
+        Some(DirectoryPermissions::Declared { mode, owner, group }) => {
+            (*mode, owner.as_ref(), group.as_ref())
+        }
+        _ => (None, None, None),
+    };
+
     let live = LiveEntry::read(path)?;
 
     match live {
-        LiveEntry::Missing => changes.deleted_paths.push(path.to_path_buf()),
-        LiveEntry::File { .. } | LiveEntry::Special => {
+        LiveEntry::Missing => {
+            // Only report the deletion if a directory is still desired at this path.
+            if desired_dir.is_some() {
+                changes.deleted_paths.push(path.to_path_buf());
+            }
+        }
+
+        LiveEntry::File { .. } | LiveEntry::Symlink | LiveEntry::Special => {
+            // The on-system entry changed type and is no longer a directory.
+            // This may be acceptable if the path has been swapped for a file in
+            // the config and the on-system change is reflected in the config.
+            if live_entry_satisfies_desired(path, desired, &live)? {
+                return Ok(());
+            }
+
             // `Missing` is the only entry without a filetype and it's handled above.
             if let Some(live) = live.file_type() {
                 changes.changed_paths.push(PathChange {
@@ -194,41 +285,34 @@ fn handle_directory(
             }
         }
 
-        LiveEntry::Symlink => {
-            // Symlinks are accepted, as long as they point to a direcetory and no explicit
-            // permissions are declared for the path.
-            let is_explicit =
-                declared_mode.is_some() || declared_owner.is_some() || declared_group.is_some();
-            if !is_explicit && points_to_directory(path)? {
-                return Ok(());
-            }
-
-            changes.changed_paths.push(PathChange {
-                path: path.to_path_buf(),
-                change: PathChangeKind::FileTypeChanged {
-                    deployed: FileType::Directory,
-                    live: FileType::Symlink,
-                },
-            });
-        }
-
         LiveEntry::Directory {
             mode: live_mode,
             owner: live_owner,
             group: live_group,
         } => {
-            // Undeclared fields were derived from defaults and aren't
-            // actively managed, so their drift isn't reported.
+            // Handle the case that the desired filetype changed.
+            // Due to this, the directory will be replaced anyway and any
+            // on-system changes are moot.
+            if desired_dir.is_none() {
+                return Ok(());
+            }
+
+            // Only explicitly declared permissions are managed by us.
+            // Check which of these no longer match the on-system state and
+            // also don't match the desired state.
             let mode = declared_mode
                 .filter(|declared| live_mode != *declared)
+                .filter(|_| desired_mode.is_some_and(|d| d != live_mode))
                 .map(|declared| (declared, live_mode));
             let owner = declared_owner
                 .as_ref()
                 .filter(|declared| &live_owner != *declared)
+                .filter(|_| desired_owner.is_some_and(|d| d != &live_owner))
                 .map(|declared| (declared.clone(), live_owner.clone()));
             let group = declared_group
                 .as_ref()
                 .filter(|declared| &live_group != *declared)
+                .filter(|_| desired_group.is_some_and(|d| d != &live_group))
                 .map(|declared| (declared.clone(), live_group.clone()));
 
             if mode.is_some() || owner.is_some() || group.is_some() {
@@ -246,6 +330,36 @@ fn handle_directory(
     }
 
     Ok(())
+}
+
+/// Whether the deployment will keep the live entry at this path in place.
+///
+/// Only called for entries whose live filetype no longer matches the previously deployed one.
+/// This is used to filter out filetype changes that were already (at least partially) absorbed
+/// into the config, e.g. a deployed file that was manually replaced with a directory while the
+/// new state also desires a directory.
+///
+/// Content and metadata of entries isn't inspected here. That's done during the deploy step.
+fn live_entry_satisfies_desired(path: &Path, desired: &Node, live: &LiveEntry) -> Result<bool> {
+    let satisfied = match (desired, live) {
+        // A desired file/directory is satisfied by any live entry of the same filetype.
+        (Node::File(_), LiveEntry::File { .. })
+        | (Node::Directory(_), LiveEntry::Directory { .. }) => true,
+        // A desired directory is satisfied by a dir-pointing symlink, unless permissions are
+        // declared. This mirrors the deploy comparison's symlink handling.
+        (Node::Directory(dir), LiveEntry::Symlink) => {
+            let is_explicit = match dir.meta().map(|meta| &meta.permissions) {
+                Some(DirectoryPermissions::Declared { mode, owner, group }) => {
+                    mode.is_some() || owner.is_some() || group.is_some()
+                }
+                _ => false,
+            };
+            !is_explicit && points_to_directory(path)?
+        }
+        _ => false,
+    };
+
+    Ok(satisfied)
 }
 
 /// Report any packages that were deployed, are still desired, but have been

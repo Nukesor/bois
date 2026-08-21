@@ -2,7 +2,7 @@ use std::{collections::BTreeSet, process::Command};
 
 use anyhow::{Context, Result, bail};
 
-/// Get the list of **exlicitly** installed foreign (AUR) packages on the system.
+/// Get the list of **explicitly** installed foreign (AUR) packages on the system.
 /// Ignore packages that are installed as a dependency, as they might be removed at any point in
 /// time when another package is uninstalled as a side-effect.
 pub fn explicit_packages() -> Result<BTreeSet<String>> {
@@ -14,7 +14,7 @@ pub fn explicit_packages() -> Result<BTreeSet<String>> {
 
     if !output.status.success() {
         bail!(
-            "Failed to get foreing pacman packages:\nStdout: {}\nStderr: {}",
+            "Failed to get foreign pacman packages:\nStdout: {}\nStderr: {}",
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr),
         );

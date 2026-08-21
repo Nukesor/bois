@@ -1,4 +1,4 @@
-//! This module contains all actual config formats, including acutal configuration files, the global
+//! This module contains all actual config formats, including actual configuration files, the global
 //! configuration, as well as inlined file configuration.
 
 pub mod bois;

@@ -62,7 +62,7 @@ impl FileConfig {
 /// See: <https://docs.rs/minijinja/latest/minijinja/syntax/struct.SyntaxConfig.html>
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Delimiters {
-    /// Use this to prefix the start element of each delimiter type with this tring.
+    /// Use this to prefix the start element of each delimiter type with this string.
     ///
     /// This is useful to prevent clashes with in-file syntax.
     /// E.g. the `#` prefix will make the templating appear as a comment for

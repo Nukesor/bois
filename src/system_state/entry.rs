@@ -66,11 +66,13 @@ impl LiveEntry {
             }
         };
 
+        // Symlink handling.
         let metadata_type = metadata.file_type();
         if metadata_type.is_symlink() {
             return Ok(LiveEntry::Symlink);
         }
 
+        // Directory and file handling
         if metadata_type.is_dir() || metadata_type.is_file() {
             let mode = mask_mode(metadata.permissions().mode());
             let owner = user_name(metadata.uid());
@@ -82,6 +84,7 @@ impl LiveEntry {
                 Ok(LiveEntry::File { mode, owner, group })
             }
         } else {
+            // Other special filetypes which we don't manage
             Ok(LiveEntry::Special)
         }
     }

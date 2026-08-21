@@ -2,7 +2,7 @@ use std::{collections::BTreeSet, process::Command};
 
 use anyhow::{Context, Result, bail};
 
-/// Get the list of **exlicitly** installed **native** (non-AUR) packages on the system.
+/// Get the list of **explicitly** installed **native** (non-AUR) packages on the system.
 /// Ignore packages that are installed as a dependency, as they might be removed at any point in
 /// time when another package is uninstalled as a side-effect.
 pub fn explicit_packages() -> Result<BTreeSet<String>> {

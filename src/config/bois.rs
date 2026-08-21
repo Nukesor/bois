@@ -94,7 +94,7 @@ pub struct Configuration {
 impl RawConfiguration {
     /// This function takes a [RawConfiguration] from a deserialized config file and populates all
     /// values that haven't explicitly set.
-    /// The resulting [Configuration] no longer has any `Option`als, which makes it convenient to
+    /// The resulting [Configuration] no longer has any `Option`s, which makes it convenient to
     /// pass around the program during runtime.
     pub fn build_configuration(self) -> Result<Configuration> {
         // Determine the hostname of the machine, if it isn't explicitly set.
@@ -228,7 +228,8 @@ If this doesn't work, set the machine's name manually via your bois.yml."
 
             path.clone()
         } else {
-            // If bois is running as root, we assume that it's used te
+            // If bois is running as root, we assume that it's used to configure the system and not
+            // to manage dotfiles.
             let config_dir = if Uid::effective().is_root() {
                 PathBuf::from("/etc/bois")
             } else {

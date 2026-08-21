@@ -45,7 +45,7 @@ pub fn get_host_vars(host_dir: &Path, hostname: &str, config: &HostConfig) -> Re
         serde_yaml::to_value(config.traits.clone()).unwrap(),
     );
 
-    // Insert environment dependant variables, specifically which user currently executes boi.
+    // Insert environment dependent variables, specifically which user currently executes boi.
     variables.insert(
         serde_yaml::to_value("USER_ID").unwrap(),
         serde_yaml::to_value(Uid::current().as_raw()).unwrap(),
