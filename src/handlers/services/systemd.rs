@@ -4,7 +4,7 @@ use anyhow::{Context, Result, bail};
 
 use crate::{
     changeset::{ServiceDisable, ServiceEnable},
-    config::bois::Mode,
+    config::bois::RunMode,
     state::ServiceManager,
     system_state::SystemState,
 };
@@ -67,9 +67,9 @@ pub(super) fn disable_services(
 /// Run a systemctl subcommand on a single unit.
 ///
 /// In user mode, the user's own systemd instance is targeted via `--user`.
-fn systemctl(mode: Mode, args: &[&str], unit: &str) -> Result<()> {
+fn systemctl(mode: RunMode, args: &[&str], unit: &str) -> Result<()> {
     let mut full_args: Vec<&str> = Vec::new();
-    if mode == Mode::User {
+    if mode == RunMode::User {
         full_args.push("--user");
     }
     full_args.extend(args);

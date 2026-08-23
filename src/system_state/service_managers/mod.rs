@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use anyhow::Result;
 
-use crate::{config::bois::Mode, state::ServiceManager};
+use crate::{config::bois::RunMode, state::ServiceManager};
 
 mod systemd;
 
@@ -21,7 +21,12 @@ impl SystemServices {
     /// static systemd units.
     ///
     /// Services whose unit doesn't exist count as "not enabled".
-    pub fn is_enabled(&mut self, manager: ServiceManager, name: &str, mode: Mode) -> Result<bool> {
+    pub fn is_enabled(
+        &mut self,
+        manager: ServiceManager,
+        name: &str,
+        mode: RunMode,
+    ) -> Result<bool> {
         let cache = self.enabled.entry(manager).or_default();
         if let Some(enabled) = cache.get(name) {
             return Ok(*enabled);
@@ -36,7 +41,12 @@ impl SystemServices {
     }
 
     /// Whether the given service is currently running.
-    pub fn is_active(&mut self, manager: ServiceManager, name: &str, mode: Mode) -> Result<bool> {
+    pub fn is_active(
+        &mut self,
+        manager: ServiceManager,
+        name: &str,
+        mode: RunMode,
+    ) -> Result<bool> {
         let cache = self.active.entry(manager).or_default();
         if let Some(active) = cache.get(name) {
             return Ok(*active);

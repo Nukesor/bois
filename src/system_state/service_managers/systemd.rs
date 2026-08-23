@@ -2,7 +2,7 @@ use std::process::Command;
 
 use anyhow::{Context, Result};
 
-use crate::config::bois::Mode;
+use crate::config::bois::RunMode;
 
 /// The systemd unit file states that need no enablement by bois.
 ///
@@ -23,7 +23,7 @@ const ENABLED_STATES: [&str; 7] = [
 ///
 /// A unit that doesn't (yet) exist counts as "not enabled". This may happen when a unit's
 /// unit file will be installed/deployed in the very same run.
-pub(super) fn is_enabled(name: &str, mode: Mode) -> Result<bool> {
+pub(super) fn is_enabled(name: &str, mode: RunMode) -> Result<bool> {
     let output = systemctl_command(mode)
         .args(["is-enabled", name])
         .output()
@@ -41,7 +41,7 @@ pub(super) fn is_enabled(name: &str, mode: Mode) -> Result<bool> {
 /// Check whether a systemd unit is currently active.
 ///
 /// Unknown units simply count as inactive.
-pub(super) fn is_active(name: &str, mode: Mode) -> Result<bool> {
+pub(super) fn is_active(name: &str, mode: RunMode) -> Result<bool> {
     let output = systemctl_command(mode)
         .args(["is-active", "--quiet", name])
         .output()
@@ -51,9 +51,9 @@ pub(super) fn is_active(name: &str, mode: Mode) -> Result<bool> {
 }
 
 /// Build a `systemctl` invocation for the given mode.
-fn systemctl_command(mode: Mode) -> Command {
+fn systemctl_command(mode: RunMode) -> Command {
     let mut command = Command::new("systemctl");
-    if mode == Mode::User {
+    if mode == RunMode::User {
         command.arg("--user");
     }
     command

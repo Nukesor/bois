@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use anyhow::Result;
 
 use crate::{
-    config::bois::Mode,
+    config::bois::RunMode,
     state::{PackageManager, ServiceManager},
     system_state::{package_managers::SystemPackages, service_managers::SystemServices},
 };
@@ -26,13 +26,13 @@ pub struct SystemState {
     /// The mode bois runs in.
     /// - User mode: target the user's services
     /// - System mode: target system-wide services.
-    mode: Mode,
+    mode: RunMode,
     packages: SystemPackages,
     services: SystemServices,
 }
 
 impl SystemState {
-    pub fn new(mode: Mode) -> Result<Self> {
+    pub fn new(mode: RunMode) -> Result<Self> {
         Ok(SystemState {
             mode,
             packages: SystemPackages::default(),
@@ -41,7 +41,7 @@ impl SystemState {
     }
 
     /// The mode bois runs in (user vs. system configuration).
-    pub fn mode(&self) -> Mode {
+    pub fn mode(&self) -> RunMode {
         self.mode
     }
 

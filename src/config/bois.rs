@@ -14,7 +14,7 @@ use crate::{
 /// The current mode we're running in.
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Mode {
+pub enum RunMode {
     // TODO: Keep the aliases for a bit, so that old state files still work.
     #[serde(alias = "User")]
     User,
@@ -55,7 +55,7 @@ pub struct RawConfiguration {
 
     /// Determine whether bois is running in system configuration mode or in
     /// user configuration mode.
-    pub mode: Option<Mode>,
+    pub mode: Option<RunMode>,
 }
 
 /// All high-level settings that're required to run bois.
@@ -88,7 +88,7 @@ pub struct Configuration {
 
     /// Determine whether bois is running in system configuration mode or in
     /// user configuration mode.
-    pub mode: Mode,
+    pub mode: RunMode,
 }
 
 impl RawConfiguration {
@@ -109,7 +109,7 @@ impl RawConfiguration {
         let bois_dir = match self.bois_dir {
             Some(dir) => expand_home(&dir),
             None => match mode {
-                Mode::User => find_directory(
+                RunMode::User => find_directory(
                     vec![
                         dirs::config_dir().map(|path| path.join("dotfiles")),
                         dirs::config_dir().map(|path| path.join("bois")),
@@ -120,7 +120,7 @@ impl RawConfiguration {
                     "bois config",
                     false,
                 )?,
-                Mode::System => PathBuf::from("/etc/bois"),
+                RunMode::System => PathBuf::from("/etc/bois"),
             },
         };
 
@@ -128,7 +128,7 @@ impl RawConfiguration {
         let target_dir = match self.target_dir {
             Some(dir) => expand_home(&dir),
             None => match mode {
-                Mode::User => find_directory(
+                RunMode::User => find_directory(
                     vec![
                         dirs::config_dir(),
                         dirs::home_dir().map(|path| path.join(".config")),
@@ -136,7 +136,7 @@ impl RawConfiguration {
                     "target",
                     true,
                 )?,
-                Mode::System => PathBuf::from("/etc"),
+                RunMode::System => PathBuf::from("/etc"),
             },
         };
 
@@ -144,12 +144,12 @@ impl RawConfiguration {
         let cache_dir = match self.cache_dir {
             Some(dir) => expand_home(&dir),
             None => match mode {
-                Mode::User => find_directory(
+                RunMode::User => find_directory(
                     vec![dirs::cache_dir().map(|path| path.join("bois"))],
                     "bois cache",
                     true,
                 )?,
-                Mode::System => PathBuf::from("/var/lib/bois"),
+                RunMode::System => PathBuf::from("/var/lib/bois"),
             },
         };
 
@@ -157,7 +157,7 @@ impl RawConfiguration {
         let runtime_dir = match self.runtime_dir {
             Some(dir) => expand_home(&dir),
             None => match mode {
-                Mode::User => find_directory(
+                RunMode::User => find_directory(
                     vec![
                         dirs::runtime_dir().map(|path| path.join("bois")),
                         dirs::cache_dir().map(|path| path.join("bois")),
@@ -166,7 +166,7 @@ impl RawConfiguration {
                     "bois runtime",
                     true,
                 )?,
-                Mode::System => PathBuf::from("/var/lib/bois"),
+                RunMode::System => PathBuf::from("/var/lib/bois"),
             },
         };
 
@@ -198,14 +198,14 @@ If this doesn't work, set the machine's name manually via your bois.yml."
 
     /// Determine the mode bois should run in.
     /// If it isn't explicitly set, root runs in system mode, everyone else in user mode.
-    pub fn resolve_mode(&self) -> Mode {
+    pub fn resolve_mode(&self) -> RunMode {
         match self.mode {
             Some(mode) => mode,
             None => {
                 if Uid::effective().is_root() {
-                    Mode::System
+                    RunMode::System
                 } else {
-                    Mode::User
+                    RunMode::User
                 }
             }
         }

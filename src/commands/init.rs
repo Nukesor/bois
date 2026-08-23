@@ -8,7 +8,7 @@ use anyhow::{Context, Result};
 use serde_yaml::{Mapping, Value};
 
 use crate::{
-    config::bois::{Mode, RawConfiguration},
+    config::bois::{RawConfiguration, RunMode},
     templating::render_template,
 };
 
@@ -46,8 +46,8 @@ pub fn run_init(raw_config: RawConfiguration, directory: &Option<PathBuf>) -> Re
 
     // Read template files based on config mode.
     let (bois_content, host_content, trait_content) = match mode {
-        Mode::User => (user::BOIS, user::HOST, user::TRAIT),
-        Mode::System => (system::BOIS, system::HOST, system::TRAIT),
+        RunMode::User => (user::BOIS, user::HOST, user::TRAIT),
+        RunMode::System => (system::BOIS, system::HOST, system::TRAIT),
     };
 
     let mut variables = Mapping::new();
