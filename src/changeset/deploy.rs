@@ -52,7 +52,7 @@ pub fn deploy_changeset(desired: &State, system_state: &mut SystemState) -> Resu
 /// - A directory's subtree is contiguous.
 fn handle_paths(desired: &Tree, changeset: &mut Changeset) -> Result<()> {
     // The root of the last directory subtree that will be created from scratch during
-    // execution. Either nothing exists at that path yet, or a conflicting entry (e.g. a
+    // execution. Either nothing exists at that path yet, or a conflicting live entry (e.g. a
     // symlink) gets deleted and replaced with a new directory.
     //
     // Either way, nothing can exist below that path once the directory is created, so all
@@ -124,7 +124,7 @@ fn handle_file(
             changeset.path_operations.push(create());
         }
         LiveEntry::Symlink | LiveEntry::Special => {
-            // `Missing` is the only entry without a filetype and it's handled above.
+            // `Missing` is the only live entry without a filetype and it's handled above.
             if let Some(found) = live.file_type() {
                 changeset
                     .path_operations
@@ -241,7 +241,7 @@ fn handle_directory(
         // The path exists, but isn't a directory.
         // Delete the conflicting path and create the directory.
         LiveEntry::File { .. } | LiveEntry::Special => {
-            // `Missing` is the only entry without a filetype and it's handled above.
+            // `Missing` is the only live entry without a filetype and it's handled above.
             if let Some(found) = live.file_type() {
                 changeset
                     .path_operations

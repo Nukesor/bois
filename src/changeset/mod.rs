@@ -133,7 +133,7 @@ impl PathOperation {
     }
 }
 
-/// The filetype of an entry on the live filesystem.
+/// The filetype of a live entry on the filesystem.
 ///
 /// Mirrors [`std::fs::FileType`], plus `Special` for sockets, devices and other special files.
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq)]
@@ -168,12 +168,12 @@ pub enum FileOperation {
     /// Delete a previously deployed file that is no longer part of the desired
     /// state.
     Cleanup { path: PathBuf },
-    /// A conflict with an unmanaged non-directory entry has been detected.
+    /// A conflict with an unmanaged non-directory live entry has been detected.
     ///
     /// This will be reported to the user and afterwards removed.
     Conflict {
         path: PathBuf,
-        /// The filetype of the entry that conflicts with our path.
+        /// The filetype of the live entry that conflicts with our path.
         found: FileType,
     },
 }
@@ -206,7 +206,7 @@ pub enum DirectoryOperation {
     /// This will be reported to the user and afterwards removed.
     Conflict {
         path: PathBuf,
-        /// The filetype of the entry that conflicts with our path.
+        /// The filetype of the live entry that conflicts with our path.
         found: FileType,
     },
 }

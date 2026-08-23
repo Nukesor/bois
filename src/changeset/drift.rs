@@ -150,14 +150,14 @@ fn handle_file(
         }
 
         LiveEntry::Directory { .. } | LiveEntry::Symlink | LiveEntry::Special => {
-            // The on-system entry changed type and is not a file.
+            // The live entry changed type and is not a file.
             // This may be acceptable if the path has been swapped for a directory in
             // the config and the on-system change is reflected in the config.
             if live_entry_satisfies_desired(path, desired, &live)? {
                 return Ok(());
             }
 
-            // `Missing` is the only entry without a filetype and it's handled above.
+            // `Missing` is the only live entry without a filetype and it's handled above.
             if let Some(live) = live.file_type() {
                 changes.changed_paths.push(PathChange {
                     path: path.to_path_buf(),
@@ -266,14 +266,14 @@ fn handle_directory(
         }
 
         LiveEntry::File { .. } | LiveEntry::Symlink | LiveEntry::Special => {
-            // The on-system entry changed type and is no longer a directory.
+            // The live entry changed type and is no longer a directory.
             // This may be acceptable if the path has been swapped for a file in
             // the config and the on-system change is reflected in the config.
             if live_entry_satisfies_desired(path, desired, &live)? {
                 return Ok(());
             }
 
-            // `Missing` is the only entry without a filetype and it's handled above.
+            // `Missing` is the only live entry without a filetype and it's handled above.
             if let Some(live) = live.file_type() {
                 changes.changed_paths.push(PathChange {
                     path: path.to_path_buf(),
@@ -334,12 +334,12 @@ fn handle_directory(
 
 /// Whether the deployment will keep the live entry at this path in place.
 ///
-/// Only called for entries whose live filetype no longer matches the previously deployed one.
+/// Only called for nodes whose live filetype no longer matches the previously deployed one.
 /// This is used to filter out filetype changes that were already (at least partially) adopted
 /// into the config, e.g. a deployed file that was manually replaced with a directory while the
 /// desired state also wants a directory.
 ///
-/// Content and metadata of entries isn't inspected here. That's done during the deploy step.
+/// Content and metadata of nodes isn't inspected here. That's done during the deploy step.
 fn live_entry_satisfies_desired(path: &Path, desired: &Node, live: &LiveEntry) -> Result<bool> {
     let satisfied = match (desired, live) {
         // A desired file/directory is satisfied by any live entry of the same filetype.

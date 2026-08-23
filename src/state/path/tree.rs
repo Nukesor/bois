@@ -33,15 +33,17 @@ pub enum Node {
 pub struct DirectoryState {
     /// Whether a source directory "backs" this directory, and if so with what settings.
     pub backing: DirectoryBacking,
-    pub entries: BTreeMap<String, Node>,
+    // TODO(backwards compatibility): alias
+    #[serde(alias = "entries")]
+    pub children: BTreeMap<String, Node>,
     /// Where this directory came from. For implicit directories this points at
-    /// the source entry whose target path caused the directory to exist.
+    /// the source of the node whose target path caused the directory to exist.
     pub source: Source,
 }
 
 impl DirectoryState {
     /// Whether this directory only exists as a parent component of some other
-    /// entry's target path, without a source directory backing it.
+    /// node's target path, without a source directory backing it.
     pub fn is_implicit(&self) -> bool {
         matches!(self.backing, DirectoryBacking::Implicit)
     }
@@ -64,7 +66,7 @@ pub enum DirectoryBacking {
     /// A real directory in a host/trait source tree, with its resolved
     /// permission management and cleanup settings.
     Backed(DirectoryMeta),
-    /// Only exists as a parent component of some other entry's target path
+    /// Only exists as a parent component of some other node's target path
     /// For example, `/etc` would be implicit for `/etc/udev/rules.d/`.
     Implicit,
 }
@@ -112,7 +114,7 @@ impl Display for Origin {
     }
 }
 
-/// Describes where an entry in the [Tree] originated, so conflicts and diffs
+/// Describes where a node in the [Tree] originated, so conflicts and diffs
 /// can point the user to the actual files that caused issues.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
@@ -151,7 +153,7 @@ impl Node {
 
     /// Describe this node for conflict messages.
     /// Implicit directories don't exist in any source directory, so they
-    /// name the entry whose target path caused them instead.
+    /// name the node whose target path caused them instead.
     fn describe(&self) -> String {
         match self {
             Node::File(file) => format!("file from {}", file.source),
@@ -173,15 +175,15 @@ impl Tree {
     pub fn get(&self, path: &Path) -> Option<&Node> {
         let (parent_components, name) = Self::split_absolute_path(path, None).ok()?;
 
-        let mut entries = &self.root;
+        let mut children = &self.root;
         for component in parent_components {
-            match entries.get(&component) {
-                Some(Node::Directory(dir)) => entries = &dir.entries,
+            match children.get(&component) {
+                Some(Node::Directory(dir)) => children = &dir.children,
                 _ => return None,
             }
         }
 
-        entries.get(&name)
+        children.get(&name)
     }
 
     /// Remove the node at the given absolute path from the tree.
@@ -191,15 +193,15 @@ impl Tree {
     pub fn remove(&mut self, path: &Path) -> Option<Node> {
         let (parent_components, name) = Self::split_absolute_path(path, None).ok()?;
 
-        let mut entries = &mut self.root;
+        let mut children = &mut self.root;
         for component in parent_components {
-            match entries.get_mut(&component) {
-                Some(Node::Directory(dir)) => entries = &mut dir.entries,
+            match children.get_mut(&component) {
+                Some(Node::Directory(dir)) => children = &mut dir.children,
                 _ => return None,
             }
         }
 
-        entries.remove(&name)
+        children.remove(&name)
     }
 
     /// Insert a fully resolved file at an absolute target path.
@@ -209,15 +211,15 @@ impl Tree {
     ///
     /// ## Errors
     ///
-    /// Errors if the target path is already occupied by a conflicting entry.
+    /// Errors if the target path is already occupied by a conflicting node.
     pub fn insert_file(&mut self, target: &Path, file: FileState) -> Result<(), Error> {
         let (parent_components, file_name) = Self::split_absolute_path(target, Some(&file.source))?;
 
-        let entries = self.ensure_directory_chain(target, &parent_components, &file.source)?;
+        let children = self.ensure_directory_chain(target, &parent_components, &file.source)?;
 
-        match entries.get(&file_name) {
+        match children.get(&file_name) {
             None => {
-                entries.insert(file_name, Node::File(file));
+                children.insert(file_name, Node::File(file));
                 Ok(())
             }
             Some(existing) => Err(Self::conflict(
@@ -256,7 +258,7 @@ impl Tree {
                     dir_name,
                     Node::Directory(DirectoryState {
                         backing: DirectoryBacking::Backed(meta),
-                        entries: BTreeMap::new(),
+                        children: BTreeMap::new(),
                         source,
                     }),
                 );
@@ -408,7 +410,7 @@ impl Tree {
 
     fn conflict(target: &Path, existing: &Node, new: String) -> Error {
         Error::PathConflict(format!(
-            "Duplicate entries for target path {target:?}:\n  - {existing}\n  - {new}",
+            "Duplicate declarations for target path {target:?}:\n  - {existing}\n  - {new}",
             existing = existing.describe()
         ))
     }
@@ -431,14 +433,14 @@ impl Tree {
     // [Tree::flatten].
     fn flatten_level<'a>(
         prefix: &Path,
-        entries: &'a BTreeMap<String, Node>,
+        children: &'a BTreeMap<String, Node>,
         result: &mut Vec<(PathBuf, &'a Node)>,
     ) {
-        for (name, node) in entries {
+        for (name, node) in children {
             let path = prefix.join(name);
             result.push((path.clone(), node));
             if let Node::Directory(dir) = node {
-                Self::flatten_level(&path, &dir.entries, result);
+                Self::flatten_level(&path, &dir.children, result);
             }
         }
     }
@@ -446,7 +448,7 @@ impl Tree {
     /// Walk down the tree along the given parent components, creating missing directories on the
     /// way.
     ///
-    /// Returns the entry map of the last parent directory.
+    /// Returns the child map of the last parent directory.
     ///
     /// ## Errors
     ///
@@ -458,33 +460,33 @@ impl Tree {
         source: &Source,
     ) -> Result<&mut BTreeMap<String, Node>, Error> {
         // Start at the root of the
-        let mut entries = &mut self.root;
+        let mut children = &mut self.root;
         let mut current_path = PathBuf::from("/");
 
         for component in components {
             current_path.push(component);
 
-            let node = entries.entry(component.clone()).or_insert_with(|| {
+            let node = children.entry(component.clone()).or_insert_with(|| {
                 Node::Directory(DirectoryState {
                     backing: DirectoryBacking::Implicit,
-                    entries: BTreeMap::new(),
+                    children: BTreeMap::new(),
                     source: source.clone(),
                 })
             });
 
             match node {
-                Node::Directory(dir) => entries = &mut dir.entries,
+                Node::Directory(dir) => children = &mut dir.children,
                 Node::File(file) => {
                     return Err(Error::PathConflict(format!(
                         "Path component {current_path:?} of target {target:?} is already a file.\n  \
-                     - existing file: {}\n  - conflicting entry: {source}",
+                     - existing file: {}\n  - conflicting declaration: {source}",
                         file.source
                     )));
                 }
             }
         }
 
-        Ok(entries)
+        Ok(children)
     }
 
     /// Split an absolute path into its parent components and the final component.

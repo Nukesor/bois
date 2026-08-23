@@ -157,7 +157,7 @@ const ROOT_MARKER_FILES: [&str; 6] = [
 ];
 
 /// Walk the top level of a host/trait source directory and insert all
-/// deployable entries into the tree.
+/// deployable nodes into the tree.
 ///
 /// Services that're declared by `dir.yml` files along the way are merged into `services`.
 ///
