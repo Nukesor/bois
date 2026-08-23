@@ -10,6 +10,7 @@ use crossterm::style::Stylize;
 use crate::{
     changeset::{
         DirectoryOperation,
+        Drift,
         FileOperation,
         PackageInstall,
         PackageUninstall,
@@ -18,7 +19,6 @@ use crate::{
         PathOperation,
         ServiceDisable,
         ServiceEnable,
-        UntrackedChanges,
     },
     config::bois::Configuration,
     constants::{CURRENT_GROUP, CURRENT_USER},
@@ -278,10 +278,10 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
 /// Print everything that changed on the system since the last deployment.
 /// Diff direction is deployed (old) -> live (new): the diff shows what the
 /// user changed on their system.
-pub fn print_untracked_changes(changes: &UntrackedChanges, config: &Configuration) -> Result<()> {
-    print_header("Untracked changes on the system since the last deploy");
+pub fn print_drift(drift: &Drift, config: &Configuration) -> Result<()> {
+    print_header("Drift on the system since the last deploy");
 
-    for PathChange { path, change } in &changes.changed_paths {
+    for PathChange { path, change } in &drift.changed_paths {
         match change {
             PathChangeKind::FileTypeChanged { deployed, live } => {
                 println!(
@@ -323,7 +323,7 @@ pub fn print_untracked_changes(changes: &UntrackedChanges, config: &Configuratio
         }
     }
 
-    for path in &changes.deleted_paths {
+    for path in &drift.deleted_paths {
         println!(
             "{} {}: was deployed, no longer exists",
             "Deleted".red().bold(),
@@ -331,7 +331,7 @@ pub fn print_untracked_changes(changes: &UntrackedChanges, config: &Configuratio
         );
     }
 
-    for (manager, package) in &changes.removed_packages {
+    for (manager, package) in &drift.removed_packages {
         println!(
             "{} package {} ({manager}): still configured, will be re-installed",
             "Removed".red().bold(),
@@ -339,7 +339,7 @@ pub fn print_untracked_changes(changes: &UntrackedChanges, config: &Configuratio
         );
     }
 
-    for (manager, service) in &changes.disabled_services {
+    for (manager, service) in &drift.disabled_services {
         println!(
             "{} service {} ({manager}): still configured, will be re-enabled",
             "Disabled".red().bold(),

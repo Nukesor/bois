@@ -1,6 +1,6 @@
 //! Comparison 2: last-deployed state -> live system.
 //!
-//! Detects any untracked changes that were made to the system since the last
+//! Detects any drift that was introduced on the system since the last
 //! deployment. The user might have forgotten to integrate those changes into
 //! the bois config, so we inform them before the changes are overwritten or
 //! removed by the deployment.
@@ -36,7 +36,7 @@ use crate::{
 
 /// Everything that changed on the live system since the last deployment.
 #[derive(Debug, Default)]
-pub struct UntrackedChanges {
+pub struct Drift {
     /// Deployed files/directories whose content, metadata or filetype changed
     /// on the system.
     pub changed_paths: Vec<PathChange>,
@@ -48,7 +48,7 @@ pub struct UntrackedChanges {
     pub disabled_services: Vec<(ServiceManager, String)>,
 }
 
-impl UntrackedChanges {
+impl Drift {
     pub fn is_empty(&self) -> bool {
         self.changed_paths.is_empty()
             && self.deleted_paths.is_empty()
@@ -92,12 +92,8 @@ pub struct ContentChange {
 ///
 /// The `new` (desired) state is used to filter out changes that the user has
 /// already integrated into the config.
-pub fn detect_untracked_changes(
-    old: &State,
-    new: &State,
-    system_state: &mut SystemState,
-) -> Result<UntrackedChanges> {
-    let mut changes = UntrackedChanges::default();
+pub fn detect_drift(old: &State, new: &State, system_state: &mut SystemState) -> Result<Drift> {
+    let mut changes = Drift::default();
 
     handle_paths(&old.path_tree, &new.path_tree, &mut changes)?;
     handle_packages(old, new, system_state, &mut changes)?;
@@ -106,7 +102,7 @@ pub fn detect_untracked_changes(
     Ok(changes)
 }
 
-fn handle_paths(old: &Tree, new: &Tree, changes: &mut UntrackedChanges) -> Result<()> {
+fn handle_paths(old: &Tree, new: &Tree, changes: &mut Drift) -> Result<()> {
     for (path, node) in old.flatten() {
         // The respective node the new state wants at this path, if any.
         // If this is `None`, the path is no longer desired.
@@ -125,7 +121,7 @@ fn handle_file(
     path: &Path,
     file: &FileState,
     desired: Option<&Node>,
-    changes: &mut UntrackedChanges,
+    changes: &mut Drift,
 ) -> Result<()> {
     // The file is no longer desired.
     // Since we're going to abandon/remove it anyway, any on-system changes are moot.
@@ -220,7 +216,7 @@ fn handle_directory(
     path: &Path,
     dir: &DirectoryState,
     desired: Option<&Node>,
-    changes: &mut UntrackedChanges,
+    changes: &mut Drift,
 ) -> Result<()> {
     // The directory is no longer desired.
     // Since we're going to abandon/remove it anyway, any on-system changes are moot.
@@ -368,7 +364,7 @@ fn handle_packages(
     old: &State,
     new: &State,
     system_state: &mut SystemState,
-    changes: &mut UntrackedChanges,
+    changes: &mut Drift,
 ) -> Result<()> {
     for (manager, old_packages) in old.packages.iter() {
         // We compare against all installed packages including dependencies.
@@ -402,7 +398,7 @@ fn handle_services(
     old: &State,
     new: &State,
     system_state: &mut SystemState,
-    changes: &mut UntrackedChanges,
+    changes: &mut Drift,
 ) -> Result<()> {
     for (manager, old_services) in old.services.iter() {
         for service in old_services {

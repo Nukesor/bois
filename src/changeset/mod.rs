@@ -9,8 +9,8 @@
 //!
 //! 1. [deploy_changeset]: desired state -> live system. The set of changes that must be executed to
 //!    reach the desired state.
-//! 2. [detect_untracked_changes]: last-deployed state -> live system. Determines on-system changes
-//!    since the last deploy. Necessary to prevent accidental overrides of unadopted changes.
+//! 2. [detect_drift]: last-deployed state -> live system. Determines drift on the system since the
+//!    last deploy. Necessary to prevent accidental overrides of unadopted changes.
 //! 3. [cleanup_changeset]: desired state -> last-deployed state. Changes from the the previous
 //!    deployment that are no longer needed and must be cleaned up.
 //!
@@ -25,17 +25,11 @@ use crate::state::{PackageManager, ServiceManager, path::FileContent};
 
 pub mod cleanup;
 pub mod deploy;
-pub mod untracked;
+pub mod drift;
 
 pub use cleanup::cleanup_changeset;
 pub use deploy::deploy_changeset;
-pub use untracked::{
-    ContentChange,
-    PathChange,
-    PathChangeKind,
-    UntrackedChanges,
-    detect_untracked_changes,
-};
+pub use drift::{ContentChange, Drift, PathChange, PathChangeKind, detect_drift};
 
 /// A [`Changeset`] represents the set of all changes that're going to be
 /// executed by bois to reach the desired system state.

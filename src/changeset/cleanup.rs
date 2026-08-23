@@ -36,7 +36,7 @@ use crate::{
 ///
 /// This state is then persisted between the cleanup and deploy phases of a run.
 /// If the deploy phase aborts halfway the next run's drift detection would otherwise
-/// blame the executed cleanup deletions on the user as untracked changes on your system.
+/// blame the executed cleanup deletions on the user as drift on your system.
 pub fn post_cleanup_state(old: &State, cleanup: &Changeset) -> State {
     let mut state = old.clone();
 

@@ -8,7 +8,7 @@ use crate::{
         cleanup::post_cleanup_state,
         cleanup_changeset,
         deploy_changeset,
-        detect_untracked_changes,
+        detect_drift,
     },
     config::bois::Configuration,
     handlers::{
@@ -19,12 +19,12 @@ use crate::{
     state::State,
     system_state::SystemState,
     ui::{
+        print_drift,
         print_package_installs,
         print_package_uninstalls,
         print_path_changes,
         print_service_disables,
         print_service_enables,
-        print_untracked_changes,
     },
 };
 
@@ -33,8 +33,8 @@ use crate::{
 /// TODO: dev_docs are completely outdated.
 /// The overall flow, as documented in `dev_docs/Architecture/Stages.md`:
 ///
-/// 1. Report untracked changes on the system since the last deploy and ask for confirmation before
-///    they get overwritten.
+/// 1. Report drift on the system since the last deploy and ask for confirmation before it gets
+///    overwritten.
 /// 2. Compute + execute the cleanup changeset, then persist an intermediate state.
 /// 3. Compute + execute the deploy changeset.
 /// 4. Persist final deployed state for the next run.
@@ -50,15 +50,15 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // - Cleanup work that's needed for the new desired state.
     let previous_state = State::read_previous(&config)?;
 
-    // ---------- Step 1: Detect untracked system changes ----------
+    // ---------- Step 1: Detect drift ----------
     // Compare the last deployed state against the live system. The user might
     // have forgotten to integrate manual changes into the bois config, so we
     // inform them before anything gets overwritten.
     if let Some(previous) = &previous_state {
-        let untracked = detect_untracked_changes(previous, &desired_state, &mut system_state)?;
+        let drift = detect_drift(previous, &desired_state, &mut system_state)?;
 
-        if !untracked.is_empty() {
-            print_untracked_changes(&untracked, &config)?;
+        if !drift.is_empty() {
+            print_drift(&drift, &config)?;
 
             if !dry_run {
                 let answer =
