@@ -275,7 +275,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
     Ok(())
 }
 
-/// Print everything that changed on the system since the last deployment.
+/// Print everything that changed on the system since the last run.
 /// Diff direction is deployed (old) -> actual (new): the diff shows what the
 /// user changed on their system.
 pub fn print_drift(drift: &Drift, config: &Configuration) -> Result<()> {

@@ -39,7 +39,7 @@ bois_dir: ~/dotfiles
 # System mode: /etc (default)
 target_dir: ~/.config
 
-# Cache directory for storing deployment state.
+# Cache directory for storing the deployed state.
 # User mode: ~/.cache/bois (default)
 # System mode: /var/lib/bois (default)
 cache_dir: ~/.cache/bois
@@ -82,7 +82,7 @@ All fields are optional:
     - `~/.config` (fallback)
   - System mode default:
     - `/etc`
-- `cache_dir`: `PathBuf` - Cache directory for storing deployment state.
+- `cache_dir`: `PathBuf` - Cache directory for storing the deployed state.
   - User mode default:
     - `XDG_CACHE_DIR/bois`
     - `~/.cache/bois`

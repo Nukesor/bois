@@ -3,7 +3,7 @@
 //! It creates changesets between the different states, with those states being
 //! - The current config source, from which we derive the "desired state"
 //! - The actual state of the system
-//! - The state of a previous deployment (if it exists).
+//! - The state of a previous run (if it exists).
 //!
 //! As such this module contains comparison logic between those three states:
 //!
@@ -11,8 +11,8 @@
 //!    to reach the desired state.
 //! 2. [detect_drift]: last-deployed state -> actual state. Determines drift on the system since the
 //!    last deploy. Necessary to prevent accidental overrides of unadopted changes.
-//! 3. [cleanup_changeset]: desired state -> last-deployed state. Changes from the the previous
-//!    deployment that are no longer needed and must be cleaned up.
+//! 3. [cleanup_changeset]: desired state -> last-deployed state. Changes from the previous run that
+//!    are no longer needed and must be cleaned up.
 //!
 //! This module only creates sets of changes, which are then later on used to report, deploy,
 //! or cleanup files/packages/services/etc. by the handler logic in [`crate::handlers`].
@@ -34,18 +34,18 @@ pub use drift::{ContentChange, Drift, PathChange, PathChangeKind, detect_drift};
 /// A [`Changeset`] represents the set of all changes that're going to be
 /// executed by bois to reach the desired system state.
 ///
-/// Each kind of tasks gets executed at different points of a deployment.
+/// Each kind of tasks gets executed at different points of a run.
 #[derive(Debug, Default)]
 pub struct Changeset {
     pub package_installs: Vec<PackageInstall>,
     pub package_uninstalls: Vec<PackageUninstall>,
-    /// Create/Modify operations in deployment
+    /// Create/Modify operations in the deploy phase
     /// The paths are scheduled in a root-to-leaves order.
     pub path_operations: Vec<PathOperation>,
     /// Delete operations
     /// The paths are scheduled in a leaf-to-root order.
     pub path_cleanup: Vec<PathOperation>,
-    /// Services to enable during deployment.
+    /// Services to enable during the deploy phase.
     pub service_enables: Vec<ServiceEnable>,
     /// Services to stop + disable during cleanup.
     pub service_disables: Vec<ServiceDisable>,

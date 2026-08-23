@@ -1,6 +1,6 @@
 //! Comparison 3: desired state -> last-deployed state.
 //!
-//! This module determines all parts of a previous deployment that're no longer
+//! This module determines all parts of a previous run that're no longer
 //! in the desired state.
 //!
 //! Such system state that must be cleaned up consists of:
@@ -31,7 +31,7 @@ use crate::{
     system_state::{SystemState, entry::ActualEntry},
 };
 
-/// Compute the state that remains from a previous deployment after the cleanup phase
+/// Compute the state that remains from a previous run after the cleanup phase
 /// has been executed.
 ///
 /// This state is then persisted between the cleanup and deploy phases of a run.

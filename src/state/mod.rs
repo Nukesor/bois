@@ -64,9 +64,9 @@ pub struct State {
 }
 
 impl State {
-    /// Try to read the state of a previous deployment.
+    /// Try to read the state of a previous run.
     /// This state will be used to determine:
-    /// - Any changes on the system's files since the last deployment
+    /// - Any changes on the system's files since the last run
     /// - Cleanup work that might need to be done for the new desired state.
     ///
     /// Will return a Ok(None), if no previous state could be found.

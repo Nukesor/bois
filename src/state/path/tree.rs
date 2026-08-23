@@ -421,7 +421,7 @@ impl Tree {
     /// - parents directories before children
     /// - Alphabetically descending within each directory
     ///
-    /// This effectively is the order in which we perform our deployment.
+    /// This effectively is the order in which we deploy.
     /// Reverse it for removals.
     pub fn flatten(&self) -> Vec<(PathBuf, &Node)> {
         let mut result = Vec::new();

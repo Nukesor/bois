@@ -28,7 +28,7 @@ use crate::{
     },
 };
 
-/// Run a full deployment.
+/// Perform a full run.
 ///
 /// TODO: dev_docs are completely outdated.
 /// The overall flow, as documented in `dev_docs/Architecture/Stages.md`:
@@ -39,14 +39,14 @@ use crate::{
 /// 3. Compute + execute the deploy changeset.
 /// 4. Persist final deployed state for the next run.
 pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
-    // Gather all cacheable system info that we may need during deployment.
+    // Gather all cacheable system info that we may need during this run.
     let mut system_state = SystemState::new(config.mode)?;
 
     // Read the desired system state from the files in the bois directory.
     let desired_state = aggregate_state(&config, &mut system_state)?;
 
     // Read the state of the previous run, if any. This is used to determine:
-    // - Any changes on the system's files since the last deployment.
+    // - Any changes on the system's files since the last run.
     // - Cleanup work that's needed for the desired state.
     let previous_state = State::read_previous(&config)?;
 
@@ -79,7 +79,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     }
 
     // ---------- Step 2: Cleanup ----------
-    // Determine everything the previous deployment left behind that's no
+    // Determine everything the previous run left behind that's no
     // longer part of the desired state and remove it.
     let cleanup = match &previous_state {
         Some(previous) => cleanup_changeset(previous, &desired_state, &mut system_state)?,
@@ -111,7 +111,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
             execute_path_operations(&cleanup.path_cleanup)?;
             uninstall_packages(&mut system_state, &cleanup.package_uninstalls)?;
 
-            // Persist the left-over state of the last deployment after cleanup.
+            // Persist the left-over state of the last run after cleanup.
             // If the following deploy phase aborts, the next run's drift detection won't blame
             // the intentional cleanup on the user.
             if let Some(previous) = &previous_state {

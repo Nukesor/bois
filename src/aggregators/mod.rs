@@ -8,8 +8,8 @@
 //! - Any conflicts have been resolved. Unresolvable conflicts result in errors.
 //! - Templating logic has been executed.
 //!
-//! As a result, the [State] is a valid representation of (managed part of) the system after
-//! deployment.
+//! As a result, the [State] is a valid representation of (managed part of) the system after the
+//! deploy phase.
 
 mod configs;
 mod packages;
@@ -56,7 +56,7 @@ pub fn aggregate_state(config: &Configuration, system_state: &mut SystemState) -
     // Walk through the host directory and all trait directories in their
     // configured order.
     //
-    // This step gathers all source files and directories for deployment,
+    // This step gathers all source files and directories for the deploy phase,
     // while resolving any conflicts, performing error handling and templating.
     let mut tree = Tree::new();
 

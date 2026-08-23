@@ -1,13 +1,13 @@
 //! Comparison 2: last-deployed state -> actual state.
 //!
-//! Detects any drift that was introduced on the system since the last
-//! deployment. The user might have forgotten to integrate those changes into
-//! the bois config, so we inform them before the changes are overwritten or
-//! removed by the deployment.
+//! Detects any drift that was introduced on the system since the last run.
+//! The user might have forgotten to integrate those changes into the bois
+//! config, so we inform them before the changes are overwritten or removed by
+//! the deploy phase.
 //!
 //! Changes that are already reflected in the desired state, however, must
 //! **not** be detected as drift. The user has already adopted those into the
-//! config and the deployment will leave them untouched anyway.
+//! config and the deploy phase will leave them untouched anyway.
 //!
 //! This module deliberately **doesn't** produce a [super::Changeset].
 //! Nothing that's detected in here should ever be executed. It's only ever
@@ -34,7 +34,7 @@ use crate::{
     },
 };
 
-/// Everything that changed on the system since the last deployment.
+/// Everything that changed on the system since the last run.
 #[derive(Debug, Default)]
 pub struct Drift {
     /// Deployed files/directories whose content, metadata or filetype changed
@@ -335,7 +335,7 @@ fn handle_directory(
     Ok(())
 }
 
-/// Whether the deployment will keep the actual entry at this path in place.
+/// Whether the deploy phase will keep the actual entry at this path in place.
 ///
 /// Only called for nodes whose actual filetype no longer matches the previously deployed one.
 /// This is used to filter out filetype changes that were already (at least partially) adopted
