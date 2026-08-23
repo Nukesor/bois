@@ -60,7 +60,7 @@ pub struct WalkContext<'a> {
     /// The absolute path of the source directory (`<bois_dir>/hosts/<name>` or
     /// `<bois_dir>/traits/<name>`).
     pub source_dir: PathBuf,
-    /// The source directory relative to the bois dir, e.g. `hosts/my_hostname`.
+    /// The source directory relative to the bois directory, e.g. `hosts/my_hostname`.
     /// Used to build [Source] infos.
     pub source_prefix: PathBuf,
     /// `host:<name>` or `trait:<name>`, used to build [Source] infos.

@@ -10,7 +10,7 @@ use crate::{error::Error, state::path::file::FileState};
 
 /// This is the fully resolved representation of all configuration files for a given host.
 ///
-/// This includes the config directory of the `host` and all its enabled traits.
+/// This includes the source directories of the `host` and all its enabled traits.
 ///
 /// The paths of this tree are **absolute**, which means that relative paths and all
 /// path overrides on trait, directory and files have already been resolved.

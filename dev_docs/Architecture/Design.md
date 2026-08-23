@@ -118,7 +118,7 @@ bois
 The deployment process is rather simple and can be devided into clear-cut steps.
 
 1. Read configuration and template files. \
-   In this step, all relevant files from the bois configuration directory are read and internally compiled into one large state struct.
+   In this step, all relevant files from the bois directory are read and internally compiled into one large state struct.
 1. Check the current deployment. \
    If there exists a previous deployment, the current system files are compared with the last known deployed state.
    This step detects any on-system changes of state that's managed by bois. \

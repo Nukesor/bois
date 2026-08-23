@@ -1,4 +1,4 @@
-//! Aggregation logic for a bois source directory.
+//! Aggregation logic for a bois directory.
 //!
 //! This module reads the whole bois configuration for the current host and its enabled traits.
 //! All that information is bundled into a single [State] struct.
@@ -28,13 +28,12 @@ use crate::{
     system_state::SystemState,
 };
 
-/// Build the desired [State] for the current host from the bois
-/// configuration directory.
+/// Build the desired [State] for the current host from the bois directory.
 pub fn aggregate_state(config: &Configuration, system_state: &mut SystemState) -> Result<State> {
-    // Make sure the bois source directory exists.
+    // Make sure the bois directory exists.
     let bois_dir = config.bois_dir.clone();
     if !bois_dir.exists() {
-        bail!("Couldn't find bois config directory at {bois_dir:?}. Aborting.");
+        bail!("Couldn't find bois directory at {bois_dir:?}. Aborting.");
     }
 
     // Read the config of the current host.

@@ -118,7 +118,7 @@ impl RawConfiguration {
                         dirs::home_dir().map(|path| path.join(".dots")),
                         dirs::home_dir().map(|path| path.join(".bois")),
                     ],
-                    "bois config",
+                    "bois",
                     false,
                 )?,
                 RunMode::System => PathBuf::from("/etc/bois"),
@@ -242,7 +242,7 @@ If this doesn't work, set the host's name manually via your bois.yml."
                         dirs::home_dir().map(|path| path.join(".dots")),
                         dirs::home_dir().map(|path| path.join(".bois")),
                     ],
-                    "bois config",
+                    "bois",
                     false,
                 );
 
@@ -257,7 +257,7 @@ If this doesn't work, set the host's name manually via your bois.yml."
                 dir
             };
 
-            // Get the default path for the user's configuration directory.
+            // Get the default path of the config file inside the bois directory.
             let path = config_dir.join("bois.yml");
             info!("Looking for config at path: {path:?}");
 

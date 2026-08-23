@@ -52,7 +52,7 @@ pub struct State {
     /// root dir or new hostname.
     pub configuration: Configuration,
 
-    /// The full tree of all configuration files as they are read from the configuration directory,
+    /// The full tree of all configuration files as they are read from the bois directory.
     pub path_tree: Tree,
 
     /// The compiled list of all packages that should be installed for this current configuration.

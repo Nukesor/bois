@@ -25,7 +25,7 @@ pub fn read_host_config(root: &Path, hostname: &str) -> Result<Host> {
     let host_dir = root.join("hosts").join(hostname);
 
     if !host_dir.exists() {
-        bail!("Couldn't find config directory for this host at {host_dir:?}. Aborting.");
+        bail!("Couldn't find host directory at {host_dir:?}. Aborting.");
     }
 
     // Read the `host.yml` from the host directory.
@@ -46,7 +46,7 @@ pub fn read_trait_config(root: &Path, name: &str) -> Result<TraitConfig> {
     let trait_dir = root.join("traits").join(name);
 
     if !trait_dir.exists() {
-        bail!("Couldn't find config directory for trait '{name}' at {trait_dir:?}. Aborting.");
+        bail!("Couldn't find trait directory for '{name}' at {trait_dir:?}. Aborting.");
     }
 
     // Read the `trait.yml` from the trait directory.

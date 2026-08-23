@@ -13,7 +13,7 @@ use winnow::{
 
 use crate::{config::file::FileConfig, error::Error, state::path::FileContent};
 
-/// A raw source file as read from a bois configuration directory.
+/// A raw source file as read from a source directory.
 ///
 /// This is used an intermediate representation of a (potentially) untemplated file with its
 /// original metadata.

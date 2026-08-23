@@ -4,7 +4,7 @@
 //! in the desired state.
 //!
 //! Such system state that must be cleaned up consists of:
-//! - Files/directories that were removed from (or moved within) the bois dir.
+//! - Files/directories that were removed from (or moved within) the bois directory.
 //! - Packages that were dropped from the config.
 //! - Services that were dropped from the config. Those are stopped and disabled.
 //!
