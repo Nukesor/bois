@@ -8,7 +8,7 @@ traits:
 
 # The default permissions for deployed files and directories inside this host directory.
 # Can be overwritten on a directory or filebases deeper down the file hierarchy.
-#file_defaults:
+#permission_defaults:
 #  owner: root
 #  group: root
 #  file_mode: 0o644

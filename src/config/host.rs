@@ -18,9 +18,10 @@ pub struct HostConfig {
     // TODO(backwards compatibility): alias
     #[serde(default, alias = "target_directory")]
     pub target_dir: Option<PathBuf>,
-    /// Default that should be applied to all files.
-    #[serde(default)]
-    pub file_defaults: HostDefaults,
+    /// Default permissions that should be applied to all files and directories.
+    // TODO(backwards compatibility): alias
+    #[serde(default, alias = "file_defaults")]
+    pub permission_defaults: HostDefaults,
     /// Cleaned settings on which components should be removed once they leave a host's
     /// configuration.
     #[serde(default)]

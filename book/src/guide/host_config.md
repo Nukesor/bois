@@ -65,8 +65,8 @@ services:
     - systemd-timesyncd
     - backup.timer
 
-# Defaults that should be applied to all files.
-file_defaults:
+# Default permissions that should be applied to all files and directories.
+permission_defaults:
   owner: root
   group: root
   file_mode: 0o644
@@ -87,11 +87,12 @@ cleanup:
   Listed services are enabled during deployment. Once removed, they're stopped and disabled.
   A service can either be a plain name, or an object with a `name` and a `start` flag to also start the service right away when it gets enabled.
   Look at [Service Management](../system_configuration/service_management/service_management.md) to see the list of available service managers.
-- `file_defaults` Set defaults file permissions for all configuration files that're inside this host directory.
-  - `owner`: `String` - The file's owner
-  - `group`: `String` - The file's assigned group
-  - `file_mode`: `OctalInt` - The default permissions that'll be set for all files.
-  - `directory_mode`: `OctalInt` - The default permissions that'll be set for all directories.
+- `permission_defaults`: (optional) Set default permissions for all configuration files and directories that're inside this host directory.
+  Each field can be set on its own.
+  - `owner`: `String` (optional) - The default owner for all files and directories.
+  - `group`: `String` (optional) - The default group for all files and directories.
+  - `file_mode`: `OctalInt` (optional) - The default permissions that'll be set for all files.
+  - `directory_mode`: `OctalInt` (optional) - The default permissions that'll be set for all directories.
 - `cleanup`: (optional) Controls what should be cleaned up once it's removed from this host's configuration.
   Files and packages are always cleaned up; this only covers resources where cleanup is opt-in.
   - `directories`: `Boolean` - Whether directories are removed once they leave the configuration. Defaults to `false`.
