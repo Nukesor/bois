@@ -17,7 +17,9 @@ pub struct FileConfig {
     /// If this is set, this path will be used as a destination.
     /// If it's an relative path, it'll be treated as relative to the default target directory.
     /// If it's an absolute path, that absolute path will be used.
-    path: Option<PathBuf>,
+    // TODO(backwards compatibility): alias
+    #[serde(alias = "path")]
+    target_path: Option<PathBuf>,
     /// Use this option to override the filename.
     /// Useful to have configs live as normal files in the bois directory, even though they need to
     /// later become '.' dotfiles.
@@ -41,12 +43,12 @@ pub struct FileConfig {
 /// This impl block contains convenience getters for file metadata, which fall back to
 /// default values.
 impl FileConfig {
-    pub fn path(&self) -> Option<PathBuf> {
-        self.path.as_ref().map(|path| expand_home(path))
+    pub fn target_path(&self) -> Option<PathBuf> {
+        self.target_path.as_ref().map(|path| expand_home(path))
     }
 
-    pub fn override_path(&mut self, path: PathBuf) {
-        self.path = Some(path)
+    pub fn override_target_path(&mut self, path: PathBuf) {
+        self.target_path = Some(path)
     }
 
     pub fn owner(&self) -> String {

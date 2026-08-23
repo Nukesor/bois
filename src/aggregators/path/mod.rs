@@ -267,9 +267,9 @@ fn walk_directory(
     // itself and everything below it.
     let cleanup_directories = config.cleanup.directories.unwrap_or(cleanup_directories);
 
-    // An explicit path override replaces the default target for this directory
+    // An explicit target_path override replaces the default target for this directory
     // and thereby for all of its children.
-    let target = match config.path() {
+    let target = match config.target_path() {
         Some(path) => {
             if path.is_absolute() {
                 path
@@ -412,21 +412,21 @@ fn handle_file(
 
 /// Resolve the final absolute target path of a file.
 ///
-/// - A `path` override in the file's config wins. Relative overrides resolve against the source's
-///   target directory, absolute ones are used as is. A trailing `/` means "the file goes *into*
-///   this directory"; without one, the override is the full destination path including the file
-///   name.
+/// - A `target_path` override in the file's config wins. Relative overrides resolve against the
+///   source's target directory, absolute ones are used as is. A trailing `/` means "the file goes
+///   *into* this directory"; without one, the override is the full destination path including the
+///   file name.
 /// - Otherwise the file lands in its parent's target directory under its own name.
-/// - A `rename` override replaces the resulting file name. If a non-dir-style `path` override
-///   exists, it will be ignored and `rename` wins. In that case, a warning is logged to warn the
-///   user about this behavior.
+/// - A `rename` override replaces the resulting file name. If a non-dir-style `target_path`
+///   override exists, it will be ignored and `rename` wins. In that case, a warning is logged to
+///   warn the user about this behavior.
 fn resolve_file_target(
     ctx: &WalkContext,
     config: &FileConfig,
     default_target_path: &Path,
     source_path: &Path,
 ) -> PathBuf {
-    let mut target = match config.path() {
+    let mut target = match config.target_path() {
         Some(path) => {
             let is_dir_style = path.to_string_lossy().ends_with('/');
             let path = if path.is_absolute() {
@@ -436,7 +436,7 @@ fn resolve_file_target(
             };
 
             if is_dir_style {
-                // `path: /usr/local/bin/` deploys the file into that directory.
+                // `target_path: /usr/local/bin/` deploys the file into that directory.
                 let file_name = default_target_path
                     .file_name()
                     .expect("target paths always have a file name");
@@ -450,15 +450,15 @@ fn resolve_file_target(
 
     // If a rename is requested, replace the file name.
     if let Some(file_name) = &config.rename {
-        // A `path` without a trailing `/` already contains a file name, which the rename is
+        // A `target_path` without a trailing `/` already contains a file name, which the rename is
         // about to replace.
         if config
-            .path()
+            .target_path()
             .is_some_and(|path| !path.to_string_lossy().ends_with('/'))
         {
             warn!(
-                "File {source_path:?} sets both `path` and `rename`: \
-                 the file name from `path` is replaced by `rename: {file_name}`"
+                "File {source_path:?} sets both `target_path` and `rename`: \
+                 the file name from `target_path` is replaced by `rename: {file_name}`"
             );
         }
         target.set_file_name(file_name);

@@ -24,7 +24,9 @@ pub struct DirectoryConfig {
     /// If this is set, this directory will be used as the default destination to write configs to.
     /// - If it's an relative path, it'll be treated as relative to the default target directory.
     /// - If it's an absolute path, that absolute path will be used.
-    path: Option<PathBuf>,
+    // TODO(backwards compatibility): alias
+    #[serde(alias = "path")]
+    target_path: Option<PathBuf>,
     pub owner: Option<String>,
     pub group: Option<String>,
     /// This is represented as a octal `Oo755` in yaml.
@@ -42,12 +44,12 @@ pub struct DirectoryConfig {
 /// This impl block contains convenience getters for directory metadata, which fall back to
 /// default values.
 impl DirectoryConfig {
-    pub fn path(&self) -> Option<PathBuf> {
-        self.path.as_ref().map(|path| expand_home(path))
+    pub fn target_path(&self) -> Option<PathBuf> {
+        self.target_path.as_ref().map(|path| expand_home(path))
     }
 
-    pub fn override_path(&mut self, path: PathBuf) {
-        self.path = Some(path)
+    pub fn override_target_path(&mut self, path: PathBuf) {
+        self.target_path = Some(path)
     }
 
     pub fn mode(&self) -> u32 {

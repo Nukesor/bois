@@ -24,7 +24,7 @@ The `dir.yml` might look like this:
 
 ```yml
 # Deploy to an absolute path outside the default target directory
-path: /etc/udev/rules.d
+target_path: /etc/udev/rules.d
 
 # Set ownership and permissions for the directory itself
 owner: root
@@ -48,11 +48,11 @@ File ownership and permissions are set per file via its [file config](./file_con
 
 ## Configuration Options
 
-- `path`: `PathBuf` (optional) - Override the destination path for this directory and all its contents.
+- `target_path`: `PathBuf` (optional) - Override the destination path for this directory and all its contents.
   - If it's a relative path, it's treated as relative to the host's/trait's target directory
     (the `target_dir` override if set, otherwise the global target directory).
   - If it's an absolute path, that absolute path is used directly.
-  - This override cascades to all child files and directories, unless they specify their own `path`.
+  - This override cascades to all child files and directories, unless they specify their own `target_path`.
 - `owner`: `String` (optional) - The directory owner. Defaults to the current user.
 - `group`: `String` (optional) - The directory's assigned group. Defaults to the current user's group.
 - `mode`: `OctalInt` (optional) - The permissions for this directory (e.g., `0o755`). Defaults to `0o755`.
@@ -66,11 +66,11 @@ File ownership and permissions are set per file via its [file config](./file_con
 
 ## Path Inheritance
 
-When a folder has a `path` override, all files and subdirectories inside inherit that override:
+When a folder has a `target_path` override, all files and subdirectories inside inherit that override:
 
 ```
  📂 systemd/
- │ dir.yml (path: /etc/systemd/system)
+ │ dir.yml (target_path: /etc/systemd/system)
  ├ 📂 timers/
  │ └ backup.timer
  └ 📁 services/

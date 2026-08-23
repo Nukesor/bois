@@ -15,9 +15,10 @@ use crate::{
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum RunMode {
-    // TODO: Keep the aliases for a bit, so that old state files still work.
+    // TODO(backwards compatibility): alias
     #[serde(alias = "User")]
     User,
+    // TODO(backwards compatibility): alias
     #[serde(alias = "System")]
     System,
 }

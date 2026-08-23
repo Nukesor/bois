@@ -23,7 +23,7 @@ Here's a bash script with a `bois_config` block:
 # owner: root
 # group: root
 # mode: 0o755
-# path: /usr/local/bin/
+# target_path: /usr/local/bin/
 # bois_config
 
 echo "Hello from {{ host }}"
@@ -45,13 +45,13 @@ If anything is missing, please open a ticket.
 
 ## Configuration Options
 
-- `path`: `PathBuf` (optional) - Override the destination path for this file.
+- `target_path`: `PathBuf` (optional) - Override the destination path for this file.
   - If it's a relative path, it's treated as relative to the host's/trait's target directory
     (the `target_dir` override if set, otherwise the global target directory).
   - If it's an absolute path, that absolute path is used directly.
   - If the path ends with a `/`, the file is deployed **into** that directory under its own name.
     Otherwise, the path is used as the full destination path, including the file name.
-  - Takes precedence over any folder-level path overrides.
+  - Takes precedence over any folder-level `target_path` overrides.
 - `rename`: `String` (optional) - Override the filename when deploying.
   Useful for deploying dotfiles without having dots in your bois directory.
   ```yml
@@ -59,7 +59,7 @@ If anything is missing, please open a ticket.
   # rename: .bashrc
   # bois_config
   ```
-  If `rename` and a non-dir-style `path` (does not end with `/`) is set, the filename in `path` will be overwritten and a warning will be emitted.
+  If `rename` and a non-dir-style `target_path` (does not end with `/`) is set, the filename in `target_path` will be overwritten and a warning will be emitted.
 - `owner`: `String` (optional) - The file owner. Defaults to the current user.
 - `group`: `String` (optional) - The file's assigned group. Defaults to the current user's group.
 - `mode`: `OctalInt` (optional) - File permissions (e.g., `0o644`). If not set, the source file's permissions are preserved.
