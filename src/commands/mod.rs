@@ -26,7 +26,7 @@ pub fn run_subcommand(raw_config: RawConfiguration, subcommand: &Subcommand) -> 
     match subcommand {
         Subcommand::Plan => deploy::run_deploy(config, true),
         Subcommand::Deploy => deploy::run_deploy(config, false),
-        Subcommand::Absorb => todo!(),
+        Subcommand::Adopt => todo!(),
         Subcommand::Diff => diff::diff(config),
         Subcommand::Init { .. } => unreachable!("handled above"),
     }

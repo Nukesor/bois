@@ -6,14 +6,14 @@
 //! removed by the deployment.
 //!
 //! Changes that are already reflected in the new desired state, however, must
-//! **not** be detected as drift. The user has already absorbed those into the
+//! **not** be detected as drift. The user has already adopted those into the
 //! config and the deployment will leave them untouched anyway.
 //!
 //! This module deliberately **doesn't** produce a [super::Changeset].
 //! Nothing that's detected in here should ever be executed. It's only ever
 //! displayed to the user.
 //!
-//! TODO: The idea is to (maybe) later on create a `bois absorb` command, which
+//! TODO: The idea is to (maybe) later on create a `bois adopt` command, which
 //! would attempt to copy over on-system changes to the bois directory.
 
 use std::path::{Path, PathBuf};
@@ -178,20 +178,20 @@ fn handle_file(
             // Check for differences in the actual file content.
             // If any are detected, they're only reported if the new on-system state differs from
             // the desired state.
-            let content_absorbed = desired_file.content.bytes() == live_content.as_slice();
-            let mode_absorbed = desired_file.mode == mode;
-            let owner_absorbed = desired_file.owner == owner;
-            let group_absorbed = desired_file.group == group;
+            let content_adopted = desired_file.content.bytes() == live_content.as_slice();
+            let mode_adopted = desired_file.mode == mode;
+            let owner_adopted = desired_file.owner == owner;
+            let group_adopted = desired_file.group == group;
 
-            let content = (file.content.bytes() != live_content.as_slice() && !content_absorbed)
+            let content = (file.content.bytes() != live_content.as_slice() && !content_adopted)
                 .then(|| ContentChange {
                     deployed: file.content.clone(),
                     live: live_content,
                 });
-            let mode = (mode != file.mode && !mode_absorbed).then_some((file.mode, mode));
-            let owner = (owner != file.owner && !owner_absorbed)
+            let mode = (mode != file.mode && !mode_adopted).then_some((file.mode, mode));
+            let owner = (owner != file.owner && !owner_adopted)
                 .then(|| (file.owner.clone(), owner.clone()));
-            let group = (group != file.group && !group_absorbed)
+            let group = (group != file.group && !group_adopted)
                 .then(|| (file.group.clone(), group.clone()));
 
             // Only report the path if at least one field changed to a value that isn't desired.
@@ -331,7 +331,7 @@ fn handle_directory(
 /// Whether the deployment will keep the live entry at this path in place.
 ///
 /// Only called for entries whose live filetype no longer matches the previously deployed one.
-/// This is used to filter out filetype changes that were already (at least partially) absorbed
+/// This is used to filter out filetype changes that were already (at least partially) adopted
 /// into the config, e.g. a deployed file that was manually replaced with a directory while the
 /// new state also desires a directory.
 ///

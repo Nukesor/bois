@@ -33,7 +33,7 @@ pub enum Subcommand {
     Diff,
     /// Check the system for any changes since the last deployment.
     /// If any are found, try to integrate them back into the configuration.
-    Absorb,
+    Adopt,
     /// Setup a new bois directory.
     /// If no name is given, it'll create the files inside of the current directory.
     Init {
