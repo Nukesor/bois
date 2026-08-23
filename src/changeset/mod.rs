@@ -9,10 +9,10 @@
 //!
 //! 1. [deploy_changeset]: desired state -> actual state. The set of changes that must be executed
 //!    to reach the desired state.
-//! 2. [detect_drift]: last-deployed state -> actual state. Determines drift on the system since the
-//!    last deploy. Necessary to prevent accidental overrides of unadopted changes.
-//! 3. [cleanup_changeset]: desired state -> last-deployed state. Changes from the previous run that
-//!    are no longer needed and must be cleaned up.
+//! 2. [detect_drift]: previous state -> actual state. Determines drift on the system since the last
+//!    deploy. Necessary to prevent accidental overrides of unadopted changes.
+//! 3. [cleanup_changeset]: desired state -> previous state. Changes from the previous run that are
+//!    no longer needed and must be cleaned up.
 //!
 //! This module only creates sets of changes, which are then later on used to report, deploy,
 //! or cleanup files/packages/services/etc. by the handler logic in [`crate::handlers`].

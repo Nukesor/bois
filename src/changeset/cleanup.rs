@@ -1,4 +1,4 @@
-//! Comparison 3: desired state -> last-deployed state.
+//! Comparison 3: desired state -> previous state.
 //!
 //! This module determines all parts of a previous run that're no longer
 //! in the desired state.

@@ -24,8 +24,8 @@ It's also not intended to cover complex multiple-dependency deployments and the 
 - Simple jinja-style templating
 - Diffs between various states:
   - `current config -> current system`: Changes that must be made to reach the desired state.
-  - `last-deployed -> current config`: Previously deployed changes that must now be cleaned up.
-  - `last-deployed -> current system`: On-system changes that may be overwritten
+  - `last-deployed (previous) -> current config`: Previously deployed changes that must now be cleaned up.
+  - `last-deployed (previous) -> current system`: On-system changes that may be overwritten
 
 ## Configuration
 

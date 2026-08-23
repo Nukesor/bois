@@ -1,4 +1,4 @@
-//! Comparison 2: last-deployed state -> actual state.
+//! Comparison 2: previous state -> actual state.
 //!
 //! Detects any drift that was introduced on the system since the last run.
 //! The user might have forgotten to integrate those changes into the bois
@@ -91,7 +91,7 @@ pub struct ContentChange {
     pub actual: Vec<u8>,
 }
 
-/// Compare the last-deployed state against the system.
+/// Compare the previous state against the system.
 ///
 /// The `desired` state is used to filter out changes that the user has
 /// already integrated into the config.
