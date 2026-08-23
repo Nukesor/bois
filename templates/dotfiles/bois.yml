@@ -7,7 +7,7 @@
 #
 # `bois --config <path/to/bois.yml>`.
 
-# The name of the machine.
+# The name of the host.
 # If this is not explicitly given, the hostname will be used.
 # name: "{{ hostname }}"
 

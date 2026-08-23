@@ -25,7 +25,7 @@ pub fn read_host_config(root: &Path, hostname: &str) -> Result<Host> {
     let host_dir = root.join("hosts").join(hostname);
 
     if !host_dir.exists() {
-        bail!("Couldn't find config directory for this machine at {host_dir:?}. Aborting.");
+        bail!("Couldn't find config directory for this host at {host_dir:?}. Aborting.");
     }
 
     // Read the `host.yml` from the host directory.

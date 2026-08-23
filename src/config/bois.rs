@@ -28,7 +28,7 @@ pub enum RunMode {
 /// [Configuration] in the [RawConfiguration::build_configuration] function.
 #[derive(PartialEq, Eq, Clone, Default, Debug, Deserialize, Serialize)]
 pub struct RawConfiguration {
-    /// The name of the machine.
+    /// The name of the host.
     /// If this is set to None, the hostname will be used
     pub name: Option<String>,
 
@@ -62,7 +62,7 @@ pub struct RawConfiguration {
 /// All high-level settings that're required to run bois.
 #[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
 pub struct Configuration {
-    /// The name of the machine.
+    /// The name of the host.
     /// If this is not explicitly given, the hostname will be used.
     pub name: String,
 
@@ -98,7 +98,7 @@ impl RawConfiguration {
     /// The resulting [Configuration] no longer has any `Option`s, which makes it convenient to
     /// pass around the program during runtime.
     pub fn build_configuration(self) -> Result<Configuration> {
-        // Determine the hostname of the machine, if it isn't explicitly set.
+        // Determine the name of the host, if it isn't explicitly set.
         let name = self.resolve_name()?;
 
         // Determine the mode bois should run in.
@@ -182,7 +182,7 @@ impl RawConfiguration {
         })
     }
 
-    /// Determine the name of the machine.
+    /// Determine the name of the host.
     /// If it isn't explicitly set, the hostname is used.
     pub fn resolve_name(&self) -> Result<String> {
         match &self.name {
@@ -190,8 +190,8 @@ impl RawConfiguration {
             None => match hostname::get() {
                 Ok(hostname) => Ok(hostname.to_string_lossy().to_string()),
                 Err(err) => bail!(
-                    "Failed to determine hostname for machine: {err}
-If this doesn't work, set the machine's name manually via your bois.yml."
+                    "Failed to determine the hostname of this machine: {err}
+If this doesn't work, set the host's name manually via your bois.yml."
                 ),
             },
         }

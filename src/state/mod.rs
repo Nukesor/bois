@@ -37,7 +37,7 @@ pub enum ServiceManager {
     Systemd,
 }
 
-/// This struct all configuration that's applicable for this machine.
+/// This struct all configuration that's applicable for this host.
 /// This includes:
 /// - All applicable traits
 ///     - Variables

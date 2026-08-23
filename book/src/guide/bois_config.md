@@ -26,7 +26,7 @@ You can also specify a custom config file location using the `--config` flag.
 Here's a full example of a `bois.yml`:
 
 ```yml
-# The machine name used to select the host directory.
+# The host name used to select the host directory.
 # If not set, the system hostname is used.
 name: my-laptop
 
@@ -65,7 +65,7 @@ mode: user
 
 All fields are optional:
 
-- `name`: `String` - The machine name, used to select which host directory to use.
+- `name`: `String` - The host name, used to select which host directory to use.
   Defaults to the system hostname.
 - `bois_dir`: `PathBuf` - The directory containing your bois configuration (hosts, traits, etc).
   - By default, it picks the first directory it finds at the following locations:

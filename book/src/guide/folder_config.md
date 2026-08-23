@@ -13,7 +13,7 @@ Imagine you have a `udev` folder in your host directory that should be deployed 
 
 ```
  📂 hosts/
- └ 📂 artifact/
+ └ 📂 ghost/
    └ 📂 udev/
      │ dir.yml
      │ 10-network.rules

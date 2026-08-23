@@ -74,7 +74,7 @@ pub struct Delimiters {
     ///
     /// Example:
     /// ```j2
-    /// #{% if host == "my_machine" }%
+    /// #{% if host == "my_host" }%
     /// ...
     /// other stuff here
     /// ...

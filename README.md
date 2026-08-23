@@ -115,7 +115,7 @@ The idea is to reach a state where most people are happy with it and then enter 
 What bois has on top:
 
 - Templating
-- Builtin support for multiple machines
+- Builtin support for multiple hosts
 - Traits to allow modular package installation/configuration for various hosts.
 
 #### System configuration manager

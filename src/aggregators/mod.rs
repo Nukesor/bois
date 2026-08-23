@@ -28,7 +28,7 @@ use crate::{
     system_state::SystemState,
 };
 
-/// Build the desired [State] for the current machine from the bois
+/// Build the desired [State] for the current host from the bois
 /// configuration directory.
 pub fn aggregate_state(config: &Configuration, system_state: &mut SystemState) -> Result<State> {
     // Make sure the bois source directory exists.
@@ -37,7 +37,7 @@ pub fn aggregate_state(config: &Configuration, system_state: &mut SystemState) -
         bail!("Couldn't find bois config directory at {bois_dir:?}. Aborting.");
     }
 
-    // Read the host config for this machine.
+    // Read the config of the current host.
     let host = read_host_config(&bois_dir, &config.name)?;
 
     // Read the configs of all enabled traits.

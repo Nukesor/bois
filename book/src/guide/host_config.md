@@ -1,22 +1,22 @@
 # Hosts
 
 Hosts are an important concept in `bois`.
-Since `bois` is designed for your personal computers, your machines are configured on a `hostname` basis.
+Since `bois` is designed for your personal computers, hosts are configured on a `hostname` basis.
 
-The configuration files for your machines are located in the `host` directory. \
-Imagine having two machines named `strelok` and `artifact` (which are also their respective `hostname`s).
+The configuration files for your hosts are located in the `hosts` directory. \
+Imagine having two hosts named `ghost` and `fang` (which are also their respective `hostname`s).
 The directory structure might look something like this:
 
 ```
  📁 traits/
  📂 hosts/
- │ 📂 artifact/
+ │ 📂 fang/
  │ │ 📁 udev/
  │ │ 📁 X11/
  │ │ pacman.conf
  │ │ host.yml
  │ └ vars.yml
- └ 📂 strelok/
+ └ 📂 ghost/
    │ host.yml
    └ vars.yml
 ```
@@ -34,12 +34,12 @@ The directory structure might look something like this:
     is_laptop: true
   ```
 - All other files that're located in a host's directory are considered configuration files that should be deployed to the system.
-  In the example above, that would be the `X11` and `udev` folders, as well as the `pacman.conf` for the `artifact` host.
+  In the example above, that would be the `X11` and `udev` folders, as well as the `pacman.conf` for the host `fang` .
 
 Let's look ahead to the next chapter real quick, which will be about [traits](./trait_config.md). Traits are a tool to allow reuse of configuration files across multiple hosts.
 
 In contrast to [traits](./trait_config.md), host configuration files are always **exclusive** for a specific host.
-This allows you have a strict distinction between reusable logic, which is kept inside of traits, and machine specific configuration, which is located the machine's respective host directory.
+This allows you have a strict distinction between reusable logic, which is kept inside of traits, and host specific configuration, which is located the host's respective directory.
 
 ## `host.yml`
 

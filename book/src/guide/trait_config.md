@@ -2,8 +2,8 @@
 
 Traits are a tool for reusing configuration files across multiple hosts.
 
-All configuration that's shared between machines should be placed into traits.
-For instance, all machines might share the same base packages, shell configuration, or editor setup.
+All configuration that's shared between hosts should be placed into traits.
+For instance, all hosts might share the same base packages, shell configuration, or editor setup.
 
 Traits are located in the top-level `traits` directory.
 The directory structure might look something like this:
