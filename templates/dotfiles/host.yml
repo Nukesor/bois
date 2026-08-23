@@ -3,7 +3,7 @@ traits:
   - base
 
 # The default directory to where files will be deployed for files in this directory
-#target_directory: ~/.dotfiles
+#target_dir: ~/.dotfiles
 
 # The default permissions for deployed files and directories inside this host directory.
 # Can be overwritten on a directory or filebases deeper down the file hierarchy.

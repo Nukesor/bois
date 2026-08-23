@@ -15,8 +15,9 @@ use crate::{
 pub struct HostConfig {
     /// Used to overwrite the target directory to which files should be deployed for
     /// this specific host. Must be an absolute path.
-    #[serde(default)]
-    pub target_directory: Option<PathBuf>,
+    // TODO(backwards compatibility): alias
+    #[serde(default, alias = "target_directory")]
+    pub target_dir: Option<PathBuf>,
     /// Default that should be applied to all files.
     #[serde(default)]
     pub file_defaults: HostDefaults,

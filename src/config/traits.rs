@@ -15,8 +15,9 @@ use crate::{
 pub struct TraitConfig {
     /// Used to overwrite the target directory to which files should be deployed for
     /// this specific trait. Must be an absolute path.
-    #[serde(default)]
-    pub target_directory: Option<PathBuf>,
+    // TODO(backwards compatibility): alias
+    #[serde(default, alias = "target_directory")]
+    pub target_dir: Option<PathBuf>,
     /// The content of this trait's directory.
     #[serde(default)]
     pub defaults: TraitDefaults,

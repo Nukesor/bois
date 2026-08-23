@@ -71,7 +71,7 @@ pub struct WalkContext<'a> {
     /// `dir.yml`s can override it per subtree during the walk.
     pub cleanup_directories: bool,
     /// The absolute path to the target directory of this context's source.
-    /// I.e. the global `target_dir`, or the host's/trait's `target_directory` override.
+    /// I.e. the global `target_dir`, or the host's/trait's `target_dir` override.
     /// Relative path overrides of directories resolve against this value.
     pub target_dir: PathBuf,
     /// The templating variables of the current host.
@@ -96,7 +96,7 @@ impl<'a> WalkContext<'a> {
                 directory_mode: host_config.file_defaults.directory_mode,
             },
             cleanup_directories: host_config.cleanup.directories.unwrap_or(false),
-            target_dir: resolve_target_dir(&config.target_dir, &host_config.target_directory)?,
+            target_dir: resolve_target_dir(&config.target_dir, &host_config.target_dir)?,
             vars,
         })
     }
@@ -118,7 +118,7 @@ impl<'a> WalkContext<'a> {
                 directory_mode: trait_config.defaults.directory_mode,
             },
             cleanup_directories: trait_config.cleanup.directories.unwrap_or(false),
-            target_dir: resolve_target_dir(&config.target_dir, &trait_config.target_directory)?,
+            target_dir: resolve_target_dir(&config.target_dir, &trait_config.target_dir)?,
             vars,
         })
     }
@@ -130,7 +130,7 @@ impl<'a> WalkContext<'a> {
 }
 
 /// Determine a source's effective target directory: the global target dir, or
-/// the source's `target_directory` override, which must be absolute.
+/// the source's `target_dir` override, which must be absolute.
 fn resolve_target_dir(target_dir: &Path, over_ride: &Option<PathBuf>) -> Result<PathBuf> {
     match over_ride {
         Some(path) => {
@@ -138,7 +138,7 @@ fn resolve_target_dir(target_dir: &Path, over_ride: &Option<PathBuf>) -> Result<
             if path.is_absolute() {
                 Ok(path)
             } else {
-                bail!("`target_directory` {path:?} must be an absolute path");
+                bail!("`target_dir` {path:?} must be an absolute path");
             }
         }
         None => Ok(target_dir.to_path_buf()),

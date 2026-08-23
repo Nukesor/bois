@@ -39,7 +39,7 @@ The following is a full example of a `trait.yml`:
 ```yml
 # Override the target directory for all files in this trait.
 # If not set, the global target directory is used.
-target_directory: /etc
+target_dir: /etc
 
 # Packages that should be installed when this trait is enabled.
 packages:
@@ -66,7 +66,7 @@ cleanup:
   directories: true
 ```
 
-- `target_directory`: `PathBuf` (optional) - Override the target directory for all configuration files in this trait.
+- `target_dir`: `PathBuf` (optional) - Override the target directory for all configuration files in this trait.
   Must be an absolute path (`~` is expanded). If not set, the global target directory is used.
 - `packages`: `Map<String -> List<String>>` (optional) - A list of packages sorted by package manager.
   Look at [Package Management](../system_configuration/package_management/package_management.md) to see the list of available package managers.

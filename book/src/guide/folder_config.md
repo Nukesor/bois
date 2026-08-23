@@ -50,7 +50,7 @@ File ownership and permissions are set per file via its [file config](./file_con
 
 - `path`: `PathBuf` (optional) - Override the destination path for this directory and all its contents.
   - If it's a relative path, it's treated as relative to the host's/trait's target directory
-    (the `target_directory` override if set, otherwise the global target directory).
+    (the `target_dir` override if set, otherwise the global target directory).
   - If it's an absolute path, that absolute path is used directly.
   - This override cascades to all child files and directories, unless they specify their own `path`.
 - `owner`: `String` (optional) - The directory owner. Defaults to the current user.

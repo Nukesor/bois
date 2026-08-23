@@ -47,7 +47,7 @@ If anything is missing, please open a ticket.
 
 - `path`: `PathBuf` (optional) - Override the destination path for this file.
   - If it's a relative path, it's treated as relative to the host's/trait's target directory
-    (the `target_directory` override if set, otherwise the global target directory).
+    (the `target_dir` override if set, otherwise the global target directory).
   - If it's an absolute path, that absolute path is used directly.
   - If the path ends with a `/`, the file is deployed **into** that directory under its own name.
     Otherwise, the path is used as the full destination path, including the file name.

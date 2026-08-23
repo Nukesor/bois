@@ -1,6 +1,6 @@
 # The default directory to where files will be deployed
 #
-#target_directory: /etc
+#target_dir: /etc
 
 # The default permissions for all files inside this trait.
 # Can be overwritten on a directory or filebases deeper down the file hierarchy.

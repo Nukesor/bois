@@ -79,7 +79,7 @@ cleanup:
 
 - `traits`: `List<String>` The list of traits that're enabled for this host.
   The trait names correspond to the trait's directory names inside the top-level `traits` directory.
-- `target_directory`: `PathBuf` (optional) - Override the target directory for all configuration files in this host directory.
+- `target_dir`: `PathBuf` (optional) - Override the target directory for all configuration files in this host directory.
   Must be an absolute path (`~` is expanded). If not set, the global target directory is used.
 - `packages`: `Map<String -> List<String>>`: A list of packages sorted by package manager.
   Look at [Package Management](../system_configuration/package_management/package_management.md) to see the list of available package managers.

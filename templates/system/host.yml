@@ -4,7 +4,7 @@ traits:
 
 # The default directory to where files will be deployed
 #
-#target_directory: /etc
+#target_dir: /etc
 
 # The default permissions for deployed files and directories inside this host directory.
 # Can be overwritten on a directory or filebases deeper down the file hierarchy.
