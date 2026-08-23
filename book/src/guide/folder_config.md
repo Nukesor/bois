@@ -81,10 +81,10 @@ Both `timers/backup.timer` and `services/backup.service` will be deployed under 
 
 ## Symlinks on the System
 
-It's common to have symlinked directories on a live system, such as `/lib/ -> /usr/lib/`.
+It's common to have symlinked directories on a system, such as `/lib/ -> /usr/lib/`.
 Bois handles such symlinks in deployment paths as follows:
 
-- If a directory in a deployment path is a symlink on the live system and that directory has **no** declared permissions (`owner`, `group` or `mode`), the symlink is accepted, as long as it points to a directory.
+- If a directory in a deployment path is a symlink on the system and that directory has **no** declared permissions (`owner`, `group` or `mode`), the symlink is accepted, as long as it points to a directory.
   All files are then simply deployed through the link.
 - As soon as any of `owner`, `group` or `mode` is declared for a directory, that directory is considered explicitly managed.
   Declared permissions can only be enforced on a real directory, so a symlink at its path is treated as a conflict: the link is deleted and replaced by a real directory.

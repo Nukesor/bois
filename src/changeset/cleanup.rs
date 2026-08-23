@@ -8,7 +8,7 @@
 //! - Packages that were dropped from the config.
 //! - Services that were dropped from the config. Those are stopped and disabled.
 //!
-//! On top of that, any detected cleanup operation is validated against the live system
+//! On top of that, any detected cleanup operation is validated against the system
 //! and should not be reported if no longer necessary.
 
 use std::{collections::HashMap, path::PathBuf};
@@ -28,7 +28,7 @@ use crate::{
         State,
         path::{DirectoryBacking, Node, Tree},
     },
-    system_state::{SystemState, entry::LiveEntry},
+    system_state::{SystemState, entry::ActualEntry},
 };
 
 /// Compute the state that remains from a previous deployment after the cleanup phase
@@ -129,7 +129,7 @@ fn handle_paths(previous: &Tree, desired: &Tree, changeset: &mut Changeset) -> R
 
         match node {
             Node::File(_) => {
-                if let LiveEntry::File { .. } = LiveEntry::read(&path)? {
+                if let ActualEntry::File { .. } = ActualEntry::read(&path)? {
                     changeset
                         .path_cleanup
                         .push(PathOperation::File(FileOperation::Cleanup { path }));
@@ -145,7 +145,7 @@ fn handle_paths(previous: &Tree, desired: &Tree, changeset: &mut Changeset) -> R
                     continue;
                 }
 
-                if let LiveEntry::Directory { .. } = LiveEntry::read(&path)? {
+                if let ActualEntry::Directory { .. } = ActualEntry::read(&path)? {
                     changeset.path_cleanup.push(PathOperation::Directory(
                         DirectoryOperation::Cleanup { path },
                     ));

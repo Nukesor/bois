@@ -19,7 +19,7 @@ pub mod service_managers;
 /// systemd: every query result is cached.
 ///
 /// File information is deliberately **not** part of this state. The filesystem
-/// is queried live per path during comparisons, as we cannot pull the whole
+/// is queried per path during comparisons, as we cannot pull the whole
 /// filesystem into a state struct.
 #[derive(Debug)]
 pub struct SystemState {

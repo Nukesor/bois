@@ -171,7 +171,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                     }
 
                     if let Some(new_content) = content {
-                        // Diff direction: live file (old) -> desired content (new).
+                        // Diff direction: actual file (old) -> desired content (new).
                         print_content_diff(config, path, new_content)?;
                     }
                 }
@@ -276,20 +276,20 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
 }
 
 /// Print everything that changed on the system since the last deployment.
-/// Diff direction is deployed (old) -> live (new): the diff shows what the
+/// Diff direction is deployed (old) -> actual (new): the diff shows what the
 /// user changed on their system.
 pub fn print_drift(drift: &Drift, config: &Configuration) -> Result<()> {
     print_header("Drift on the system since the last deploy");
 
     for PathChange { path, change } in &drift.changed_paths {
         match change {
-            PathChangeKind::FileTypeChanged { deployed, live } => {
+            PathChangeKind::FileTypeChanged { deployed, actual } => {
                 println!(
                     "{} {}: was deployed as {}, is now a {}",
                     "Replaced".yellow().bold(),
                     path.to_string_lossy(),
                     deployed.to_string().bold(),
-                    live.to_string().bold(),
+                    actual.to_string().bold(),
                 );
             }
             PathChangeKind::Modified {
@@ -301,14 +301,14 @@ pub fn print_drift(drift: &Drift, config: &Configuration) -> Result<()> {
                 println!("{} {}", "Modified".yellow().bold(), path.to_string_lossy());
 
                 let mut table = Table::new();
-                if let Some((deployed, live)) = mode {
-                    add_table_row(&mut table, "Mod", &format!("{deployed:#o} -> {live:#o}"));
+                if let Some((deployed, actual)) = mode {
+                    add_table_row(&mut table, "Mod", &format!("{deployed:#o} -> {actual:#o}"));
                 }
-                if let Some((deployed, live)) = owner {
-                    add_table_row(&mut table, "Owner", &format!("{deployed} -> {live}"));
+                if let Some((deployed, actual)) = owner {
+                    add_table_row(&mut table, "Owner", &format!("{deployed} -> {actual}"));
                 }
-                if let Some((deployed, live)) = group {
-                    add_table_row(&mut table, "Group", &format!("{deployed} -> {live}"));
+                if let Some((deployed, actual)) = group {
+                    add_table_row(&mut table, "Group", &format!("{deployed} -> {actual}"));
                 }
                 if !table.is_empty() {
                     print_table(table);
@@ -316,7 +316,7 @@ pub fn print_drift(drift: &Drift, config: &Configuration) -> Result<()> {
 
                 if let Some(content_change) = content {
                     // Write the *deployed* content to a temp file and diff it
-                    // against the live file: deployed -> live.
+                    // against the actual file: deployed -> actual.
                     print_diff_against_temp(config, &content_change.deployed, path)?;
                 }
             }
@@ -390,7 +390,7 @@ fn print_table(mut table: Table) {
     println!("{table}");
 }
 
-/// Show the content diff `live file -> desired content` for a deploy Modify.
+/// Show the content diff `actual file -> desired content` for a deploy Modify.
 fn print_content_diff(config: &Configuration, path: &Path, desired: &FileContent) -> Result<()> {
     match desired {
         FileContent::Binary(bytes) => {
@@ -404,11 +404,11 @@ fn print_content_diff(config: &Configuration, path: &Path, desired: &FileContent
     }
 }
 
-/// Show the content diff `deployed content -> live file` for drift reporting.
+/// Show the content diff `deployed content -> actual file` for drift reporting.
 fn print_diff_against_temp(
     config: &Configuration,
     deployed: &FileContent,
-    live_path: &Path,
+    actual_path: &Path,
 ) -> Result<()> {
     match deployed {
         FileContent::Binary(_) => {
@@ -417,7 +417,7 @@ fn print_diff_against_temp(
         }
         FileContent::Text(_) => {
             let temp_path = write_temp_diff_file(config, deployed)?;
-            print_file_diff(&temp_path, live_path)
+            print_file_diff(&temp_path, actual_path)
         }
     }
 }

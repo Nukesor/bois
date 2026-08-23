@@ -2,20 +2,20 @@
 //!
 //! It creates changesets between the different states, with those states being
 //! - The current config source, from which we derive the "desired state"
-//! - The live system
+//! - The actual state of the system
 //! - The state of a previous deployment (if it exists).
 //!
 //! As such this module contains comparison logic between those three states:
 //!
-//! 1. [deploy_changeset]: desired state -> live system. The set of changes that must be executed to
-//!    reach the desired state.
-//! 2. [detect_drift]: last-deployed state -> live system. Determines drift on the system since the
+//! 1. [deploy_changeset]: desired state -> actual state. The set of changes that must be executed
+//!    to reach the desired state.
+//! 2. [detect_drift]: last-deployed state -> actual state. Determines drift on the system since the
 //!    last deploy. Necessary to prevent accidental overrides of unadopted changes.
 //! 3. [cleanup_changeset]: desired state -> last-deployed state. Changes from the the previous
 //!    deployment that are no longer needed and must be cleaned up.
 //!
 //! This module only creates sets of changes, which are then later on used to report, deploy,
-//! or cleanup files/packages/services/etc. by the actual handler logic in [`crate::handlers`].
+//! or cleanup files/packages/services/etc. by the handler logic in [`crate::handlers`].
 
 use std::path::PathBuf;
 
@@ -133,7 +133,7 @@ impl PathOperation {
     }
 }
 
-/// The filetype of a live entry on the filesystem.
+/// The filetype of an actual entry on the filesystem.
 ///
 /// Mirrors [`std::fs::FileType`], plus `Special` for sockets, devices and other special files.
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq)]
@@ -168,12 +168,12 @@ pub enum FileOperation {
     /// Delete a previously deployed file that is no longer part of the desired
     /// state.
     Cleanup { path: PathBuf },
-    /// A conflict with an unmanaged non-directory live entry has been detected.
+    /// A conflict with an unmanaged non-directory actual entry has been detected.
     ///
     /// This will be reported to the user and afterwards removed.
     Conflict {
         path: PathBuf,
-        /// The filetype of the live entry that conflicts with our path.
+        /// The filetype of the actual entry that conflicts with our path.
         found: FileType,
     },
 }
@@ -206,7 +206,7 @@ pub enum DirectoryOperation {
     /// This will be reported to the user and afterwards removed.
     Conflict {
         path: PathBuf,
-        /// The filetype of the live entry that conflicts with our path.
+        /// The filetype of the actual entry that conflicts with our path.
         found: FileType,
     },
 }

@@ -59,7 +59,7 @@ impl DirectoryState {
 
 /// Whether a directory in the tree is backed by a source directory.
 ///
-/// "backed" in this this context means that there's an actual directory
+/// "backed" in this this context means that there's a real directory
 /// in the source directory that introduced this node.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DirectoryBacking {
@@ -115,7 +115,7 @@ impl Display for Origin {
 }
 
 /// Describes where a node in the [Tree] originated, so conflicts and diffs
-/// can point the user to the actual files that caused issues.
+/// can point the user to the source files that caused issues.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
     /// The host or trait.

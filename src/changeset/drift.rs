@@ -1,4 +1,4 @@
-//! Comparison 2: last-deployed state -> live system.
+//! Comparison 2: last-deployed state -> actual state.
 //!
 //! Detects any drift that was introduced on the system since the last
 //! deployment. The user might have forgotten to integrate those changes into
@@ -14,7 +14,7 @@
 //! displayed to the user.
 //!
 //! TODO: The idea is to (maybe) later on create a `bois adopt` command, which
-//! would attempt to copy over on-system changes to the bois directory.
+//! would attempt to copy over changes from the system into the bois directory.
 
 use std::path::{Path, PathBuf};
 
@@ -30,11 +30,11 @@ use crate::{
     },
     system_state::{
         SystemState,
-        entry::{LiveEntry, points_to_directory, read_live_content},
+        entry::{ActualEntry, points_to_directory, read_actual_content},
     },
 };
 
-/// Everything that changed on the live system since the last deployment.
+/// Everything that changed on the system since the last deployment.
 #[derive(Debug, Default)]
 pub struct Drift {
     /// Deployed files/directories whose content, metadata or filetype changed
@@ -68,15 +68,18 @@ pub struct PathChange {
 pub enum PathChangeKind {
     /// The filetype changed, e.g. a deployed file was replaced by a
     /// directory or symlink.
-    FileTypeChanged { deployed: FileType, live: FileType },
+    FileTypeChanged {
+        deployed: FileType,
+        actual: FileType,
+    },
     /// Content and/or metadata changed. Only the changed fields are set.
     Modified {
         content: Option<ContentChange>,
-        /// (deployed, live)
+        /// (deployed, actual)
         mode: Option<(u32, u32)>,
-        /// (deployed, live)
+        /// (deployed, actual)
         owner: Option<(String, String)>,
-        /// (deployed, live)
+        /// (deployed, actual)
         group: Option<(String, String)>,
     },
 }
@@ -85,10 +88,10 @@ pub enum PathChangeKind {
 #[derive(Debug)]
 pub struct ContentChange {
     pub deployed: FileContent,
-    pub live: Vec<u8>,
+    pub actual: Vec<u8>,
 }
 
-/// Compare the last-deployed state with the live system.
+/// Compare the last-deployed state against the system.
 ///
 /// The `desired` state is used to filter out changes that the user has
 /// already integrated into the config.
@@ -128,12 +131,12 @@ fn handle_file(
     changes: &mut Drift,
 ) -> Result<()> {
     // The file is no longer desired.
-    // Since we're going to abandon/remove it anyway, any on-system changes are moot.
+    // Since we're going to abandon/remove it anyway, any changes on the system are moot.
     let Some(desired) = desired else {
         return Ok(());
     };
 
-    let live = LiveEntry::read(path)?;
+    let actual = ActualEntry::read(path)?;
 
     // The file the desired state wants at this path, if it still does.
     let desired_file = match desired {
@@ -141,56 +144,56 @@ fn handle_file(
         _ => None,
     };
 
-    match live {
-        LiveEntry::Missing => {
+    match actual {
+        ActualEntry::Missing => {
             // Only report the deletion if a file is still desired at this path.
             if desired_file.is_some() {
                 changes.deleted_paths.push(path.to_path_buf());
             }
         }
 
-        LiveEntry::Directory { .. } | LiveEntry::Symlink | LiveEntry::Special => {
-            // The live entry changed type and is not a file.
+        ActualEntry::Directory { .. } | ActualEntry::Symlink | ActualEntry::Special => {
+            // The actual entry changed type and is not a file.
             // This may be acceptable if the path has been swapped for a directory in
-            // the config and the on-system change is reflected in the config.
-            if live_entry_satisfies_desired(path, desired, &live)? {
+            // the config and the change on the system is reflected in the config.
+            if actual_entry_satisfies_desired(path, desired, &actual)? {
                 return Ok(());
             }
 
-            // `Missing` is the only live entry without a filetype and it's handled above.
-            if let Some(live) = live.file_type() {
+            // `Missing` is the only actual entry without a filetype and it's handled above.
+            if let Some(actual) = actual.file_type() {
                 changes.changed_paths.push(PathChange {
                     path: path.to_path_buf(),
                     change: PathChangeKind::FileTypeChanged {
                         deployed: FileType::File,
-                        live,
+                        actual,
                     },
                 })
             }
         }
 
-        LiveEntry::File { mode, owner, group } => {
+        ActualEntry::File { mode, owner, group } => {
             // Handle the case that the desired filetype changed.
-            // Due to this, the file will be replaced anyway and any on-system
-            // changes are moot.
+            // Due to this, the file will be replaced anyway and any changes
+            // on the system are moot.
             let Some(desired_file) = desired_file else {
                 return Ok(());
             };
 
-            let live_content = read_live_content(path)?;
+            let actual_content = read_actual_content(path)?;
 
             // Check for differences in the actual file content.
-            // If any are detected, they're only reported if the new on-system state differs
-            // from the desired state.
-            let content_adopted = desired_file.content.bytes() == live_content.as_slice();
+            // If any are detected, they're only reported if the actual state differs from
+            // the desired state.
+            let content_adopted = desired_file.content.bytes() == actual_content.as_slice();
             let mode_adopted = desired_file.mode == mode;
             let owner_adopted = desired_file.owner == owner;
             let group_adopted = desired_file.group == group;
 
-            let content = (file.content.bytes() != live_content.as_slice() && !content_adopted)
+            let content = (file.content.bytes() != actual_content.as_slice() && !content_adopted)
                 .then(|| ContentChange {
                     deployed: file.content.clone(),
-                    live: live_content,
+                    actual: actual_content,
                 });
             let mode = (mode != file.mode && !mode_adopted).then_some((file.mode, mode));
             let owner = (owner != file.owner && !owner_adopted)
@@ -223,7 +226,7 @@ fn handle_directory(
     changes: &mut Drift,
 ) -> Result<()> {
     // The directory is no longer desired.
-    // Since we're going to abandon/remove it anyway, any on-system changes are moot.
+    // Since we're going to abandon/remove it anyway, any changes on the system are moot.
     let Some(desired) = desired else {
         return Ok(());
     };
@@ -255,65 +258,65 @@ fn handle_directory(
         _ => (None, None, None),
     };
 
-    let live = LiveEntry::read(path)?;
+    let actual = ActualEntry::read(path)?;
 
-    match live {
-        LiveEntry::Missing => {
+    match actual {
+        ActualEntry::Missing => {
             // Only report the deletion if a directory is still desired at this path.
             if desired_dir.is_some() {
                 changes.deleted_paths.push(path.to_path_buf());
             }
         }
 
-        LiveEntry::File { .. } | LiveEntry::Symlink | LiveEntry::Special => {
-            // The live entry changed type and is no longer a directory.
+        ActualEntry::File { .. } | ActualEntry::Symlink | ActualEntry::Special => {
+            // The actual entry changed type and is no longer a directory.
             // This may be acceptable if the path has been swapped for a file in
-            // the config and the on-system change is reflected in the config.
-            if live_entry_satisfies_desired(path, desired, &live)? {
+            // the config and the change on the system is reflected in the config.
+            if actual_entry_satisfies_desired(path, desired, &actual)? {
                 return Ok(());
             }
 
-            // `Missing` is the only live entry without a filetype and it's handled above.
-            if let Some(live) = live.file_type() {
+            // `Missing` is the only actual entry without a filetype and it's handled above.
+            if let Some(actual) = actual.file_type() {
                 changes.changed_paths.push(PathChange {
                     path: path.to_path_buf(),
                     change: PathChangeKind::FileTypeChanged {
                         deployed: FileType::Directory,
-                        live,
+                        actual,
                     },
                 })
             }
         }
 
-        LiveEntry::Directory {
-            mode: live_mode,
-            owner: live_owner,
-            group: live_group,
+        ActualEntry::Directory {
+            mode: actual_mode,
+            owner: actual_owner,
+            group: actual_group,
         } => {
             // Handle the case that the desired filetype changed.
             // Due to this, the directory will be replaced anyway and any
-            // on-system changes are moot.
+            // changes on the system are moot.
             if desired_dir.is_none() {
                 return Ok(());
             }
 
             // Only explicitly declared permissions are managed by us.
-            // Check which of these no longer match the on-system state and
+            // Check which of these no longer match the actual state and
             // also don't match the desired state.
             let mode = declared_mode
-                .filter(|declared| live_mode != *declared)
-                .filter(|_| desired_mode.is_some_and(|d| d != live_mode))
-                .map(|declared| (declared, live_mode));
+                .filter(|declared| actual_mode != *declared)
+                .filter(|_| desired_mode.is_some_and(|d| d != actual_mode))
+                .map(|declared| (declared, actual_mode));
             let owner = declared_owner
                 .as_ref()
-                .filter(|declared| &live_owner != *declared)
-                .filter(|_| desired_owner.is_some_and(|d| d != &live_owner))
-                .map(|declared| (declared.clone(), live_owner.clone()));
+                .filter(|declared| &actual_owner != *declared)
+                .filter(|_| desired_owner.is_some_and(|d| d != &actual_owner))
+                .map(|declared| (declared.clone(), actual_owner.clone()));
             let group = declared_group
                 .as_ref()
-                .filter(|declared| &live_group != *declared)
-                .filter(|_| desired_group.is_some_and(|d| d != &live_group))
-                .map(|declared| (declared.clone(), live_group.clone()));
+                .filter(|declared| &actual_group != *declared)
+                .filter(|_| desired_group.is_some_and(|d| d != &actual_group))
+                .map(|declared| (declared.clone(), actual_group.clone()));
 
             if mode.is_some() || owner.is_some() || group.is_some() {
                 changes.changed_paths.push(PathChange {
@@ -332,22 +335,26 @@ fn handle_directory(
     Ok(())
 }
 
-/// Whether the deployment will keep the live entry at this path in place.
+/// Whether the deployment will keep the actual entry at this path in place.
 ///
-/// Only called for nodes whose live filetype no longer matches the previously deployed one.
+/// Only called for nodes whose actual filetype no longer matches the previously deployed one.
 /// This is used to filter out filetype changes that were already (at least partially) adopted
 /// into the config, e.g. a deployed file that was manually replaced with a directory while the
 /// desired state also wants a directory.
 ///
 /// Content and metadata of nodes isn't inspected here. That's done during the deploy step.
-fn live_entry_satisfies_desired(path: &Path, desired: &Node, live: &LiveEntry) -> Result<bool> {
-    let satisfied = match (desired, live) {
-        // A desired file/directory is satisfied by any live entry of the same filetype.
-        (Node::File(_), LiveEntry::File { .. })
-        | (Node::Directory(_), LiveEntry::Directory { .. }) => true,
+fn actual_entry_satisfies_desired(
+    path: &Path,
+    desired: &Node,
+    actual: &ActualEntry,
+) -> Result<bool> {
+    let satisfied = match (desired, actual) {
+        // A desired file/directory is satisfied by any actual entry of the same filetype.
+        (Node::File(_), ActualEntry::File { .. })
+        | (Node::Directory(_), ActualEntry::Directory { .. }) => true,
         // A desired directory is satisfied by a dir-pointing symlink, unless permissions are
         // declared. This mirrors the deploy comparison's symlink handling.
-        (Node::Directory(dir), LiveEntry::Symlink) => {
+        (Node::Directory(dir), ActualEntry::Symlink) => {
             let is_explicit = match dir.meta().map(|meta| &meta.permissions) {
                 Some(DirectoryPermissions::Declared { mode, owner, group }) => {
                     mode.is_some() || owner.is_some() || group.is_some()

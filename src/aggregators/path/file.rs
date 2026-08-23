@@ -37,7 +37,7 @@ pub struct SourceFile {
 impl SourceFile {
     /// Read and parse a source file with an optional bois config block.
     ///
-    /// The optional config block is removed from the file during parsing, leaving the actual
+    /// The optional config block is removed from the file during parsing, leaving only the
     /// (potentially templatable) content.
     ///
     /// If the file cannot be parsed as UTF-8, it's returned as [`FileContent::Binary`].

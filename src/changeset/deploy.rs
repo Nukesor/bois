@@ -1,6 +1,6 @@
-//! Comparison 1: desired state -> live system.
+//! Comparison 1: desired state -> actual state.
 //!
-//! [deploy_changeset] determines what has to happen so the live system reaches the desired state.
+//! [deploy_changeset] determines what has to happen so the system reaches the desired state.
 //!
 //! There're a few rules regarding path modifications:
 //! - The case that a different filetype is detected at the target location than desired. For
@@ -27,13 +27,13 @@ use crate::{
     },
     system_state::{
         SystemState,
-        entry::{LiveEntry, points_to_directory, read_live_content},
+        entry::{ActualEntry, points_to_directory, read_actual_content},
     },
 };
 
-/// Create the changeset that transforms the live system into the desired state.
+/// Create the changeset that transforms the system into the desired state.
 ///
-/// - The target [`State::path_tree`] is checked against the live filesystem
+/// - The target [`State::path_tree`] is checked against the filesystem
 /// - Packages and services are checked against the cached system state.
 pub fn deploy_changeset(desired: &State, system_state: &mut SystemState) -> Result<Changeset> {
     let mut changeset = Changeset::new();
@@ -52,7 +52,7 @@ pub fn deploy_changeset(desired: &State, system_state: &mut SystemState) -> Resu
 /// - A directory's subtree is contiguous.
 fn handle_paths(desired: &Tree, changeset: &mut Changeset) -> Result<()> {
     // The root of the last directory subtree that will be created from scratch during
-    // execution. Either nothing exists at that path yet, or a conflicting live entry (e.g. a
+    // execution. Either nothing exists at that path yet, or a conflicting actual entry (e.g. a
     // symlink) gets deleted and replaced with a new directory.
     //
     // Either way, nothing can exist below that path once the directory is created, so all
@@ -62,15 +62,15 @@ fn handle_paths(desired: &Tree, changeset: &mut Changeset) -> Result<()> {
     for (path, node) in desired.flatten() {
         let inside_new_dir = new_dir.as_ref().is_some_and(|root| path.starts_with(root));
 
-        let live = if inside_new_dir {
-            LiveEntry::Missing
+        let actual = if inside_new_dir {
+            ActualEntry::Missing
         } else {
-            LiveEntry::read(&path)?
+            ActualEntry::read(&path)?
         };
 
         match node {
-            Node::File(file) => handle_file(&path, file, &live, changeset)?,
-            Node::Directory(dir) => match handle_directory(&path, dir, &live, changeset)? {
+            Node::File(file) => handle_file(&path, file, &actual, changeset)?,
+            Node::Directory(dir) => match handle_directory(&path, dir, &actual, changeset)? {
                 DirectoryOutcome::Kept => (),
                 DirectoryOutcome::Created | DirectoryOutcome::Replaced => {
                     if !inside_new_dir {
@@ -89,7 +89,7 @@ fn handle_paths(desired: &Tree, changeset: &mut Changeset) -> Result<()> {
 fn handle_file(
     path: &std::path::Path,
     file: &FileState,
-    live: &LiveEntry,
+    actual: &ActualEntry,
     changeset: &mut Changeset,
 ) -> Result<()> {
     let create = || {
@@ -102,19 +102,19 @@ fn handle_file(
         })
     };
 
-    match live {
-        LiveEntry::Missing => changeset.path_operations.push(create()),
+    match actual {
+        ActualEntry::Missing => changeset.path_operations.push(create()),
 
         // The path exists, but isn't a file.
         // First delete the conflicting path, then create the new file.
         //
-        // A non-empty live directory makes the conflict operation fail at execution time, as we
-        // don't want silently wipe directory trees full of data.
+        // A non-empty directory on the system makes the conflict operation fail at execution time,
+        // as we don't want to silently wipe directory trees full of data.
         //
         // No interference with the cleanup phase: this changeset is computed after cleanup has
         // already been executed, so a directory that's cleaned up in the same run is simply gone
-        // by the time we look at the live system here.
-        LiveEntry::Directory { .. } => {
+        // by the time we look at the system here.
+        ActualEntry::Directory { .. } => {
             changeset.path_operations.push(PathOperation::Directory(
                 DirectoryOperation::Conflict {
                     path: path.to_path_buf(),
@@ -123,9 +123,9 @@ fn handle_file(
             ));
             changeset.path_operations.push(create());
         }
-        LiveEntry::Symlink | LiveEntry::Special => {
-            // `Missing` is the only live entry without a filetype and it's handled above.
-            if let Some(found) = live.file_type() {
+        ActualEntry::Symlink | ActualEntry::Special => {
+            // `Missing` is the only actual entry without a filetype and it's handled above.
+            if let Some(found) = actual.file_type() {
                 changeset
                     .path_operations
                     .push(PathOperation::File(FileOperation::Conflict {
@@ -137,14 +137,14 @@ fn handle_file(
         }
 
         // The file exists. Check for any differences.
-        LiveEntry::File { mode, owner, group } => {
+        ActualEntry::File { mode, owner, group } => {
             let mut modified_content = None;
             let mut modified_mode = None;
             let mut modified_owner = None;
             let mut modified_group = None;
 
-            let live_content = read_live_content(path)?;
-            if file.content.bytes() != live_content.as_slice() {
+            let actual_content = read_actual_content(path)?;
+            if file.content.bytes() != actual_content.as_slice() {
                 modified_content = Some(file.content.clone());
             }
 
@@ -188,15 +188,15 @@ enum DirectoryOutcome {
     Kept,
     /// Nothing exists at this path yet and a new directory will be created.
     Created,
-    /// A conflicting live entry will be deleted and replaced with a new directory.
+    /// A conflicting actual entry will be deleted and replaced with a new directory.
     Replaced,
 }
 
-/// Compare a single directory node against its live entry.
+/// Compare a single directory node against its actual entry.
 fn handle_directory(
     path: &std::path::Path,
     dir: &DirectoryState,
-    live: &LiveEntry,
+    actual: &ActualEntry,
     changeset: &mut Changeset,
 ) -> Result<DirectoryOutcome> {
     // Get the permissions for this directory.
@@ -232,17 +232,17 @@ fn handle_directory(
         })
     };
 
-    let outcome = match live {
-        LiveEntry::Missing => {
+    let outcome = match actual {
+        ActualEntry::Missing => {
             changeset.path_operations.push(create());
             DirectoryOutcome::Created
         }
 
         // The path exists, but isn't a directory.
         // Delete the conflicting path and create the directory.
-        LiveEntry::File { .. } | LiveEntry::Special => {
-            // `Missing` is the only live entry without a filetype and it's handled above.
-            if let Some(found) = live.file_type() {
+        ActualEntry::File { .. } | ActualEntry::Special => {
+            // `Missing` is the only actual entry without a filetype and it's handled above.
+            if let Some(found) = actual.file_type() {
                 changeset
                     .path_operations
                     .push(PathOperation::File(FileOperation::Conflict {
@@ -255,7 +255,7 @@ fn handle_directory(
         }
 
         // The path exists, but it's a symlink.
-        LiveEntry::Symlink => {
+        ActualEntry::Symlink => {
             // Symlinks are accepted in place of non-explicit directories, as long as
             // they point towards a directory. All reads and writes of deployed
             // children simply resolve through the link.
@@ -277,7 +277,7 @@ fn handle_directory(
         // The directory exists. Check for any differences.
         // Only declared permission fields are enforced; everything else
         // is left alone once the directory exists.
-        LiveEntry::Directory { mode, owner, group } => {
+        ActualEntry::Directory { mode, owner, group } => {
             let mut modified_mode = None;
             let mut modified_owner = None;
             let mut modified_group = None;

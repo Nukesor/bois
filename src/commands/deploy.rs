@@ -51,7 +51,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     let previous_state = State::read_previous(&config)?;
 
     // ---------- Step 1: Detect drift ----------
-    // Compare the last deployed state against the live system. The user might
+    // Compare the last deployed state against the system. The user might
     // have forgotten to integrate manual changes into the bois config, so we
     // inform them before anything gets overwritten.
     if let Some(previous) = &previous_state {
