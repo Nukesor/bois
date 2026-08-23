@@ -18,9 +18,10 @@ pub struct TraitConfig {
     // TODO(backwards compatibility): alias
     #[serde(default, alias = "target_directory")]
     pub target_dir: Option<PathBuf>,
-    /// The content of this trait's directory.
-    #[serde(default)]
-    pub defaults: TraitDefaults,
+    /// Default that should be applied to all files.
+    // TODO(backwards compatibility): alias
+    #[serde(default, alias = "defaults")]
+    pub file_defaults: TraitDefaults,
     /// Cleaned settings on which components should be removed once they leave a
     /// trait's configuration.
     #[serde(default)]

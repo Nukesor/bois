@@ -2,9 +2,9 @@
 #
 #target_dir: /etc
 
-# The default permissions for all files inside this trait.
+# The default permissions for deployed files and directories inside this trait directory.
 # Can be overwritten on a directory or filebases deeper down the file hierarchy.
-#defaults:
+#file_defaults:
 #  owner: root
 #  group: root
 #  file_mode: 0o644

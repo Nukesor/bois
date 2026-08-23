@@ -55,7 +55,7 @@ services:
     - backup.timer
 
 # Defaults that should be applied to all files in this trait.
-defaults:
+file_defaults:
   owner: root
   group: root
   file_mode: 0o644
@@ -74,7 +74,7 @@ cleanup:
   Listed services are enabled during deployment. Once removed, they're stopped and disabled.
   A service can either be a plain name, or an object with a `name` and a `start` flag to also start the service right away when it gets enabled.
   Look at [Service Management](../system_configuration/service_management/service_management.md) to see the list of available service managers.
-- `defaults`: (optional) Set default file permissions for all configuration files that're inside this trait directory.
+- `file_defaults`: (optional) Set default file permissions for all configuration files that're inside this trait directory.
   - `owner`: `String` - The file's owner
   - `group`: `String` - The file's assigned group
   - `file_mode`: `OctalInt` - The default permissions that'll be set for all files.
