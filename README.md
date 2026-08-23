@@ -1,18 +1,27 @@
 # Bois
 
+[![Book](https://img.shields.io/badge/Read%20the%20book-blue)](https://nukesor.github.io/bois/guide/setup.html)
+[![Test Build](https://github.com/Nukesor/bois/actions/workflows/test.yml/badge.svg)](https://github.com/Nukesor/bois/actions/workflows/test.yml)
+[![Crates.io](https://img.shields.io/crates/v/bois)](https://crates.io/crates/bois)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://img.shields.io/github/downloads/nukesor/bois/total.svg)](https://github.com/nukesor/bois/releases)
+
 **DON'T USE THIS YET.**
 The project is highly experimental and very much work in progress. \
 It's only public so I don't have to hassle around with deployment keys and such.
 
-## What is Bois
+## What does it do?
 
-Bois is an opinionated system provisioning tool for your **personal** machines, (which I lovingly call `my bois`).
+Bois is an opinionated dotfile or system provisioning tool for your :sparkles:personal:sparkles: computers (hosts).
 
-It allows you to manage your system configuration files (mostly everything in `/etc`), so it lives in a git repository and can easily be re-used by your other devices.
-This means re-usability of your system configuration via templating and optional deployment on a per-host basis.
-On top of this, it also manages your installed packages and enabled services.
+It allows you to manage your configuration files and to synchronize or share them between your hosts.
+There's support for templating, per-host configuration and sets of shared configuration that can be opt-in on a per host basis.
 
-You could say that it aims to strike a balance between Chezmoi and Ansible/Saltstack, but on-host and for system configuration.
+On top of this, `bois` can also manage your installed packages and enabled services.
+
+For a full tour, check out the [book](https://nukesor.github.io/bois/guide/how_to_dotfiles.html).
+
+You could say that it aims to strike a balance between Chezmoi and Ansible/Saltstack, but on-host and for your own computers.
 
 - [Features](https://github.com/Nukesor/bois#features)
 - [Installation](https://github.com/Nukesor/bois#installation)
@@ -25,14 +34,14 @@ You could say that it aims to strike a balance between Chezmoi and Ansible/Salts
 - Configuration file management
   - Allow editing of deployed files
   - Diffing/Merging of deployed files vs. changed files in bois directory.
-  - Safety first. Don't overwrite changes without a prompt.
+  - Safety first: Don't overwrite changes without a prompt.
 - Granular system package management (via package managers)
 - Granular system service management (e.g. Systemd).
-  - Start/enable services based on deployed files.
-- Cleanup
-  - Remove deployed files/directories if removed from bois.
-  - Uninstall packages if removed from bois.
-  - Disable/stop services if removed from bois.
+  - Dis-/Enable services based on deployed files.
+- Automatic Cleanup
+  - Remove deployed files/directories.
+  - Uninstall packages.
+  - Disable/stop services.
 - Also designed for usage as user dotfile manager.
 
 ## Installation
@@ -72,10 +81,9 @@ The final binaries will be located in `target/release/bois`.
 ## Design Goals
 
 The main focus for bois is that it's supposed to be run on bare-metal **personal** machines, i.e. your desktop, laptop and maybe your home-server/NAS.
-It's also supposed to be used from **inside** the system, in contrast to other tools, which provision systems from the outside (e.g. ssh or a orchestrator server).
-It aims to strike a balance between Chezmoi and Ansible, but on-host and for systems configuration.
+It's also supposed to be used from **inside** the system, in contrast to other tools, which provision systems from the outside (for example via ssh (`ansible`) or a orchestrator server (`chef`)).
 
-Additionally, there're a few "buzzwordy" design goals that need to be achieved:
+Additionally, there're a few "buzzwordy" design goals that I aim for:
 
 - Idempotency - Deploying identical files will be always result in the same outcome.
 - Insight - It must be easy to inspect any actions done by Bois, both beforehand and retrospectivelly.
@@ -88,13 +96,13 @@ Additionally, there're a few "buzzwordy" design goals that need to be achieved:
   The idea is to be rather a bit too verbose than sorry, at least by default.
 - Opinionated - Bois isn't supposed to be a solution for everything and everyone.
   Its feature scope will be limited to some basic functionality, I don't want to build a second Ansible.
-  Hence the scope is limited to the following parts of the system:
+  Hence the scope is (for now) limited to the following parts of the system:
   - Configuration files
   - System packages (via package managers)
   - System services
 
 Like all of my projects, this one is also designed to cover the 90-95% use-case.
-It doesn't aim to be a jack of all trades solution and more complex use-cases might be dropped to keep the project usable **and** maintainable.
+It doesn't aim to be a jack of all trades solution and more complex use-cases might be dropped to keep the project **usable and maintainable**.
 The idea is to reach a state where most people are happy with it and then enter some form of soft "feature freeze".
 
 ## Similar Projects
@@ -144,15 +152,16 @@ There's a plenthora of server provisioning tools that work in different ways and
 To name just a few examples I personally worked with:
 
 - [Ansible](https://www.ansible.com/) can be used to provision a fleet of servers via SSH. It's a mature solution albeit a bit slow.
-- [Saltstack](https://saltproject.io/) is uses a custom protocol and usually deploys a master server that's pinged by the server fleet.
+- [Saltstack](https://saltproject.io/) uses a master server that's pinged by the server fleet to keep them in sync.
 - [Chef](https://www.chef.io/) uses a master server to distribute provisioning scripts to the fleet. Configuration happens via code, which can be both a boon and a curse.
 
 ## Project History
 
 - ~2020: Project ideation
-- 2020-2022: On-off designing, technology choice and prototyping until .
+- 2020-2022: On-off designing, technology choice and prototyping.
 - November 2022: First actual commit in repository.
 - December 2024: Project is in a raw functional state that's actually in use by a few friends.
+- August 2026: Major rewrite of all internal components is finished. Most functionality is there, but UI still needs a rework.
 
 ## Why name it "bois"
 

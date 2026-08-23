@@ -3,11 +3,11 @@
 The `pass()` templating function can be used to interact with `pass`.
 There're however a few requirements for this to go smoothly:
 
-1. If your key has a passphrase, you should have a working [gpg-agent](https://wiki.archlinux.org/title/GnuPG#gpg-agent) setup.
+1. If your key has a passphrase, you should have a working terminal-capable [gpg-agent](https://wiki.archlinux.org/title/GnuPG#gpg-agent) setup.
    Otherwise, `pass` won't work as there's no way to provide the password to decrypt your gpg key via a CLI option.
    Your key needs to be, at least temporarily, added to the gpg-agent for bois to be able to access keys.
 1. When you're running `bois` as `root` to configure your system, you must have a working passwordstore and gpg setup for `root` as well.
-   - To avoid to also having to copy and synchronize your passwordstore to root, you can set the following environment variable in your global `bois.yml` to use your normal user's.
+   - You can avoid having to copy and synchronize your passwordstore to root, by setting the following environment variable in your global `bois.yml`. That way, you'll simply use your normal user's passwordstore.
      ```
      # /etc/bois/bois.yml
      envs:
