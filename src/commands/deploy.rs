@@ -47,7 +47,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
 
     // Read the state of the previous run, if any. This is used to determine:
     // - Any changes on the system's files since the last deployment.
-    // - Cleanup work that's needed for the new desired state.
+    // - Cleanup work that's needed for the desired state.
     let previous_state = State::read_previous(&config)?;
 
     // ---------- Step 1: Detect drift ----------

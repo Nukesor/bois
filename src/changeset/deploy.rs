@@ -35,12 +35,12 @@ use crate::{
 ///
 /// - The target [`State::path_tree`] is checked against the live filesystem
 /// - Packages and services are checked against the cached system state.
-pub fn deploy_changeset(new: &State, system_state: &mut SystemState) -> Result<Changeset> {
+pub fn deploy_changeset(desired: &State, system_state: &mut SystemState) -> Result<Changeset> {
     let mut changeset = Changeset::new();
 
-    handle_paths(&new.path_tree, &mut changeset)?;
-    handle_packages(new, system_state, &mut changeset)?;
-    handle_services(new, system_state, &mut changeset)?;
+    handle_paths(&desired.path_tree, &mut changeset)?;
+    handle_packages(desired, system_state, &mut changeset)?;
+    handle_services(desired, system_state, &mut changeset)?;
 
     Ok(changeset)
 }
@@ -50,7 +50,7 @@ pub fn deploy_changeset(new: &State, system_state: &mut SystemState) -> Result<C
 /// This relies on [Tree::flatten] returning a pre-order walk:
 /// - Parents come before their children
 /// - A directory's subtree is contiguous.
-fn handle_paths(new: &Tree, changeset: &mut Changeset) -> Result<()> {
+fn handle_paths(desired: &Tree, changeset: &mut Changeset) -> Result<()> {
     // The root of the last directory subtree that will be created from scratch during
     // execution. Either nothing exists at that path yet, or a conflicting entry (e.g. a
     // symlink) gets deleted and replaced with a new directory.
@@ -59,7 +59,7 @@ fn handle_paths(new: &Tree, changeset: &mut Changeset) -> Result<()> {
     // descendants are compared as missing.
     let mut new_dir: Option<std::path::PathBuf> = None;
 
-    for (path, node) in new.flatten() {
+    for (path, node) in desired.flatten() {
         let inside_new_dir = new_dir.as_ref().is_some_and(|root| path.starts_with(root));
 
         let live = if inside_new_dir {
@@ -318,11 +318,11 @@ fn handle_directory(
 /// Detect any packages that're missing on the current system and queue them
 /// for installation.
 fn handle_packages(
-    new: &State,
+    desired: &State,
     system_state: &mut SystemState,
     changeset: &mut Changeset,
 ) -> Result<()> {
-    for (manager, packages) in new.packages.iter() {
+    for (manager, packages) in desired.packages.iter() {
         // We look at all installed packages, including dependencies.
         // In case some desired package has already been installed as a
         // dependency, we won't try to re-install it.
@@ -352,11 +352,11 @@ fn handle_packages(
 /// A service with the `start` flag is started at the moment it gets enabled, but if a service
 /// is already enabled, it won't be started again, no matter its current status.
 fn handle_services(
-    new: &State,
+    desired: &State,
     system_state: &mut SystemState,
     changeset: &mut Changeset,
 ) -> Result<()> {
-    for (manager, services) in new.services.iter() {
+    for (manager, services) in desired.services.iter() {
         for service in services {
             if system_state.service_enabled(*manager, &service.name)? {
                 continue;

@@ -37,8 +37,8 @@ use crate::{
 /// This state is then persisted between the cleanup and deploy phases of a run.
 /// If the deploy phase aborts halfway the next run's drift detection would otherwise
 /// blame the executed cleanup deletions on the user as drift on your system.
-pub fn post_cleanup_state(old: &State, cleanup: &Changeset) -> State {
-    let mut state = old.clone();
+pub fn post_cleanup_state(previous: &State, cleanup: &Changeset) -> State {
+    let mut state = previous.clone();
 
     // The cleanup operations are ordered leaf-to-root, so children are
     // removed before their parent directories.
@@ -61,33 +61,33 @@ pub fn post_cleanup_state(old: &State, cleanup: &Changeset) -> State {
     state
 }
 
-/// Compare the previously deployed state with the new desired state and
+/// Compare the previously deployed state with the desired state and
 /// create the changeset of all necessary cleanup operations.
 ///
-/// This comparison is "filetype-sensitive" This means that a path that's a file in the old state
-/// and a directory in the new state (or vice versa) counts as removed.
+/// This comparison is "filetype-sensitive" This means that a path that's a file in the previous
+/// state and a directory in the desired state (or vice versa) counts as removed.
 pub fn cleanup_changeset(
-    old: &State,
-    new: &State,
+    previous: &State,
+    desired: &State,
     system_state: &mut SystemState,
 ) -> Result<Changeset> {
     let mut changeset = Changeset::new();
 
-    handle_paths(&old.path_tree, &new.path_tree, &mut changeset)?;
-    handle_packages(old, new, system_state, &mut changeset)?;
-    handle_services(old, new, system_state, &mut changeset)?;
+    handle_paths(&previous.path_tree, &desired.path_tree, &mut changeset)?;
+    handle_packages(previous, desired, system_state, &mut changeset)?;
+    handle_services(previous, desired, system_state, &mut changeset)?;
 
     Ok(changeset)
 }
 
 /// Queue deletions for all previously deployed paths that're absent from the
-/// new state.
+/// desired state.
 ///
-/// The old tree is walked in leaf-to-root order, so files and subdirectories are deleted before
-/// their parent directories.
-fn handle_paths(old: &Tree, new: &Tree, changeset: &mut Changeset) -> Result<()> {
-    // Lookup of the new state's paths with all parent symlinks resolved.
-    let resolved_new_paths: HashMap<PathBuf, bool> = new
+/// The previous tree is walked in leaf-to-root order, so files and subdirectories are deleted
+/// before their parent directories.
+fn handle_paths(previous: &Tree, desired: &Tree, changeset: &mut Changeset) -> Result<()> {
+    // Lookup of the desired state's paths with all parent symlinks resolved.
+    let resolved_desired_paths: HashMap<PathBuf, bool> = desired
         .flatten()
         .into_iter()
         .filter_map(|(path, node)| {
@@ -96,10 +96,10 @@ fn handle_paths(old: &Tree, new: &Tree, changeset: &mut Changeset) -> Result<()>
         })
         .collect();
 
-    for (path, node) in old.flatten().into_iter().rev() {
-        // Anything that's still present in the new state should not be cleaned up.
-        // So we check if the new state still contains this exact path with the same filetype.
-        let still_present = match (new.get(&path), node) {
+    for (path, node) in previous.flatten().into_iter().rev() {
+        // Anything that's still present in the desired state should not be cleaned up.
+        // So we check if the desired state still contains this exact path with the same filetype.
+        let still_present = match (desired.get(&path), node) {
             (Some(Node::File(_)), Node::File(_))
             | (Some(Node::Directory(_)), Node::Directory(_)) => true,
             // Either missing, or present with a different filetype.
@@ -110,17 +110,18 @@ fn handle_paths(old: &Tree, new: &Tree, changeset: &mut Changeset) -> Result<()>
         }
 
         // The path might have been renamed to a path that resolves to the same physical location
-        // through symlinks. Cleaning up the old path would then delete the file although it should
-        // remain untouched. Because of this, the following logic checks for such symlink "renames".
+        // through symlinks. Cleaning up the previous path would then delete the file although it
+        // should remain untouched. Because of this, the following logic checks for such
+        // symlink "renames".
         //
-        // For a conflict to happen, the old path must exist and resolve.
+        // For a conflict to happen, the previous path must exist and resolve.
         if path.exists()
             && let Ok(resolved) = path.canonicalize()
         {
-            // And the new state must have a path with the same type that resolves to the same
+            // And the desired state must have a path with the same type that resolves to the same
             // value.
-            if let Some(is_new_dir) = resolved_new_paths.get(&resolved)
-                && *is_new_dir == matches!(node, Node::Directory(_))
+            if let Some(is_desired_dir) = resolved_desired_paths.get(&resolved)
+                && *is_desired_dir == matches!(node, Node::Directory(_))
             {
                 continue;
             }
@@ -159,13 +160,13 @@ fn handle_paths(old: &Tree, new: &Tree, changeset: &mut Changeset) -> Result<()>
 /// Check for any packages that were previously deployed but are no longer
 /// part of the desired state and queue them for removal.
 fn handle_packages(
-    old: &State,
-    new: &State,
+    previous: &State,
+    desired: &State,
     system_state: &mut SystemState,
     changeset: &mut Changeset,
 ) -> Result<()> {
-    for (manager, old_packages) in old.packages.iter() {
-        let new_packages = new.packages.get(manager);
+    for (manager, previous_packages) in previous.packages.iter() {
+        let desired_packages = desired.packages.get(manager);
 
         // Uninstalling only makes sense for packages that're currently
         // installed as **explicit** packages. If a package was demoted to a
@@ -174,18 +175,19 @@ fn handle_packages(
         // need a better dependency solver.
         let explicit_packages = system_state.explicit_packages(*manager)?;
 
-        for old_package in old_packages {
-            let still_desired = new_packages.is_some_and(|packages| packages.contains(old_package));
+        for previous_package in previous_packages {
+            let still_desired =
+                desired_packages.is_some_and(|packages| packages.contains(previous_package));
             if still_desired {
                 continue;
             }
 
             // TODO: Check out the super::deploy::handle_packages function for why we
             // need a better dependency solver.
-            if explicit_packages.contains(old_package) {
+            if explicit_packages.contains(previous_package) {
                 changeset.package_uninstalls.push(PackageUninstall {
                     manager: *manager,
-                    name: old_package.clone(),
+                    name: previous_package.clone(),
                 });
             }
         }
@@ -197,29 +199,32 @@ fn handle_packages(
 /// Check for any services that were previously deployed but are no longer
 /// part of the desired state and queue them to be stopped + disabled.
 fn handle_services(
-    old: &State,
-    new: &State,
+    previous: &State,
+    desired: &State,
     system_state: &mut SystemState,
     changeset: &mut Changeset,
 ) -> Result<()> {
-    for (manager, old_services) in old.services.iter() {
-        let new_services = new.services.get(manager);
+    for (manager, previous_services) in previous.services.iter() {
+        let desired_services = desired.services.get(manager);
 
-        for old_service in old_services {
-            let still_desired = new_services
-                .is_some_and(|services| services.iter().any(|new| new.name == old_service.name));
+        for previous_service in previous_services {
+            let still_desired = desired_services.is_some_and(|services| {
+                services
+                    .iter()
+                    .any(|desired| desired.name == previous_service.name)
+            });
             if still_desired {
                 continue;
             }
 
             // Only queue services that're actually still enabled or running. Anything else, like a
             // unit that was manually disabled or vanished, needs no cleanup.
-            if system_state.service_enabled(*manager, &old_service.name)?
-                || system_state.service_active(*manager, &old_service.name)?
+            if system_state.service_enabled(*manager, &previous_service.name)?
+                || system_state.service_active(*manager, &previous_service.name)?
             {
                 changeset.service_disables.push(ServiceDisable {
                     manager: *manager,
-                    name: old_service.name.clone(),
+                    name: previous_service.name.clone(),
                 });
             }
         }

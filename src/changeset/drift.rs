@@ -5,7 +5,7 @@
 //! the bois config, so we inform them before the changes are overwritten or
 //! removed by the deployment.
 //!
-//! Changes that are already reflected in the new desired state, however, must
+//! Changes that are already reflected in the desired state, however, must
 //! **not** be detected as drift. The user has already adopted those into the
 //! config and the deployment will leave them untouched anyway.
 //!
@@ -57,7 +57,7 @@ impl Drift {
     }
 }
 
-/// A single changed path. The old (deployed) value always comes first.
+/// A single changed path. The deployed value always comes first.
 #[derive(Debug)]
 pub struct PathChange {
     pub path: PathBuf,
@@ -90,27 +90,31 @@ pub struct ContentChange {
 
 /// Compare the last-deployed state with the live system.
 ///
-/// The `new` (desired) state is used to filter out changes that the user has
+/// The `desired` state is used to filter out changes that the user has
 /// already integrated into the config.
-pub fn detect_drift(old: &State, new: &State, system_state: &mut SystemState) -> Result<Drift> {
+pub fn detect_drift(
+    previous: &State,
+    desired: &State,
+    system_state: &mut SystemState,
+) -> Result<Drift> {
     let mut changes = Drift::default();
 
-    handle_paths(&old.path_tree, &new.path_tree, &mut changes)?;
-    handle_packages(old, new, system_state, &mut changes)?;
-    handle_services(old, new, system_state, &mut changes)?;
+    handle_paths(&previous.path_tree, &desired.path_tree, &mut changes)?;
+    handle_packages(previous, desired, system_state, &mut changes)?;
+    handle_services(previous, desired, system_state, &mut changes)?;
 
     Ok(changes)
 }
 
-fn handle_paths(old: &Tree, new: &Tree, changes: &mut Drift) -> Result<()> {
-    for (path, node) in old.flatten() {
-        // The respective node the new state wants at this path, if any.
+fn handle_paths(previous: &Tree, desired: &Tree, changes: &mut Drift) -> Result<()> {
+    for (path, node) in previous.flatten() {
+        // The respective node the desired state wants at this path, if any.
         // If this is `None`, the path is no longer desired.
-        let desired = new.get(&path);
+        let desired_node = desired.get(&path);
 
         match node {
-            Node::File(file) => handle_file(&path, file, desired, changes)?,
-            Node::Directory(dir) => handle_directory(&path, dir, desired, changes)?,
+            Node::File(file) => handle_file(&path, file, desired_node, changes)?,
+            Node::Directory(dir) => handle_directory(&path, dir, desired_node, changes)?,
         }
     }
 
@@ -131,7 +135,7 @@ fn handle_file(
 
     let live = LiveEntry::read(path)?;
 
-    // The file the new state desires at this path, if it still does.
+    // The file the desired state wants at this path, if it still does.
     let desired_file = match desired {
         Node::File(file) => Some(file),
         _ => None,
@@ -176,8 +180,8 @@ fn handle_file(
             let live_content = read_live_content(path)?;
 
             // Check for differences in the actual file content.
-            // If any are detected, they're only reported if the new on-system state differs from
-            // the desired state.
+            // If any are detected, they're only reported if the new on-system state differs
+            // from the desired state.
             let content_adopted = desired_file.content.bytes() == live_content.as_slice();
             let mode_adopted = desired_file.mode == mode;
             let owner_adopted = desired_file.owner == owner;
@@ -235,12 +239,12 @@ fn handle_directory(
         DirectoryPermissions::Default => (None, &None, &None),
     };
 
-    // The directory the new state wants at this path, if it still wants one.
+    // The directory the desired state wants at this path, if it still wants one.
     let desired_dir = match desired {
         Node::Directory(dir) => Some(dir),
         _ => None,
     };
-    // The new state's declared permissions for this path.
+    // The desired state's declared permissions for this path.
     let (desired_mode, desired_owner, desired_group) = match desired_dir
         .and_then(|dir| dir.meta())
         .map(|meta| &meta.permissions)
@@ -333,7 +337,7 @@ fn handle_directory(
 /// Only called for entries whose live filetype no longer matches the previously deployed one.
 /// This is used to filter out filetype changes that were already (at least partially) adopted
 /// into the config, e.g. a deployed file that was manually replaced with a directory while the
-/// new state also desires a directory.
+/// desired state also wants a directory.
 ///
 /// Content and metadata of entries isn't inspected here. That's done during the deploy step.
 fn live_entry_satisfies_desired(path: &Path, desired: &Node, live: &LiveEntry) -> Result<bool> {
@@ -361,25 +365,25 @@ fn live_entry_satisfies_desired(path: &Path, desired: &Node, live: &LiveEntry) -
 /// Report any packages that were deployed, are still desired, but have been
 /// manually removed from the system since the last deploy.
 fn handle_packages(
-    old: &State,
-    new: &State,
+    previous: &State,
+    desired: &State,
     system_state: &mut SystemState,
     changes: &mut Drift,
 ) -> Result<()> {
-    for (manager, old_packages) in old.packages.iter() {
+    for (manager, previous_packages) in previous.packages.iter() {
         // We compare against all installed packages including dependencies.
         // A package that was demoted to a dependency is still on the system
         // and thereby not drift.
         let installed = system_state.packages(*manager)?;
 
-        for package in old_packages {
+        for package in previous_packages {
             if installed.contains(package) {
                 continue;
             }
 
             // Only report the removal if the package is still desired.
             // Otherwise its removal is simply an already-done cleanup.
-            let still_desired = new
+            let still_desired = desired
                 .packages
                 .get(manager)
                 .is_some_and(|packages| packages.contains(package));
@@ -395,23 +399,22 @@ fn handle_packages(
 /// Report any services that were deployed, are still desired, but have been
 /// manually disabled on the system since the last deploy.
 fn handle_services(
-    old: &State,
-    new: &State,
+    previous: &State,
+    desired: &State,
     system_state: &mut SystemState,
     changes: &mut Drift,
 ) -> Result<()> {
-    for (manager, old_services) in old.services.iter() {
-        for service in old_services {
+    for (manager, previous_services) in previous.services.iter() {
+        for service in previous_services {
             if system_state.service_enabled(*manager, &service.name)? {
                 continue;
             }
 
             // Only report the disable if the service is still desired.
             // Otherwise it's simply an already-done cleanup.
-            let still_desired = new
-                .services
-                .get(manager)
-                .is_some_and(|services| services.iter().any(|new| new.name == service.name));
+            let still_desired = desired.services.get(manager).is_some_and(|services| {
+                services.iter().any(|desired| desired.name == service.name)
+            });
             if still_desired {
                 changes
                     .disabled_services
