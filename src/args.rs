@@ -35,7 +35,7 @@ pub enum Subcommand {
     /// If any are found, try to integrate them back into the configuration.
     Adopt,
     /// Setup a new bois directory.
-    /// If no name is given, it'll create the files inside of the current directory.
+    /// If no path is provided, it'll create the files inside of the current directory.
     Init {
         /// When provided, a new directory with that name will be created and used.
         directory: Option<PathBuf>,
