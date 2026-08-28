@@ -26,6 +26,8 @@ use crate::{
     state::{PackageManager, ServiceManager, path::FileContent},
 };
 
+mod diff;
+
 pub fn print_package_uninstalls(packages: &[PackageUninstall]) {
     let mut sorted_changes: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
     print_header("Package removals");
