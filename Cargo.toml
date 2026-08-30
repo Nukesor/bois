@@ -17,6 +17,7 @@ better-panic = "0.3"
 clap = { version = "4", features = ["cargo", "derive"] }
 comfy-table = "7"
 crossterm = { version = "0.29", default-features = false }
+dialoguer = { version = "0.12" }
 dirs = "6"
 dotenv = "0.15"
 file-owner = "0.1"

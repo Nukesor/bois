@@ -2,6 +2,8 @@
 //!
 //! Uses [similar] for text diffs.
 
+use similar::ChangeTag;
+
 use crate::state::path::FileContent;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -146,9 +148,9 @@ impl Diff {
             for op in &group {
                 for change in diff.iter_changes(op) {
                     let kind = match change.tag() {
-                        similar::ChangeTag::Equal => DiffLineKind::Context,
-                        similar::ChangeTag::Delete => DiffLineKind::Remove,
-                        similar::ChangeTag::Insert => DiffLineKind::Add,
+                        ChangeTag::Equal => DiffLineKind::Context,
+                        ChangeTag::Delete => DiffLineKind::Remove,
+                        ChangeTag::Insert => DiffLineKind::Add,
                     };
                     let text = change.value().trim_end_matches('\n').to_string();
                     lines.push(DiffLine { kind, text });
@@ -177,4 +179,6 @@ impl Diff {
         }
         format!("{value:.1} PiB")
     }
+
+    pub fn format(&self) -> String {}
 }

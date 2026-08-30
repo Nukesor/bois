@@ -8,12 +8,9 @@ use crossterm::style::Stylize;
 use crate::{
     changeset::{
         DirectoryOperation,
-        Drift,
         FileOperation,
         PackageInstall,
         PackageUninstall,
-        PathChange,
-        PathChangeKind,
         PathOperation,
         ServiceDisable,
         ServiceEnable,
@@ -26,6 +23,7 @@ use crate::{
 
 mod color;
 mod diff;
+pub mod stages;
 mod style;
 
 pub fn print_package_uninstalls(packages: &[PackageUninstall]) {
@@ -274,81 +272,6 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
             println!("{}", "              ".underlined());
         }
     }
-    Ok(())
-}
-
-/// Print everything that changed on the system since the last run.
-/// Diff direction is deployed (old) -> actual (new): the diff shows what the
-/// user changed on their system.
-pub fn print_drift(drift: &Drift, config: &Configuration) -> Result<()> {
-    print_header("Drift on the system since the last deploy");
-
-    for PathChange { path, change } in &drift.changed_paths {
-        match change {
-            PathChangeKind::FileTypeChanged { deployed, actual } => {
-                println!(
-                    "{} {}: was deployed as {}, is now a {}",
-                    "Replaced".yellow().bold(),
-                    path.to_string_lossy(),
-                    deployed.to_string().bold(),
-                    actual.to_string().bold(),
-                );
-            }
-            PathChangeKind::Modified {
-                content,
-                mode,
-                owner,
-                group,
-            } => {
-                println!("{} {}", "Modified".yellow().bold(), path.to_string_lossy());
-
-                let mut table = Table::new();
-                if let Some((deployed, actual)) = mode {
-                    add_table_row(&mut table, "Mod", &format!("{deployed:#o} -> {actual:#o}"));
-                }
-                if let Some((deployed, actual)) = owner {
-                    add_table_row(&mut table, "Owner", &format!("{deployed} -> {actual}"));
-                }
-                if let Some((deployed, actual)) = group {
-                    add_table_row(&mut table, "Group", &format!("{deployed} -> {actual}"));
-                }
-                if !table.is_empty() {
-                    print_table(table);
-                }
-
-                if let Some(content_change) = content {
-                    // Write the *deployed* content to a temp file and diff it
-                    // against the actual file: deployed -> actual.
-                    print_diff_against_temp(config, &content_change.deployed, path)?;
-                }
-            }
-        }
-    }
-
-    for path in &drift.deleted_paths {
-        println!(
-            "{} {}: was deployed, no longer exists",
-            "Deleted".red().bold(),
-            path.to_string_lossy()
-        );
-    }
-
-    for (manager, package) in &drift.removed_packages {
-        println!(
-            "{} package {} ({manager}): still configured, will be re-installed",
-            "Removed".red().bold(),
-            package.clone().bold(),
-        );
-    }
-
-    for (manager, service) in &drift.disabled_services {
-        println!(
-            "{} service {} ({manager}): still configured, will be re-enabled",
-            "Disabled".red().bold(),
-            service.clone().bold(),
-        );
-    }
-
     Ok(())
 }
 

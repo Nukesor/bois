@@ -1,5 +1,4 @@
-use anyhow::{Result, bail};
-use inquire::Confirm;
+use anyhow::Result;
 
 use crate::{
     aggregators::aggregate_state,
@@ -19,12 +18,12 @@ use crate::{
     state::State,
     system_state::SystemState,
     ui::{
-        print_drift,
         print_package_installs,
         print_package_uninstalls,
         print_path_changes,
         print_service_disables,
         print_service_enables,
+        stages::drift::handle_drift,
     },
 };
 
@@ -58,23 +57,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
         let drift = detect_drift(previous, &desired_state, &mut system_state)?;
 
         if !drift.is_empty() {
-            print_drift(&drift, &config)?;
-
-            if !dry_run {
-                let answer =
-                    Confirm::new("These changes will be overwritten. Are you sure that's okay?")
-                        .with_default(false)
-                        .with_help_message(
-                            "The changes above were made on your system and haven't been \
-                             merged into your config yet.",
-                        )
-                        .prompt();
-
-                match answer {
-                    Ok(true) => (),
-                    _ => bail!("Aborting"),
-                }
-            }
+            handle_drift(&drift, &config)?;
         }
     }
 
