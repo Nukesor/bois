@@ -1,6 +1,6 @@
-//! Process diffing for bois
+//! Helper types for file diffing.
 //!
-//! Uses [similar] for
+//! Uses [similar] for text diffs.
 
 use crate::state::path::FileContent;
 

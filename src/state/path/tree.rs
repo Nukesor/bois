@@ -233,7 +233,7 @@ impl Tree {
     /// Insert a fully resolved directory at an absolute target path.
     ///
     /// If a directory already exists at the path, the two are merged accordingly
-    /// if possible. See [Self::merge_directory] for info on the merge logic.
+    /// if possible. See [`Self::merge_directory`] for info on the merge logic.
     ///
     /// ## Errors
     ///
@@ -294,7 +294,7 @@ impl Tree {
     /// ## Error
     ///
     /// A file at the target path is always a hard error.
-    fn merge_directory(
+    pub fn merge_directory(
         target: &Path,
         existing: &mut DirectoryState,
         new: DirectoryMeta,

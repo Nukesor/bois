@@ -1,6 +1,4 @@
-//! All user-facing output of changesets and drift reports:
-//! change summaries, metadata tables and content diffs.
-
+#![allow(dead_code)]
 use std::{collections::BTreeMap, fs::File, io::Write, path::Path, process::Command};
 
 use anyhow::Result;
@@ -26,7 +24,9 @@ use crate::{
     state::{PackageManager, ServiceManager, path::FileContent},
 };
 
+mod color;
 mod diff;
+mod style;
 
 pub fn print_package_uninstalls(packages: &[PackageUninstall]) {
     let mut sorted_changes: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
