@@ -6,7 +6,7 @@ use dialoguer::{Input, theme::ColorfulTheme};
 
 use super::print_header;
 use crate::{
-    changeset::{Drift, PathChange, PathChangeKind},
+    changeset::{Drift, FileType, PathChange, PathChangeKind},
     config::bois::Configuration,
     error::Error,
     ui::{diff::Diff, style_path, theme::Stylize},
@@ -58,8 +58,16 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Re
         let mut rows = Vec::new();
 
         for (index, PathChange { path, change }) in drift.changed_paths.iter().enumerate() {
+            let filetype = match change {
+                PathChangeKind::FileTypeChanged { actual, .. } => actual,
+                PathChangeKind::Modified { filetype, .. } => filetype,
+            };
             let mut row = DriftRow {
-                path: style_path(path, |name| name.highlight().bold()),
+                path: format!(
+                    "{} {}",
+                    filetype_emoji(filetype),
+                    style_path(path, |name| name.highlight().bold())
+                ),
                 ..Default::default()
             };
 
@@ -76,6 +84,7 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Re
                     mode,
                     owner,
                     group,
+                    ..
                 } => {
                     if let Some((deployed, actual)) = mode {
                         row.mode = Some(format!(
@@ -258,4 +267,14 @@ pub fn handle_prompt(drift: &Drift, content_changes: &Vec<usize>) -> Result<()> 
     handle_prompt(drift, content_changes)?;
 
     Ok(())
+}
+
+/// The emoji marking a path's filetype in the drift table.
+fn filetype_emoji(filetype: &FileType) -> &'static str {
+    match filetype {
+        FileType::File => "📄",
+        FileType::Directory => "📁",
+        FileType::Symlink => "🔗",
+        FileType::Special => "⚙️",
+    }
 }

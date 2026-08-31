@@ -77,6 +77,8 @@ pub enum PathChangeKind {
     },
     /// Content and/or metadata changed. Only the changed fields are set.
     Modified {
+        /// The (unchanged) filetype of the path, for display purposes.
+        filetype: FileType,
         content: Option<ContentChange>,
         /// (deployed, actual)
         mode: Option<(u32, u32)>,
@@ -209,6 +211,7 @@ fn handle_file(
                 changes.changed_paths.push(PathChange {
                     path: path.to_path_buf(),
                     change: PathChangeKind::Modified {
+                        filetype: FileType::File,
                         content,
                         mode,
                         owner,
@@ -325,6 +328,7 @@ fn handle_directory(
                 changes.changed_paths.push(PathChange {
                     path: path.to_path_buf(),
                     change: PathChangeKind::Modified {
+                        filetype: FileType::Directory,
                         content: None,
                         mode,
                         owner,

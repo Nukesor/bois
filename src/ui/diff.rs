@@ -52,6 +52,8 @@ impl HunkHeader {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DiffLine {
     pub kind: DiffLineKind,
+    /// The 1-based line number in the new file. `None` for removed lines.
+    pub new_line: Option<usize>,
     pub text: String,
 }
 
@@ -151,7 +153,12 @@ impl Diff {
                         ChangeTag::Insert => DiffLineKind::Add,
                     };
                     let text = change.value().trim_end_matches('\n').to_string();
-                    lines.push(DiffLine { kind, text });
+                    let new_line = change.new_index().map(|index| index + 1);
+                    lines.push(DiffLine {
+                        kind,
+                        new_line,
+                        text,
+                    });
                 }
             }
 
@@ -188,18 +195,34 @@ impl Diff {
             Diff::Identical => String::new(),
             Diff::Binary(summary) => summary.change().to_string(),
             Diff::Text(hunks) => {
+                // Width of the line number gutter (e.g. ` 5║`), sized by
+                // the largest new-file line number in the diff.
+                let width = hunks
+                    .iter()
+                    .flat_map(|hunk| hunk.lines.iter())
+                    .filter_map(|line| line.new_line)
+                    .max()
+                    .unwrap_or(0)
+                    .to_string()
+                    .len();
+
                 let mut lines = Vec::new();
                 for hunk in hunks {
                     if let Some(header) = &hunk.header {
                         lines.push(header.format().change().to_string());
                     }
                     for line in &hunk.lines {
+                        // Removed lines have no line number in the new file.
+                        let gutter = match line.new_line {
+                            Some(number) => format!("{number:>width$}║"),
+                            None => format!("{:>width$}║", ""),
+                        };
                         let styled = match line.kind {
                             DiffLineKind::Context => format!(" {}", line.text).unchanged(),
                             DiffLineKind::Add => format!("+{}", line.text).addition(),
                             DiffLineKind::Remove => format!("-{}", line.text).removal(),
                         };
-                        lines.push(styled.to_string());
+                        lines.push(format!("{}{styled}", gutter.unchanged()));
                     }
                 }
                 lines.join("\n")
