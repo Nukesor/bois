@@ -1,7 +1,6 @@
-use std::{collections::BTreeMap, num::ParseIntError};
+use std::num::ParseIntError;
 
 use anyhow::Result;
-use crossterm::style::Stylize;
 use dialoguer::{Input, theme::ColorfulTheme};
 
 use super::print_header;
@@ -9,48 +8,29 @@ use crate::{
     changeset::{Drift, PathChange, PathChangeKind},
     config::bois::Configuration,
     error::Error,
-    state::{PackageManager, ServiceManager},
-    ui::diff::Diff,
+    ui::{diff::Diff, theme::Stylize},
 };
 
 /// Print everything that changed on the system since the last run.
 /// Diff direction is deployed (old) -> actual (new): the diff shows what the
 /// user changed on their system.
-pub fn handle_drift(drift: &Drift, _config: &Configuration) -> Result<()> {
+pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Result<()> {
     print_header("Drift since the last deploy");
 
-    // Sort the packages by package manager
-    // TODO: Change the data structure to look like this in `drift` by default.
-    let removed_packages: BTreeMap<PackageManager, Vec<String>> = drift
-        .removed_packages
-        .iter()
-        .fold(BTreeMap::new(), |mut map, (manager, package)| {
-            map.entry(*manager).or_default().push(package.clone());
-            map
-        });
-    if !removed_packages.is_empty() {
+    if !drift.removed_packages.is_empty() {
         println!("Uninstalled packages:");
-        for (manager, packages) in &removed_packages {
+        for (manager, packages) in &drift.removed_packages {
             for package in packages {
-                println!("{manager} - {}", package.clone().bold(),);
+                println!("{manager} - {}", package.bold());
             }
         }
     }
 
-    // Sort the packages by package manager
-    // TODO: Change the data structure to look like this in `drift` by default.
-    let disabled_services: BTreeMap<ServiceManager, Vec<String>> = drift
-        .disabled_services
-        .iter()
-        .fold(BTreeMap::new(), |mut map, (manager, package)| {
-            map.entry(*manager).or_default().push(package.clone());
-            map
-        });
-    if !disabled_services.is_empty() {
+    if !drift.disabled_services.is_empty() {
         println!("Disabled services:");
-        for (manager, packages) in &removed_packages {
-            for package in packages {
-                println!("{manager} - {}", package.clone().bold(),);
+        for (manager, services) in &drift.disabled_services {
+            for service in services {
+                println!("{manager} - {}", service.bold());
             }
         }
     }
@@ -66,10 +46,10 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration) -> Result<()> {
             match change {
                 PathChangeKind::FileTypeChanged { deployed, actual } => {
                     println!(
-                        "{}: Filetype {} ↠ {}",
-                        path.to_string_lossy().yellow().bold(),
-                        deployed.to_string().bold(),
-                        actual.to_string().bold(),
+                        "{}: Filetype {} → {}",
+                        path.display().highlight().bold(),
+                        deployed.bold(),
+                        actual.bold(),
                     );
                 }
                 PathChangeKind::Modified {
@@ -78,30 +58,40 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration) -> Result<()> {
                     owner,
                     group,
                 } => {
-                    let mut message = format!("{} ", path.to_string_lossy().yellow().bold());
+                    let mut message = format!("{} ", path.display().highlight().bold());
 
                     if let Some((deployed, actual)) = mode {
-                        message.push_str(&format!("mod {deployed:#o} ↠ {actual:#o}, "));
+                        message.push_str(&format!("mod {deployed:#o} → {actual:#o}, "));
                     }
                     if let Some((deployed, actual)) = owner {
-                        message.push_str(&format!("owner {deployed} ↠ {actual}, "));
+                        message.push_str(&format!("owner {deployed} → {actual}, "));
                     }
                     if let Some((deployed, actual)) = group {
-                        message.push_str(&format!("group {deployed} ↠ {actual}, "));
+                        message.push_str(&format!("group {deployed} → {actual}, "));
                     }
                     if content.is_some() {
-                        message.push_str(&format!("content changed"));
+                        message.push_str("content changed");
                         content_changes.push(index);
                     }
 
-                    println!("{}", message.strip_suffix(", ").unwrap_or(&message))
+                    println!("{}", message.strip_suffix(", ").unwrap_or(&message));
+
+                    // In a dry-run mode, we also always print diffs.
+                    if dry_run && let Some(change) = content {
+                        let diff = Diff::for_drift(&change.deployed, &change.actual);
+                        println!("{}", diff.format());
+                    }
                 }
             }
         }
 
         for path in &drift.deleted_paths {
-            println!("{}: Deleted", path.to_string_lossy().red().bold());
+            println!("{}: Deleted", path.display().removal().bold());
         }
+    }
+
+    if !dry_run {
+        handle_prompt(drift, &content_changes)?;
     }
 
     Ok(())
@@ -161,7 +151,7 @@ pub fn handle_prompt(drift: &Drift, content_changes: &Vec<usize>) -> Result<()> 
 
     // If we got invalid input, just show the prompt again.
     if !valid_input || diffs_to_show.is_empty() {
-        handle_prompt(drift, content_changes);
+        handle_prompt(drift, content_changes)?;
     }
 
     // We got some valid ids, show them:
@@ -169,20 +159,21 @@ pub fn handle_prompt(drift: &Drift, content_changes: &Vec<usize>) -> Result<()> 
         // Unwrap, as we just know these indices exist.
         let change = drift.changed_paths.get(*id).unwrap();
         let PathChangeKind::Modified {
-            content: Some(change),
+            content: Some(content_change),
             ..
         } = &change.change
         else {
             unreachable!();
         };
 
-        let diff = Diff::for_drift(&change.deployed, &change.actual);
+        let diff = Diff::for_drift(&content_change.deployed, &content_change.actual);
 
-        println!("{diff}");
+        println!("Changes for path {}", change.path.to_string_lossy());
+        println!("{}", diff.format());
     }
 
     // Now that we presented the diffs, show the prompt again.
-    handle_prompt(drift, content_changes);
+    handle_prompt(drift, content_changes)?;
 
     Ok(())
 }

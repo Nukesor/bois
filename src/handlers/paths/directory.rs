@@ -5,16 +5,15 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use crossterm::style::Stylize;
 use file_owner::PathExt;
 use log::warn;
 
-use crate::error::Error;
+use crate::{error::Error, ui::theme::Stylize};
 
 pub fn create_directory(path: &Path, mode: u32, owner: &str, group: &str) -> Result<()> {
     // A previous change might have already created this directory.
     if !path.exists() {
-        println!("{} directory at {path:?}", "Creating".green());
+        println!("{} directory at {path:?}", "Creating".addition());
         std::fs::create_dir(path)
             .map_err(|err| Error::IoPath(path.to_path_buf(), "creating directory.", err))?;
     }
@@ -36,7 +35,7 @@ pub fn modify_directory(
     owner: &Option<String>,
     group: &Option<String>,
 ) -> Result<()> {
-    println!("{} directory at {path:?}", "Modifying".yellow());
+    println!("{} directory at {path:?}", "Modifying".change());
     if let Some(mode) = mode {
         set_permissions(path, Permissions::from_mode(*mode))?;
     }
@@ -76,7 +75,7 @@ pub fn cleanup_directory(path: &Path) -> Result<()> {
         return Ok(());
     }
 
-    println!("{} directory at {path:?}", "Removing".red());
+    println!("{} directory at {path:?}", "Removing".removal());
     std::fs::remove_dir(path)
         .map_err(|err| Error::IoPath(path.to_path_buf(), "removing directory", err))?;
 
@@ -93,7 +92,7 @@ pub fn remove_conflicting_directory(path: &Path) -> Result<()> {
         return Ok(());
     }
 
-    println!("{} directory at {path:?}", "Removing".red());
+    println!("{} directory at {path:?}", "Removing".removal());
     std::fs::remove_dir(path)
         .map_err(|err| Error::IoPath(path.to_path_buf(), "removing directory", err))
         .context(format!(

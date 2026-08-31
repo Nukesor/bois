@@ -16,7 +16,10 @@
 //! TODO: The idea is to (maybe) later on create a `bois adopt` command, which
 //! would attempt to copy over changes from the system into the bois directory.
 
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result;
 
@@ -43,9 +46,9 @@ pub struct Drift {
     /// Previously deployed files that are now missing on the system.
     pub deleted_paths: Vec<PathBuf>,
     /// Managed packages that were manually uninstalled from the system.
-    pub removed_packages: Vec<(PackageManager, String)>,
+    pub removed_packages: BTreeMap<PackageManager, Vec<String>>,
     /// Managed services that were manually disabled on the system.
-    pub disabled_services: Vec<(ServiceManager, String)>,
+    pub disabled_services: BTreeMap<ServiceManager, Vec<String>>,
 }
 
 impl Drift {
@@ -394,8 +397,13 @@ fn handle_packages(
                 .packages
                 .get(manager)
                 .is_some_and(|packages| packages.contains(package));
+
             if still_desired {
-                changes.removed_packages.push((*manager, package.clone()));
+                changes
+                    .removed_packages
+                    .entry(*manager)
+                    .or_default()
+                    .push(package.clone());
             }
         }
     }
@@ -425,7 +433,9 @@ fn handle_services(
             if still_desired {
                 changes
                     .disabled_services
-                    .push((*manager, service.name.clone()));
+                    .entry(*manager)
+                    .or_default()
+                    .push(service.name.clone());
             }
         }
     }

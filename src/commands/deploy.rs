@@ -57,7 +57,7 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
         let drift = detect_drift(previous, &desired_state, &mut system_state)?;
 
         if !drift.is_empty() {
-            handle_drift(&drift, &config)?;
+            handle_drift(&drift, &config, dry_run)?;
         }
     }
 

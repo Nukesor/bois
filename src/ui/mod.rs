@@ -3,7 +3,6 @@ use std::{collections::BTreeMap, fs::File, io::Write, path::Path, process::Comma
 
 use anyhow::Result;
 use comfy_table::{Attribute, Cell, CellAlignment, Column, ContentArrangement, Table, presets};
-use crossterm::style::Stylize;
 
 use crate::{
     changeset::{
@@ -19,12 +18,13 @@ use crate::{
     constants::{CURRENT_GROUP, CURRENT_USER},
     error::Error,
     state::{PackageManager, ServiceManager, path::FileContent},
+    ui::theme::Stylize,
 };
 
-mod color;
 mod diff;
 pub mod stages;
 mod style;
+pub mod theme;
 
 pub fn print_package_uninstalls(packages: &[PackageUninstall]) {
     let mut sorted_changes: BTreeMap<PackageManager, Vec<String>> = BTreeMap::new();
@@ -38,7 +38,7 @@ pub fn print_package_uninstalls(packages: &[PackageUninstall]) {
     for (manager, packages) in sorted_changes {
         println!("{}:", manager.to_string().bold());
         for package in packages {
-            println!("  {} {package}", "-".red());
+            println!("  {} {package}", "-".removal());
         }
     }
 }
@@ -55,7 +55,7 @@ pub fn print_package_installs(packages: &[PackageInstall]) {
     for (manager, packages) in sorted_changes {
         println!("{}:", manager.to_string().bold());
         for package in packages {
-            println!("  {} {package}", "+".green());
+            println!("  {} {package}", "+".addition());
         }
     }
 }
@@ -73,9 +73,9 @@ pub fn print_service_enables(services: &[ServiceEnable]) {
         println!("{}:", manager.to_string().bold());
         for service in services {
             if service.start {
-                println!("  {} {} (will be started)", "+".green(), service.name);
+                println!("  {} {} (will be started)", "+".addition(), service.name);
             } else {
-                println!("  {} {}", "+".green(), service.name);
+                println!("  {} {}", "+".addition(), service.name);
             }
         }
     }
@@ -93,7 +93,7 @@ pub fn print_service_disables(services: &[ServiceDisable]) {
     for (manager, services) in sorted_changes {
         println!("{}:", manager.to_string().bold());
         for service in services {
-            println!("  {} {} (will be stopped)", "-".red(), service.name);
+            println!("  {} {} (will be stopped)", "-".removal(), service.name);
         }
     }
 }
@@ -116,7 +116,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 } => {
                     println!(
                         "{} {}:      {}",
-                        "New".green().bold(),
+                        "New".addition().bold(),
                         "file".bold(),
                         style_path(path)
                     );
@@ -149,7 +149,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 } => {
                     println!(
                         "{} {}: {}",
-                        "Modifying".yellow().bold(),
+                        "Modifying".change().bold(),
                         "file".bold(),
                         path.to_string_lossy(),
                     );
@@ -178,7 +178,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 FileOperation::Cleanup { path } => {
                     println!(
                         "{} {}: {}",
-                        "Deleting".red().bold(),
+                        "Deleting".removal().bold(),
                         "file".bold(),
                         path.to_string_lossy(),
                     );
@@ -186,7 +186,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 FileOperation::Conflict { path, found } => {
                     println!(
                         "{} {}: {}",
-                        "Removing".red().bold(),
+                        "Removing".removal().bold(),
                         format!("conflicting {found}").bold(),
                         path.to_string_lossy(),
                     );
@@ -201,7 +201,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 } => {
                     println!(
                         "{} {}: {}",
-                        "New".green().bold(),
+                        "New".addition().bold(),
                         "directory".bold(),
                         path.to_string_lossy(),
                     );
@@ -226,7 +226,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 } => {
                     println!(
                         "{} {}: {}",
-                        "Modifying".yellow().bold(),
+                        "Modifying".change().bold(),
                         "directory".bold(),
                         path.to_string_lossy(),
                     );
@@ -250,7 +250,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 DirectoryOperation::Cleanup { path } => {
                     println!(
                         "{} {}: {}",
-                        "Deleting".red().bold(),
+                        "Deleting".removal().bold(),
                         "directory".bold(),
                         path.to_string_lossy(),
                     );
@@ -258,7 +258,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                 DirectoryOperation::Conflict { path, found } => {
                     println!(
                         "{} {}: {}",
-                        "Removing".red().bold(),
+                        "Removing".removal().bold(),
                         format!("conflicting {found}").bold(),
                         path.to_string_lossy(),
                     );
@@ -295,7 +295,7 @@ fn style_path(path: &Path) -> String {
     // Remove the filename from the path.
     path.pop();
 
-    format!("{}/{}", path.to_string_lossy(), filename.yellow())
+    format!("{}/{}", path.to_string_lossy(), filename.highlight())
 }
 
 fn add_table_row(table: &mut Table, name: &str, value: &str) {

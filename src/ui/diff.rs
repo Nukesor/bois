@@ -4,7 +4,7 @@
 
 use similar::ChangeTag;
 
-use crate::state::path::FileContent;
+use crate::{state::path::FileContent, ui::theme::Stylize};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HunkHeader {
@@ -135,8 +135,6 @@ impl Diff {
     }
 
     /// Create a text diff with the [`similar`] crate.
-    ///
-    /// Returns a list of lines
     fn text_diff(old: &str, new: &str) -> Diff {
         let diff = similar::TextDiff::from_lines(old, new);
         let mut hunks = Vec::new();
@@ -180,5 +178,32 @@ impl Diff {
         format!("{value:.1} PiB")
     }
 
-    pub fn format(&self) -> String {}
+    /// Render the diff as a git-style unified diff (without the file header),
+    /// colored with the active palette.
+    ///
+    /// Lines are joined with `\n` without a trailing newline. An identical diff
+    /// renders as an empty string.
+    pub fn format(&self) -> String {
+        match self {
+            Diff::Identical => String::new(),
+            Diff::Binary(summary) => summary.change().to_string(),
+            Diff::Text(hunks) => {
+                let mut lines = Vec::new();
+                for hunk in hunks {
+                    if let Some(header) = &hunk.header {
+                        lines.push(header.format().change().to_string());
+                    }
+                    for line in &hunk.lines {
+                        let styled = match line.kind {
+                            DiffLineKind::Context => format!(" {}", line.text).unchanged(),
+                            DiffLineKind::Add => format!("+{}", line.text).addition(),
+                            DiffLineKind::Remove => format!("-{}", line.text).removal(),
+                        };
+                        lines.push(styled.to_string());
+                    }
+                }
+                lines.join("\n")
+            }
+        }
+    }
 }

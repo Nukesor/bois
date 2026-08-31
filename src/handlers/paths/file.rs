@@ -6,13 +6,12 @@ use std::{
 };
 
 use anyhow::Result;
-use crossterm::style::Stylize;
 use file_owner::PathExt;
 
-use crate::error::Error;
+use crate::{error::Error, ui::theme::Stylize};
 
 pub fn create_file(path: &Path, content: &[u8], mode: u32, owner: &str, group: &str) -> Result<()> {
-    println!("{} file at {path:?}", "Creating".green());
+    println!("{} file at {path:?}", "Creating".addition());
     let mut file = File::create(path)
         .map_err(|err| Error::IoPath(path.to_path_buf(), "creating file.", err))?;
 
@@ -37,7 +36,7 @@ pub fn modify_file(
     owner: &Option<String>,
     group: &Option<String>,
 ) -> Result<()> {
-    println!("{} file at {path:?}", "Modifying".yellow());
+    println!("{} file at {path:?}", "Modifying".change());
     // Get options to read/write the file.
     let mut file_options = File::options();
     file_options.read(true).write(true);
@@ -85,7 +84,7 @@ pub fn remove_file(path: &Path) -> Result<()> {
         return Ok(());
     }
 
-    println!("{} file at {path:?}", "Removing".red());
+    println!("{} file at {path:?}", "Removing".removal());
     std::fs::remove_file(path)
         .map_err(|err| Error::IoPath(path.to_path_buf(), "removing file", err))?;
 
