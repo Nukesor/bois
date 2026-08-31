@@ -18,7 +18,7 @@ use crate::{
     constants::{CURRENT_GROUP, CURRENT_USER},
     error::Error,
     state::{PackageManager, ServiceManager, path::FileContent},
-    ui::theme::Stylize,
+    ui::theme::{Styled, Stylize},
 };
 
 mod diff;
@@ -118,7 +118,7 @@ pub fn print_path_changes(changes: &[PathOperation], config: &Configuration) -> 
                         "{} {}:      {}",
                         "New".addition().bold(),
                         "file".bold(),
-                        style_path(path)
+                        style_path(path, |name| name.highlight())
                     );
 
                     let mut table = Table::new();
@@ -284,18 +284,25 @@ fn print_header(header: &str) {
     let column = table.column_mut(0).unwrap();
     column.set_cell_alignment(CellAlignment::Center);
 
-    table.load_preset(presets::UTF8_FULL);
+    table.load_style(presets::UTF8_FULL);
     println!("{table}\n");
 }
 
-fn style_path(path: &Path) -> String {
+/// Display a path with only its last component styled.
+pub(crate) fn style_path<F>(path: &Path, style: F) -> String
+where
+    F: FnOnce(String) -> Styled<String>,
+{
     let mut path = path.to_path_buf();
     // Get the filename
-    let filename = path.file_name().unwrap().to_string_lossy().to_string();
+    let Some(filename) = path.file_name() else {
+        return path.to_string_lossy().into_owned();
+    };
+    let filename = filename.to_string_lossy().to_string();
     // Remove the filename from the path.
     path.pop();
 
-    format!("{}/{}", path.to_string_lossy(), filename.highlight())
+    format!("{}/{}", path.to_string_lossy(), style(filename))
 }
 
 fn add_table_row(table: &mut Table, name: &str, value: &str) {
@@ -306,7 +313,7 @@ fn add_table_row(table: &mut Table, name: &str, value: &str) {
 }
 
 fn print_table(mut table: Table) {
-    table.load_preset(presets::NOTHING);
+    table.load_style(presets::NOTHING);
     {
         let mut columns = table.column_iter_mut().collect::<Vec<&mut Column>>();
         columns[0].set_padding((2, 0));

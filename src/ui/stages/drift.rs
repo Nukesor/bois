@@ -1,6 +1,7 @@
 use std::num::ParseIntError;
 
 use anyhow::Result;
+use comfy_table::{Cell, Table, presets};
 use dialoguer::{Input, theme::ColorfulTheme};
 
 use super::print_header;
@@ -8,7 +9,7 @@ use crate::{
     changeset::{Drift, PathChange, PathChangeKind},
     config::bois::Configuration,
     error::Error,
-    ui::{diff::Diff, theme::Stylize},
+    ui::{diff::Diff, style_path, theme::Stylize},
 };
 
 /// Print everything that changed on the system since the last run.
@@ -40,17 +41,35 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Re
     let mut content_changes = Vec::new();
 
     if !drift.changed_paths.is_empty() || !drift.deleted_paths.is_empty() {
-        println!("Paths:");
+        // When printing the output for the drifted paths, we only want to show the
+        // properties that have been changed. As such, we accumulate all rows into
+        // a temporary `DriftRow`, which only has optional properties.
+        //
+        // This allows us to easily check later-on whether there's any row for a given property.
+        #[derive(Default)]
+        struct DriftRow {
+            path: String,
+            mode: Option<String>,
+            group: Option<String>,
+            user: Option<String>,
+            content: Option<String>,
+        }
+
+        let mut rows = Vec::new();
 
         for (index, PathChange { path, change }) in drift.changed_paths.iter().enumerate() {
+            let mut row = DriftRow {
+                path: style_path(path, |name| name.highlight().bold()),
+                ..Default::default()
+            };
+
             match change {
                 PathChangeKind::FileTypeChanged { deployed, actual } => {
-                    println!(
-                        "{}: Filetype {} → {}",
-                        path.display().highlight().bold(),
-                        deployed.bold(),
-                        actual.bold(),
-                    );
+                    row.content = Some(format!(
+                        "filetype {} → {}",
+                        deployed.removal(),
+                        actual.change()
+                    ));
                 }
                 PathChangeKind::Modified {
                     content,
@@ -58,39 +77,99 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Re
                     owner,
                     group,
                 } => {
-                    let mut message = format!("{} ", path.display().highlight().bold());
-
                     if let Some((deployed, actual)) = mode {
-                        message.push_str(&format!("mod {deployed:#o} → {actual:#o}, "));
-                    }
-                    if let Some((deployed, actual)) = owner {
-                        message.push_str(&format!("owner {deployed} → {actual}, "));
+                        row.mode = Some(format!(
+                            "{} → {}",
+                            format!("{deployed:#o}").removal(),
+                            format!("{actual:#o}").change()
+                        ));
                     }
                     if let Some((deployed, actual)) = group {
-                        message.push_str(&format!("group {deployed} → {actual}, "));
+                        row.group = Some(format!("{} → {}", deployed.removal(), actual.change()));
+                    }
+                    if let Some((deployed, actual)) = owner {
+                        row.user = Some(format!("{} → {}", deployed.removal(), actual.change()));
                     }
                     if content.is_some() {
-                        message.push_str("content changed");
+                        row.content = Some("changed".change().to_string());
                         content_changes.push(index);
-                    }
-
-                    println!("{}", message.strip_suffix(", ").unwrap_or(&message));
-
-                    // In a dry-run mode, we also always print diffs.
-                    if dry_run && let Some(change) = content {
-                        let diff = Diff::for_drift(&change.deployed, &change.actual);
-                        println!("{}", diff.format());
                     }
                 }
             }
+
+            rows.push(row);
         }
 
         for path in &drift.deleted_paths {
-            println!("{}: Deleted", path.display().removal().bold());
+            rows.push(DriftRow {
+                path: style_path(path, |name| name.removal().bold()),
+                content: Some("deleted".removal().to_string()),
+                ..Default::default()
+            });
         }
+
+        // The optional property columns: header + value getter.
+        type PropertyColumn = (&'static str, fn(&DriftRow) -> Option<&String>);
+        let property_columns: [PropertyColumn; 4] = [
+            ("Mod", |row| row.mode.as_ref()),
+            ("Group", |row| row.group.as_ref()),
+            ("User", |row| row.user.as_ref()),
+            ("Content", |row| row.content.as_ref()),
+        ];
+
+        // Only show property columns with at least one entry.
+        let columns: Vec<_> = property_columns
+            .into_iter()
+            .filter(|(_, value)| rows.iter().any(|row| value(row).is_some()))
+            .collect();
+
+        let mut table = Table::new();
+        table.load_style(presets::NOTHING);
+
+        let mut header = vec![Cell::new("Path".bold())];
+        header.extend(columns.iter().map(|(name, _)| Cell::new(name.bold())));
+        table.set_header(header);
+
+        for row in &rows {
+            let mut cells = vec![Cell::new(&row.path)];
+            cells.extend(
+                columns.iter().map(|(_, value)| {
+                    Cell::new(value(row).map(String::as_str).unwrap_or_default())
+                }),
+            );
+            table.add_row(cells);
+        }
+
+        // Give the property columns some extra spacing to their left
+        // neighbor, the default padding is quite crowded.
+        for column in table.column_iter_mut().skip(1) {
+            column.set_padding((3, 1));
+        }
+
+        println!("{table}");
     }
 
-    if !dry_run {
+    // Print the diffs of all changed files after the table during dry runs.
+    if dry_run {
+        for index in &content_changes {
+            // Unwrap, as we know these indices exist.
+            let change = drift.changed_paths.get(*index).unwrap();
+            let PathChangeKind::Modified {
+                content: Some(content_change),
+                ..
+            } = &change.change
+            else {
+                unreachable!();
+            };
+
+            let diff = Diff::for_drift(&content_change.deployed, &content_change.actual);
+            println!(
+                "\nChanges for path {}",
+                style_path(&change.path, |name| name.highlight())
+            );
+            println!("{}", diff.format());
+        }
+    } else {
         handle_prompt(drift, &content_changes)?;
     }
 
@@ -156,7 +235,7 @@ pub fn handle_prompt(drift: &Drift, content_changes: &Vec<usize>) -> Result<()> 
 
     // We got some valid ids, show them:
     for id in content_changes {
-        // Unwrap, as we just know these indices exist.
+        // Unwrap, as we know these indices exist.
         let change = drift.changed_paths.get(*id).unwrap();
         let PathChangeKind::Modified {
             content: Some(content_change),
@@ -168,7 +247,10 @@ pub fn handle_prompt(drift: &Drift, content_changes: &Vec<usize>) -> Result<()> 
 
         let diff = Diff::for_drift(&content_change.deployed, &content_change.actual);
 
-        println!("Changes for path {}", change.path.to_string_lossy());
+        println!(
+            "Changes for path {}",
+            style_path(&change.path, |name| name.highlight())
+        );
         println!("{}", diff.format());
     }
 
