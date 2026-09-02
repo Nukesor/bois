@@ -44,9 +44,9 @@ fn execute_path_operation(op: &PathOperation) -> Result<()> {
             } => modify_file(
                 path,
                 &content.as_ref().map(|content| content.bytes().to_vec()),
-                mode,
-                owner,
-                group,
+                &mode.map(|mode| mode.new),
+                &owner.as_ref().map(|owner| owner.new.clone()),
+                &group.as_ref().map(|group| group.new.clone()),
             ),
             FileOperation::Cleanup { path } | FileOperation::Conflict { path, .. } => {
                 remove_file(path)
@@ -64,7 +64,12 @@ fn execute_path_operation(op: &PathOperation) -> Result<()> {
                 mode,
                 owner,
                 group,
-            } => modify_directory(path, mode, owner, group),
+            } => modify_directory(
+                path,
+                &mode.map(|mode| mode.new),
+                &owner.as_ref().map(|owner| owner.new.clone()),
+                &group.as_ref().map(|group| group.new.clone()),
+            ),
             DirectoryOperation::Cleanup { path } => cleanup_directory(path),
             DirectoryOperation::Conflict { path, .. } => remove_conflicting_directory(path),
         },

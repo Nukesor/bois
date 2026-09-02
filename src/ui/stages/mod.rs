@@ -6,7 +6,7 @@ use comfy_table::{Cell, Table, presets};
 use crossterm::terminal;
 
 use crate::{
-    changeset::{DirectoryOperation, FileOperation, FileType, PathOperation},
+    changeset::{DirectoryOperation, FileOperation, FileType, Modified, PathOperation},
     constants::{CURRENT_GROUP, CURRENT_USER},
     state::path::FileContent,
     ui::{diff::Diff, style_path, theme::Stylize},
@@ -181,13 +181,13 @@ fn creation_row(
 }
 
 /// The row for a path whose properties will be modified.
-/// The old values aren't known here, so the cells show `→ new-value`.
+/// The cells show the old state that gets overwritten: `old → new`.
 fn modification_row(
     path: &std::path::Path,
     filetype: &FileType,
-    mode: &Option<u32>,
-    owner: &Option<String>,
-    group: &Option<String>,
+    mode: &Option<Modified<u32>>,
+    owner: &Option<Modified<String>>,
+    group: &Option<Modified<String>>,
 ) -> PathRow {
     PathRow {
         path: format!(
@@ -195,9 +195,19 @@ fn modification_row(
             filetype.emoji(),
             style_path(path, |name| name.highlight().bold())
         ),
-        mode: mode.map(|mode| format!("→ {}", format!("{mode:#o}").change())),
-        user: owner.as_ref().map(|owner| format!("→ {}", owner.change())),
-        group: group.as_ref().map(|group| format!("→ {}", group.change())),
+        mode: mode.map(|Modified { old, new }| {
+            format!(
+                "{} → {}",
+                format!("{old:#o}").change(),
+                format!("{new:#o}").addition()
+            )
+        }),
+        user: owner
+            .as_ref()
+            .map(|Modified { old, new }| format!("{} → {}", old.change(), new.addition())),
+        group: group
+            .as_ref()
+            .map(|Modified { old, new }| format!("{} → {}", old.change(), new.addition())),
         ..Default::default()
     }
 }

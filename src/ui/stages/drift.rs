@@ -5,7 +5,7 @@ use dialoguer::{Input, theme::ColorfulTheme};
 
 use super::{PathRow, print_header, print_path_table};
 use crate::{
-    changeset::{Drift, PathChange, PathChangeKind},
+    changeset::{Drift, Modified, PathChange, PathChangeKind},
     config::bois::Configuration,
     error::Error,
     ui::{diff::Diff, style_path, theme::Stylize},
@@ -70,17 +70,29 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Re
                     group,
                     ..
                 } => {
-                    if let Some((deployed, actual)) = mode {
+                    if let Some(Modified {
+                        old: deployed,
+                        new: actual,
+                    }) = mode
+                    {
                         row.mode = Some(format!(
                             "{} → {}",
                             format!("{deployed:#o}").removal(),
                             format!("{actual:#o}").change()
                         ));
                     }
-                    if let Some((deployed, actual)) = group {
+                    if let Some(Modified {
+                        old: deployed,
+                        new: actual,
+                    }) = group
+                    {
                         row.group = Some(format!("{} → {}", deployed.removal(), actual.change()));
                     }
-                    if let Some((deployed, actual)) = owner {
+                    if let Some(Modified {
+                        old: deployed,
+                        new: actual,
+                    }) = owner
+                    {
                         row.user = Some(format!("{} → {}", deployed.removal(), actual.change()));
                     }
                     if content.is_some() {

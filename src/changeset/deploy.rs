@@ -16,6 +16,7 @@ use crate::{
         DirectoryOperation,
         FileOperation,
         FileType,
+        Modified,
         PackageInstall,
         PathOperation,
         ServiceEnable,
@@ -149,13 +150,22 @@ fn handle_file(
             }
 
             if *mode != file.mode {
-                modified_mode = Some(file.mode);
+                modified_mode = Some(Modified {
+                    old: *mode,
+                    new: file.mode,
+                });
             }
             if *owner != file.owner {
-                modified_owner = Some(file.owner.clone());
+                modified_owner = Some(Modified {
+                    old: owner.clone(),
+                    new: file.owner.clone(),
+                });
             }
             if *group != file.group {
-                modified_group = Some(file.group.clone());
+                modified_group = Some(Modified {
+                    old: group.clone(),
+                    new: file.group.clone(),
+                });
             }
 
             if modified_content.is_some()
@@ -284,17 +294,26 @@ fn handle_directory(
 
             if let Some(declared) = declared_mode {
                 if *mode != declared {
-                    modified_mode = Some(declared);
+                    modified_mode = Some(Modified {
+                        old: *mode,
+                        new: declared,
+                    });
                 }
             }
             if let Some(declared) = declared_owner {
                 if *owner != declared {
-                    modified_owner = Some(declared);
+                    modified_owner = Some(Modified {
+                        old: owner.clone(),
+                        new: declared,
+                    });
                 }
             }
             if let Some(declared) = declared_group {
                 if *group != declared {
-                    modified_group = Some(declared);
+                    modified_group = Some(Modified {
+                        old: group.clone(),
+                        new: declared,
+                    });
                 }
             }
 

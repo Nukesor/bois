@@ -158,6 +158,15 @@ impl FileType {
     }
 }
 
+/// A modification of a single, generic property.
+///
+/// This struct is used to keep of the "before and after" of a value.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Modified<T> {
+    pub old: T,
+    pub new: T,
+}
+
 /// This enum represents all possible operations for single files.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FileOperation {
@@ -169,13 +178,13 @@ pub enum FileOperation {
         group: String,
     },
     /// All fields on modify are optional, as not all properties necessarily need
-    /// to be modified.
+    /// to be modified. Changed properties keep track of old and new values via  [Modified].
     Modify {
         path: PathBuf,
         content: Option<FileContent>,
-        mode: Option<u32>,
-        owner: Option<String>,
-        group: Option<String>,
+        mode: Option<Modified<u32>>,
+        owner: Option<Modified<String>>,
+        group: Option<Modified<String>>,
     },
     /// Delete a previously deployed file that is no longer part of the desired
     /// state.
@@ -200,12 +209,12 @@ pub enum DirectoryOperation {
         group: String,
     },
     /// All fields on modify are optional, as not all properties necessarily need
-    /// to be modified.
+    /// to be modified. Changed properties keep track of old and new values via  [Modified].
     Modify {
         path: PathBuf,
-        mode: Option<u32>,
-        owner: Option<String>,
-        group: Option<String>,
+        mode: Option<Modified<u32>>,
+        owner: Option<Modified<String>>,
+        group: Option<Modified<String>>,
     },
     /// Delete a previously deployed directory that's no longer part of the
     /// desired state.

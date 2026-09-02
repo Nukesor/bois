@@ -24,7 +24,7 @@ use std::{
 use anyhow::Result;
 
 use crate::{
-    changeset::FileType,
+    changeset::{FileType, Modified},
     state::{
         PackageManager,
         ServiceManager,
@@ -80,12 +80,9 @@ pub enum PathChangeKind {
         /// The (unchanged) filetype of the path, for display purposes.
         filetype: FileType,
         content: Option<ContentChange>,
-        /// (deployed, actual)
-        mode: Option<(u32, u32)>,
-        /// (deployed, actual)
-        owner: Option<(String, String)>,
-        /// (deployed, actual)
-        group: Option<(String, String)>,
+        mode: Option<Modified<u32>>,
+        owner: Option<Modified<String>>,
+        group: Option<Modified<String>>,
     },
 }
 
@@ -200,11 +197,18 @@ fn handle_file(
                     deployed: file.content.clone(),
                     actual: actual_content,
                 });
-            let mode = (mode != file.mode && !mode_adopted).then_some((file.mode, mode));
-            let owner = (owner != file.owner && !owner_adopted)
-                .then(|| (file.owner.clone(), owner.clone()));
-            let group = (group != file.group && !group_adopted)
-                .then(|| (file.group.clone(), group.clone()));
+            let mode = (mode != file.mode && !mode_adopted).then_some(Modified {
+                old: file.mode,
+                new: mode,
+            });
+            let owner = (owner != file.owner && !owner_adopted).then(|| Modified {
+                old: file.owner.clone(),
+                new: owner.clone(),
+            });
+            let group = (group != file.group && !group_adopted).then(|| Modified {
+                old: file.group.clone(),
+                new: group.clone(),
+            });
 
             // Only report the path if at least one field changed to a value that isn't desired.
             if content.is_some() || mode.is_some() || owner.is_some() || group.is_some() {
@@ -312,17 +316,26 @@ fn handle_directory(
             let mode = declared_mode
                 .filter(|declared| actual_mode != *declared)
                 .filter(|_| desired_mode.is_some_and(|d| d != actual_mode))
-                .map(|declared| (declared, actual_mode));
+                .map(|declared| Modified {
+                    old: declared,
+                    new: actual_mode,
+                });
             let owner = declared_owner
                 .as_ref()
                 .filter(|declared| &actual_owner != *declared)
                 .filter(|_| desired_owner.is_some_and(|d| d != &actual_owner))
-                .map(|declared| (declared.clone(), actual_owner.clone()));
+                .map(|declared| Modified {
+                    old: declared.clone(),
+                    new: actual_owner.clone(),
+                });
             let group = declared_group
                 .as_ref()
                 .filter(|declared| &actual_group != *declared)
                 .filter(|_| desired_group.is_some_and(|d| d != &actual_group))
-                .map(|declared| (declared.clone(), actual_group.clone()));
+                .map(|declared| Modified {
+                    old: declared.clone(),
+                    new: actual_group.clone(),
+                });
 
             if mode.is_some() || owner.is_some() || group.is_some() {
                 changes.changed_paths.push(PathChange {
