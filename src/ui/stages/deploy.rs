@@ -9,7 +9,7 @@ use crate::{
     changeset::{Changeset, FileOperation, PathOperation},
     error::Error,
     state::{PackageManager, ServiceManager},
-    ui::{diff::Diff, style_path, theme::Stylize},
+    ui::{diff::Diff, stages::print_delimiter, style_path, theme::Stylize},
 };
 
 /// Print all changes that'll be applied to the system to reach the desired
@@ -59,8 +59,9 @@ pub fn handle_deploy(changeset: &Changeset) -> Result<()> {
                 .map_err(|err| Error::IoPath(path.clone(), "reading file for diff.", err))?;
             let diff = Diff::for_deploy(&actual, desired);
 
+            print_delimiter();
             println!(
-                "\nChanges for path {}",
+                "Changes for path {}",
                 style_path(path, |name| name.highlight())
             );
             println!("{}", diff.format());

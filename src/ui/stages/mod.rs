@@ -33,6 +33,24 @@ fn print_header(text: &str) {
     println!("{header}\n");
 }
 
+/// Printls a simple delimiter for better visual differentiation between
+/// sections/bulks of content.
+///
+/// "──────────────────────────────"
+pub fn print_delimiter() {
+    // Set a min size of 10 chars.
+    let mut header = String::from("──────────");
+
+    if let Ok((cols, _)) = terminal::size() {
+        let remaining = ((cols / 2) as usize)
+            .checked_sub(header.len())
+            .unwrap_or(header.len());
+        header.extend(repeat_n("─", remaining));
+    };
+
+    println!("\n{header}");
+}
+
 /// A row of a stage's path table.
 ///
 /// Only the properties that're relevant for the row's operation are set.

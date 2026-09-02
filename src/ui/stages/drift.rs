@@ -8,7 +8,7 @@ use crate::{
     changeset::{Drift, Modified, PathChange, PathChangeKind},
     config::bois::Configuration,
     error::Error,
-    ui::{diff::Diff, style_path, theme::Stylize},
+    ui::{diff::Diff, stages::print_delimiter, style_path, theme::Stylize},
 };
 
 /// Print everything that changed on the system since the last run.
@@ -133,8 +133,9 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Re
             };
 
             let diff = Diff::for_drift(&content_change.deployed, &content_change.actual);
+            print_delimiter();
             println!(
-                "\nChanges for path {}",
+                "Changes for path {}",
                 style_path(&change.path, |name| name.highlight())
             );
             println!("{}", diff.format());
@@ -217,6 +218,7 @@ pub fn handle_prompt(drift: &Drift, content_changes: &Vec<usize>) -> Result<()> 
 
         let diff = Diff::for_drift(&content_change.deployed, &content_change.actual);
 
+        print_delimiter();
         println!(
             "Changes for path {}",
             style_path(&change.path, |name| name.highlight())

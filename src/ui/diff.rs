@@ -219,8 +219,8 @@ impl Diff {
                         };
                         let styled = match line.kind {
                             DiffLineKind::Context => format!(" {}", line.text).unchanged(),
-                            DiffLineKind::Add => format!("+{}", line.text).addition(),
-                            DiffLineKind::Remove => format!("-{}", line.text).removal(),
+                            DiffLineKind::Add => format!("+{}", line.text).addition().bold(),
+                            DiffLineKind::Remove => format!("-{}", line.text).removal().bold(),
                         };
                         lines.push(format!("{}{styled}", gutter.unchanged()));
                     }
