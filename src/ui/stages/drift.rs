@@ -1,20 +1,18 @@
 use std::num::ParseIntError;
 
 use anyhow::Result;
-use comfy_table::{Cell, Table, presets};
 use dialoguer::{Input, theme::ColorfulTheme};
 
-use super::print_header;
+use super::{PathRow, print_header, print_path_table};
 use crate::{
-    changeset::{Drift, FileType, PathChange, PathChangeKind},
+    changeset::{Drift, PathChange, PathChangeKind},
     config::bois::Configuration,
     error::Error,
     ui::{diff::Diff, style_path, theme::Stylize},
 };
 
 /// Print everything that changed on the system since the last run.
-/// Diff direction is deployed (old) -> actual (new): the diff shows what the
-/// user changed on their system.
+/// The diff direction is deployed -> actual.
 pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Result<()> {
     print_header("Drift since the last deploy");
 
@@ -41,20 +39,6 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Re
     let mut content_changes = Vec::new();
 
     if !drift.changed_paths.is_empty() || !drift.deleted_paths.is_empty() {
-        // When printing the output for the drifted paths, we only want to show the
-        // properties that have been changed. As such, we accumulate all rows into
-        // a temporary `DriftRow`, which only has optional properties.
-        //
-        // This allows us to easily check later-on whether there's any row for a given property.
-        #[derive(Default)]
-        struct DriftRow {
-            path: String,
-            mode: Option<String>,
-            group: Option<String>,
-            user: Option<String>,
-            content: Option<String>,
-        }
-
         let mut rows = Vec::new();
 
         for (index, PathChange { path, change }) in drift.changed_paths.iter().enumerate() {
@@ -62,10 +46,10 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Re
                 PathChangeKind::FileTypeChanged { actual, .. } => actual,
                 PathChangeKind::Modified { filetype, .. } => filetype,
             };
-            let mut row = DriftRow {
+            let mut row = PathRow {
                 path: format!(
                     "{} {}",
-                    filetype_emoji(filetype),
+                    filetype.emoji(),
                     style_path(path, |name| name.highlight().bold())
                 ),
                 ..Default::default()
@@ -110,52 +94,17 @@ pub fn handle_drift(drift: &Drift, _config: &Configuration, dry_run: bool) -> Re
         }
 
         for path in &drift.deleted_paths {
-            rows.push(DriftRow {
+            rows.push(PathRow {
                 path: style_path(path, |name| name.removal().bold()),
                 content: Some("deleted".removal().to_string()),
                 ..Default::default()
             });
         }
 
-        // The optional property columns: header + value getter.
-        type PropertyColumn = (&'static str, fn(&DriftRow) -> Option<&String>);
-        let property_columns: [PropertyColumn; 4] = [
-            ("Mod", |row| row.mode.as_ref()),
-            ("Group", |row| row.group.as_ref()),
-            ("User", |row| row.user.as_ref()),
-            ("Content", |row| row.content.as_ref()),
-        ];
-
-        // Only show property columns with at least one entry.
-        let columns: Vec<_> = property_columns
-            .into_iter()
-            .filter(|(_, value)| rows.iter().any(|row| value(row).is_some()))
-            .collect();
-
-        let mut table = Table::new();
-        table.load_style(presets::NOTHING);
-
-        let mut header = vec![Cell::new("Path".bold())];
-        header.extend(columns.iter().map(|(name, _)| Cell::new(name.bold())));
-        table.set_header(header);
-
-        for row in &rows {
-            let mut cells = vec![Cell::new(&row.path)];
-            cells.extend(
-                columns.iter().map(|(_, value)| {
-                    Cell::new(value(row).map(String::as_str).unwrap_or_default())
-                }),
-            );
-            table.add_row(cells);
-        }
-
-        // Give the property columns some extra spacing to their left
-        // neighbor, the default padding is quite crowded.
-        for column in table.column_iter_mut().skip(1) {
-            column.set_padding((3, 1));
-        }
-
-        println!("{table}");
+        print_path_table(
+            format!("Paths that {}", "changed on-system".change()),
+            &rows,
+        );
     }
 
     // Print the diffs of all changed files after the table during dry runs.
@@ -267,14 +216,4 @@ pub fn handle_prompt(drift: &Drift, content_changes: &Vec<usize>) -> Result<()> 
     handle_prompt(drift, content_changes)?;
 
     Ok(())
-}
-
-/// The emoji marking a path's filetype in the drift table.
-fn filetype_emoji(filetype: &FileType) -> &'static str {
-    match filetype {
-        FileType::File => "📄",
-        FileType::Directory => "📁",
-        FileType::Symlink => "🔗",
-        FileType::Special => "⚙️",
-    }
 }

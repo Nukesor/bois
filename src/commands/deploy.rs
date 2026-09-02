@@ -18,12 +18,8 @@ use crate::{
     state::State,
     system_state::SystemState,
     ui::{
-        print_package_installs,
-        print_package_uninstalls,
-        print_path_changes,
-        print_service_disables,
-        print_service_enables,
-        stages::drift::handle_drift,
+        stages::{cleanup::handle_cleanup, deploy::handle_deploy, drift::handle_drift},
+        style::Status,
     },
 };
 
@@ -53,10 +49,12 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     // Compare the last deployed state against the system. The user might
     // have forgotten to integrate manual changes into the bois config, so we
     // inform them before anything gets overwritten.
+    let mut drift_exists = false;
     if let Some(previous) = &previous_state {
         let drift = detect_drift(previous, &desired_state, &mut system_state)?;
+        drift_exists = !drift.is_empty();
 
-        if !drift.is_empty() {
+        if drift_exists {
             handle_drift(&drift, &config, dry_run)?;
         }
     }
@@ -69,30 +67,30 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
         None => Changeset::new(),
     };
 
-    if !cleanup.is_empty() {
-        if !cleanup.service_disables.is_empty() {
-            print_service_disables(&cleanup.service_disables);
+    let cleanup_exists = !cleanup.is_empty();
+    if cleanup_exists {
+        if drift_exists {
             println!();
         }
-        if !cleanup.path_cleanup.is_empty() {
-            print_path_changes(&cleanup.path_cleanup, &config)?;
-            println!();
-        }
-        if !cleanup.package_uninstalls.is_empty() {
-            print_package_uninstalls(&cleanup.package_uninstalls);
-            println!();
-        }
+        handle_cleanup(&cleanup);
 
-        if dry_run {
-            println!("Dry-run. Not cleaning anything up... yet");
-        } else {
+        if !dry_run {
             // Cleanup in the following order:
             // - System services.
             // - On-disk files.
             // - Packages.
-            disable_services(&mut system_state, &cleanup.service_disables)?;
-            execute_path_operations(&cleanup.path_cleanup)?;
-            uninstall_packages(&mut system_state, &cleanup.package_uninstalls)?;
+            if !cleanup.service_disables.is_empty() {
+                disable_services(&mut system_state, &cleanup.service_disables)?;
+                println!("{} Services disabled", Status::Applied.styled());
+            }
+            if !cleanup.path_cleanup.is_empty() {
+                execute_path_operations(&cleanup.path_cleanup)?;
+                println!("{} Files removed", Status::Applied.styled());
+            }
+            if !cleanup.package_uninstalls.is_empty() {
+                uninstall_packages(&mut system_state, &cleanup.package_uninstalls)?;
+                println!("{} Packages uninstalled", Status::Applied.styled());
+            }
 
             // Persist the left-over state of the last run after cleanup.
             // If the following deploy phase aborts, the next run's drift detection won't blame
@@ -115,21 +113,16 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
         return Ok(());
     }
 
-    if !deploy.package_installs.is_empty() {
-        print_package_installs(&deploy.package_installs);
-        println!();
-    }
-    if !deploy.path_operations.is_empty() {
-        print_path_changes(&deploy.path_operations, &config)?;
-        println!();
-    }
-    if !deploy.service_enables.is_empty() {
-        print_service_enables(&deploy.service_enables);
-        println!();
+    if !deploy.is_empty() {
+        if drift_exists || cleanup_exists {
+            println!();
+        }
+
+        handle_deploy(&deploy)?;
     }
 
     if dry_run {
-        println!("Dry-run. Not deploying anything... yet");
+        println!("Dry-run. Not doing anything... yet");
         return Ok(());
     }
 
@@ -143,9 +136,18 @@ pub fn run_deploy(config: Configuration, dry_run: bool) -> Result<()> {
     //
     // TODO: Check what happens if a path is scheduled for creation, but that path is then
     // created by a package installation
-    install_packages(&mut system_state, &deploy.package_installs)?;
-    execute_path_operations(&deploy.path_operations)?;
-    enable_services(&mut system_state, &deploy.service_enables)?;
+    if !deploy.package_installs.is_empty() {
+        install_packages(&mut system_state, &deploy.package_installs)?;
+        println!("{} Packages installed", Status::Applied.styled());
+    }
+    if !deploy.path_operations.is_empty() {
+        execute_path_operations(&deploy.path_operations)?;
+        println!("{} Files deployed", Status::Applied.styled());
+    }
+    if !deploy.service_enables.is_empty() {
+        enable_services(&mut system_state, &deploy.service_enables)?;
+        println!("{} Services enaabled", Status::Applied.styled());
+    }
 
     // ---------- Step 4: Persist the new state ----------
     desired_state.save()?;

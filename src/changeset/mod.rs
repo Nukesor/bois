@@ -146,6 +146,18 @@ pub enum FileType {
     Special,
 }
 
+impl FileType {
+    /// Returns an emoji that represents the filetype.
+    pub fn emoji(&self) -> &'static str {
+        match self {
+            FileType::File => "📄",
+            FileType::Directory => "📁",
+            FileType::Symlink => "🔗",
+            FileType::Special => "✨",
+        }
+    }
+}
+
 /// This enum represents all possible operations for single files.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FileOperation {
