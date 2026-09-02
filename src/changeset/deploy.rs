@@ -292,29 +292,29 @@ fn handle_directory(
             let mut modified_owner = None;
             let mut modified_group = None;
 
-            if let Some(declared) = declared_mode {
-                if *mode != declared {
-                    modified_mode = Some(Modified {
-                        old: *mode,
-                        new: declared,
-                    });
-                }
+            if let Some(declared) = declared_mode
+                && *mode != declared
+            {
+                modified_mode = Some(Modified {
+                    old: *mode,
+                    new: declared,
+                });
             }
-            if let Some(declared) = declared_owner {
-                if *owner != declared {
-                    modified_owner = Some(Modified {
-                        old: owner.clone(),
-                        new: declared,
-                    });
-                }
+            if let Some(declared) = declared_owner
+                && *owner != declared
+            {
+                modified_owner = Some(Modified {
+                    old: owner.clone(),
+                    new: declared,
+                });
             }
-            if let Some(declared) = declared_group {
-                if *group != declared {
-                    modified_group = Some(Modified {
-                        old: group.clone(),
-                        new: declared,
-                    });
-                }
+            if let Some(declared) = declared_group
+                && *group != declared
+            {
+                modified_group = Some(Modified {
+                    old: group.clone(),
+                    new: declared,
+                });
             }
 
             if modified_mode.is_some() || modified_owner.is_some() || modified_group.is_some() {

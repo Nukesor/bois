@@ -40,13 +40,11 @@ pub fn find_directory(
 
     // If this is one of the directories we should create (such as runtime/cache dirs), we just
     // use the first directory as the default and do so.
-    if create_on_missing {
-        if let Some(default_dir) = dirs.first() {
-            create_dir_all(default_dir).map_err(|err| {
-                Error::IoPathString(default_dir.clone(), format!("creating {dir_type} dir"), err)
-            })?;
-            return Ok(default_dir.clone());
-        }
+    if create_on_missing && let Some(default_dir) = dirs.first() {
+        create_dir_all(default_dir).map_err(|err| {
+            Error::IoPathString(default_dir.clone(), format!("creating {dir_type} dir"), err)
+        })?;
+        return Ok(default_dir.clone());
     }
 
     // In case we expect at least one of the directories to already exist, but none of the paths
