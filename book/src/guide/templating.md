@@ -62,6 +62,7 @@ SECRET=lorem
 OTHER_SECRET=sit
 ```
 
+
 ### Pre-defined variables
 
 `bois` pre-populates the templating environment with a few variables for your convenience:

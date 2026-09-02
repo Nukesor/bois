@@ -29,6 +29,11 @@ pub enum Error {
     #[error("{}", .0)]
     PathConflict(String),
 
+    /// A templating error, pre-rendered into a full report (headline, offending
+    /// line with caret, available variables) by `templating::render_template`.
+    #[error("{}", .0)]
+    Template(String),
+
     #[error("Error while running process '{}'\nError:\n{}", .0, .1)]
     Process(&'static str, std::io::Error),
 

@@ -372,7 +372,7 @@ fn handle_file(
     if config.template {
         match content {
             FileContent::Text(ref text) => {
-                let rendered = render_template(text, ctx.vars, &config.delimiters)
+                let rendered = render_template(relative_path, text, ctx.vars, &config.delimiters)
                     .context(format!("Error for template at {path:?}"))?;
                 content = FileContent::Text(rendered);
             }

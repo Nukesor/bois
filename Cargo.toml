@@ -25,7 +25,8 @@ hostname = "0.4"
 inquire = "0.9"
 lazy_static = "1"
 log = "0.4"
-minijinja = { version = "2", features = ["custom_syntax"] }
+# `UndefinedBehavior::SemiStrict` needs at least 2.8
+minijinja = { version = "2.8", features = ["custom_syntax"] }
 nix = { version = "0.31", features = ["user"] }
 pretty_env_logger = "0.5"
 serde = { version = "1", features = ["derive"] }

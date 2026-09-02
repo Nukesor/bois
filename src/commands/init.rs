@@ -55,7 +55,12 @@ pub fn run_init(raw_config: RawConfiguration, directory: &Option<PathBuf>) -> Re
         serde_yaml::to_value("hostname").unwrap(),
         serde_yaml::to_value(&name).unwrap(),
     );
-    let templated_bois_content = render_template(bois_content, &Value::Mapping(variables), &None)?;
+    let templated_bois_content = render_template(
+        &PathBuf::from("internal/template"),
+        bois_content,
+        &Value::Mapping(variables),
+        &None,
+    )?;
     let config_path = root_dir.join("bois.yml");
     fs::write(config_path, templated_bois_content)?;
 
