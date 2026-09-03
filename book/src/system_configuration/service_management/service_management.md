@@ -11,7 +11,7 @@ The rules are:
 - Bois doesn't manage the _running_ state of services. A service that's already enabled but was stopped manually won't be started again.
 - The [mode](../../guide/bois_config.md#modes) bois runs in determines which service manager instance is targeted: user mode manages the user's own instance (e.g. `systemctl --user`), system mode the system's.
 
-Services can be declared in a `host.yml`, a `trait.yml` or a folder's `dir.yml`:
+Services can be declared in a host config, a trait config or a folder's `dir.yml`:
 
 ```yaml
 services:

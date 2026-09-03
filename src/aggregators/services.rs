@@ -11,10 +11,10 @@ pub fn aggregate_services(
 ) -> BTreeMap<ServiceManager, BTreeSet<Service>> {
     let mut services = BTreeMap::new();
 
-    merge_services("host.yml", host_services, &mut services);
+    merge_services("the host config", host_services, &mut services);
     for (name, trait_config) in traits {
         merge_services(
-            &format!("trait.yml of trait '{name}'"),
+            &format!("the config of trait '{name}'"),
             &trait_config.services,
             &mut services,
         );

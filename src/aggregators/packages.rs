@@ -31,10 +31,10 @@ pub fn aggregate_packages(
         }
     };
 
-    merge("host.yml", host_packages, &mut packages);
+    merge("the host config", host_packages, &mut packages);
     for (name, trait_config) in traits {
         merge(
-            &format!("trait.yml of trait '{name}'"),
+            &format!("the config of trait '{name}'"),
             &trait_config.packages,
             &mut packages,
         );

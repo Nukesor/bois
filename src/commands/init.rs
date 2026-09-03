@@ -64,11 +64,11 @@ pub fn run_init(raw_config: RawConfiguration, directory: &Option<PathBuf>) -> Re
     let config_path = root_dir.join("bois.yml");
     fs::write(config_path, templated_bois_content)?;
 
-    let hosts_dir = root_dir.join("hosts").join(&name);
-    create_dir_all(&hosts_dir).context("Failed to create hosts directory")?;
-    let host_config_path = hosts_dir.join("host.yml");
+    let host_dir = root_dir.join("hosts").join(&name);
+    create_dir_all(&host_dir).context("Failed to create hosts directory")?;
+    let host_config_path = host_dir.join(format!("{name}.yml"));
     fs::write(host_config_path, host_content)?;
-    let host_vars_path = hosts_dir.join("vars.yml");
+    let host_vars_path = host_dir.join("vars.yml");
     fs::write(
         host_vars_path,
         "# Variables that're available in all templates of this host.\n\
@@ -76,9 +76,9 @@ pub fn run_init(raw_config: RawConfiguration, directory: &Option<PathBuf>) -> Re
          #editor: nvim\n",
     )?;
 
-    let traits_dir = root_dir.join("traits").join("base");
-    create_dir_all(&traits_dir).context("Failed to create traits directory")?;
-    let trait_config_path = traits_dir.join("trait.yml");
+    let trait_dir = root_dir.join("traits").join("base");
+    create_dir_all(&trait_dir).context("Failed to create traits directory")?;
+    let trait_config_path = trait_dir.join("base.yml");
     fs::write(trait_config_path, trait_content)?;
 
     Ok(())

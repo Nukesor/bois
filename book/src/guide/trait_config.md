@@ -13,28 +13,30 @@ The directory structure might look something like this:
  │ 📂 base/
  │ │ 📁 shell/
  │ │ 📁 git/
- │ └ trait.yml
+ │ └ base.yml
  │ 📂 laptop/
  │ │ 📁 upower/
- │ └ trait.yml
- └ 📂 games/
-   └ trait.yml
+ │ └ laptop.yml
+ └ games.yml
  📁 hosts/
 ```
 
-- The `trait.yml` file is optional.
-  It allows you to set trait-specific configuration and specify packages that should be installed when this trait is included.
+- A trait's config file is optional. A trait with its own directory keeps the config file inside
+  that directory at `traits/<traitname>/<traitname>.yml`, like `base` and `laptop` above.
+  A trait can also consist of only a config file without a directory; it then lives directly
+  at `traits/<traitname>.yml`, like `games` above.
+  The config file allows you to set trait-specific configuration and specify packages that should be installed when this trait is included.
 - All other files that're located in a trait's directory are considered configuration files that should be deployed to the system.
   In the example above, that would be the `shell`, `git`, and `upower` folders.
 
 Templating variables are defined in the host's `vars.yml` and are available in all traits as well.
 Read the [templating docs](./templating.md) for detailed info.
 
-Traits are **enabled per host** by adding them to the `traits` list in the [host.yml](./host_config.md#hostyml).
+Traits are **enabled per host** by adding them to the `traits` list in the [host config](./host_config.md#the-host-config-file).
 
-## `trait.yml`
+## The trait config file
 
-The following is a full example of a `trait.yml`:
+The following is a full example of a trait config file:
 
 ```yml
 # Override the target directory for all files in this trait.

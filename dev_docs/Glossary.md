@@ -7,9 +7,11 @@ This document describes the terminology used throughout the bois codebase.
 - **bois directory**: The root directory that holds the entire configuration, i.e. `bois.yml`, `hosts/`, and `traits/`.
 - **run mode**: Whether bois manages a user's dotfiles (`user`) or provisions a system (`system`).
 - **host**: A machine that's managed by bois.
-- **host config**: A single machine's configuration, living in `<bois directory>/hosts/<name>/`.
-- **trait**: A reusable, self-contained configuration unit in `<bois directory>/traits/<name>/`
-  (e.g. `desktop`, `audio`). Hosts opt into traits.
+- **host config**: A single machine's configuration. Its required config file lives at
+  `<bois directory>/hosts/<name>/<name>.yml`, or at `<bois directory>/hosts/<name>.yml` for a host without a directory.
+- **trait**: A reusable, self-contained configuration unit (e.g. `desktop`, `audio`). Its optional config file lives at
+  `<bois directory>/traits/<name>/<name>.yml`, or at `<bois directory>/traits/<name>.yml` for a trait without a directory.
+  Hosts opt into traits.
 - **source directory**: The directory of a single host or trait, i.e. where its files are read from.
   Also referred to as "host directory" and "trait directory".
 - **source file**: A raw file as read from a source directory, before templating, with its config block still attached.

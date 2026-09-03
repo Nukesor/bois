@@ -145,17 +145,6 @@ fn resolve_target_dir(target_dir: &Path, over_ride: &Option<PathBuf>) -> Result<
     }
 }
 
-/// The configuration file names that are found in the root of host and trait
-/// directories. Those should never be deployed.
-const ROOT_MARKER_FILES: [&str; 6] = [
-    "host.yml",
-    "host.yaml",
-    "trait.yml",
-    "trait.yaml",
-    "vars.yml",
-    "vars.yaml",
-];
-
 /// Walk the top level of a host/trait source directory and insert all
 /// deployable nodes into the tree.
 ///
@@ -168,11 +157,28 @@ pub fn walk_source(
     tree: &mut Tree,
     services: &mut BTreeMap<ServiceManager, BTreeSet<Service>>,
 ) -> Result<()> {
+    // A host/trait may consist of only a config file (e.g. just packages and
+    // services) and not have a source directory at all.
+    if !ctx.source_dir.exists() {
+        return Ok(());
+    }
+
+    // The source's config file lives inside its directory
+    // (`hosts/<name>/<name>.yml`) and must not be deployed.
+    let source_name = ctx
+        .source_dir
+        .file_name()
+        .map(|name| name.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let config_file_names = [format!("{source_name}.yml"), format!("{source_name}.yaml")];
+
     for entry in read_dir_sorted(&ctx.source_dir)? {
         let file_name = entry.file_name().to_string_lossy().to_string();
 
         // Skip all bois-internal configuration files at the source root.
-        if ROOT_MARKER_FILES.contains(&file_name.as_str()) {
+        if ["vars.yml", "vars.yaml"].contains(&file_name.as_str())
+            || config_file_names.contains(&file_name)
+        {
             continue;
         }
 

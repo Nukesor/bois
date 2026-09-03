@@ -45,7 +45,7 @@ target_dir: ~/.config
 cache_dir: ~/.cache/bois
 
 # Runtime directory for temporary files.
-# User mode: /run/user/$YOUR_USER_ID/bois (default)
+# User mode: /run/user/<YOUR_USER_ID>/bois (default)
 # System mode: /var/lib/bois (default)
 runtime_dir: /run/user/1000/bois
 

@@ -2,7 +2,7 @@
 
 ## Configuration
 
-Services can be added by adding a `services.systemd` section to a `host.yml`, a `trait.yml` or a folder's `dir.yml`.
+Services can be added by adding a `services.systemd` section to a host config, a trait config or a folder's `dir.yml`.
 For example:
 
 ```yaml
@@ -13,7 +13,7 @@ services:
     - backup.timer
 ```
 
-All systemd services that're defined in the `host.yml`, in the `trait.yml` files of enabled traits and in `dir.yml` files will then be enabled for the given host.
+All systemd services that're defined in the host config, in the configs of enabled traits and in `dir.yml` files will then be enabled for the given host.
 
 Unit names without an explicit unit suffix (such as `.service` or `.timer`) refer to `.service` units, just like they do when calling `systemctl`.
 I.e. `systemd-timesyncd` and `systemd-timesyncd.service` are treated as the same unit.

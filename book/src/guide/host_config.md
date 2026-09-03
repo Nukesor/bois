@@ -13,16 +13,16 @@ The directory structure might look something like this:
  │ 📂 cleo/
  │ │ 📁 udev/
  │ │ 📁 X11/
+ │ │ cleo.yml
  │ │ pacman.conf
- │ │ host.yml
  │ └ vars.yml
- └ 📂 milo/
-   │ host.yml
-   └ vars.yml
+ └ milo.yml
 ```
 
-- The `host.yml` file is required to exist in every host directory.
-  It allows you to set host-specific configuration defaults and determines which traits are going to be included for this host.
+- Every host requires a config file.
+  The config file allows you to set host-specific configuration defaults and determines which traits are going to be included for this host.
+  If a directory exists for a host, the config is expected inside that directory at `hosts/<hostname>/<hostname>.yml`, like `cleo` above.
+  If no directory is required, a host may only have a config file directly at `hosts/<hostname>.yml`, like `milo` above.
 - All variables inside the `vars.yml` are exposed to the templating engine.
   Read the [templating docs](./templating.md) for detailed info.
   The top level of the `vars.yml` is expected to be an object.
@@ -41,9 +41,9 @@ Let's look ahead to the next chapter real quick, which will be about [traits](./
 In contrast to [traits](./trait_config.md), host configuration files are always **exclusive** for a specific host.
 This allows you have a strict distinction between reusable logic, which is kept inside of traits, and host specific configuration, which is located the host's respective directory.
 
-## `host.yml`
+## The host config file
 
-The following is a full example of a `host.yml`:
+The following is a full example of a host config file:
 
 ```yml
 # Traits that're required by this host.
