@@ -4,6 +4,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use serde_yaml::Value;
 
 use crate::{
     config::{cleanup::CleanupConfig, services::Service},
@@ -29,6 +30,9 @@ pub struct HostConfig {
     /// Traits that're required by this host.
     #[serde(default)]
     pub traits: Vec<String>,
+    /// Variables that're exposed to the templating engine as an alternative to `vars.yml`.
+    #[serde(default)]
+    pub vars: Option<Value>,
     /// Packages that should always be installed for this host.
     #[serde(default)]
     pub packages: BTreeMap<PackageManager, BTreeSet<String>>,

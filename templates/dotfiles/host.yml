@@ -12,3 +12,9 @@ traits:
 #  group: root
 #  file_mode: 0o644
 #  directory_mode: 0o755
+
+# Variables that're available in all templates of this host.
+# An alternative to the vars.yml file in the host directory.
+# Only one of the two may be used.
+#vars:
+#  editor: nvim

@@ -33,6 +33,8 @@ The directory structure might look something like this:
     threads: 8
     is_laptop: true
   ```
+  Instead of a `vars.yml` file, the variables can also be defined in the `vars` field of the host's config file.
+  Only one of the two may be used, defining both is an error.
 - All other files that're located in a host's directory are considered configuration files that should be deployed to the system.
   In the example above, that would be the `X11` and `udev` folders, as well as the `pacman.conf` for the host `cleo` .
 
@@ -75,6 +77,11 @@ permission_defaults:
 # Controls what should be cleaned up once it's removed from this host's configuration.
 cleanup:
   directories: true
+
+# Variables that're exposed to the templating engine.
+# An alternative to a `vars.yml` file in the host directory.
+vars:
+  editor: nvim
 ```
 
 - `traits`: `List<String>` The list of traits that're enabled for this host.
@@ -93,6 +100,9 @@ cleanup:
   - `group`: `String` (optional) - The default group for all files and directories.
   - `file_mode`: `OctalInt` (optional) - The default permissions that'll be set for all files.
   - `directory_mode`: `OctalInt` (optional) - The default permissions that'll be set for all directories.
+- `vars`: `Map` (optional) - Variables that're exposed to the templating engine.
+  An alternative to the `vars.yml` file in the host directory, only one of the two may be used.
+  Read the [templating docs](./templating.md) for detailed info.
 - `cleanup`: (optional) Controls what should be cleaned up once it's removed from this host's configuration.
   Files and packages are always cleaned up; this only covers resources where cleanup is opt-in.
   - `directories`: `Boolean` - Whether directories are removed once they leave the configuration. Defaults to `false`.

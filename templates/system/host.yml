@@ -29,3 +29,9 @@ traits:
 #    - backup.timer
 #    - name: docker
 #      start: true
+
+# Variables that're available in all templates of this host.
+# An alternative to the vars.yml file in the host directory.
+# Only one of the two may be used.
+#vars:
+#  editor: nvim

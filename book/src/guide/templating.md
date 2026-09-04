@@ -25,6 +25,8 @@ To enable templating for a file, you must enable the `template` option in its [F
 
 Once this configuration flag is found, `bois` will treat the whole file as a template.
 If there's a `vars.yml` file in the current host's directory, it'll be read and injected into the templating environment.
+Alternatively, the variables can be defined in the `vars` field of the host's config file.
+Only one of the two may be used, defining both is an error.
 
 For example, consider the following `vars.yml` file in a host's directory.
 
