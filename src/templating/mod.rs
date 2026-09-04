@@ -349,7 +349,7 @@ mod tests {
             "Undefined variable `machine.threads.rofl` in template \"host/test.conf\"",
             "1 | count = {{ machine.threads.rofl }}",
             "  |            ^^^^^^^^^^^^^^^^^^^^",
-            "`machine.threads` is a number, not a mapping, so `rofl` cannot exist",
+            "`machine.threads` is a number, not a mapping",
         ]
         .join("\n");
         assert_eq!(error.to_string(), expected);
