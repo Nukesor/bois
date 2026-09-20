@@ -165,7 +165,7 @@ To name just a few examples I personally worked with:
 
 ## Why name it "bois"
 
-Quite a few reasons. First of, I kinda like the sound of it "boiiiiis". And it has a sillier connotation than "boys", mostly from usage in mostly stupid but fun memes. I always have to think about the "yeah boi" dub of a particular very angry desert frog that lets out his ferocious war cry.
+Quite a few reasons. First of, I kinda like the sound of it "boiiiiis". And it has a sillier connotation than "boys", mostly from usage in stupid but fun memes. I always have to think about the "yeah boi" dub of a particular very angry desert frog that lets out his ferocious war cry.
 
 Also "bois" seems like a much more German way of writing that word. Feels more natural, as we barely use `y` in words.
 
